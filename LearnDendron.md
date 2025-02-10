@@ -2,7 +2,7 @@
 id: po1d50dtr8zzbao0sn1duvh
 title: LearnDendron
 desc: ''
-updated: 1739164777493
+updated: 1739169153799
 created: 1737484383438
 ---
 
@@ -160,7 +160,7 @@ enableAutoCreateOnDefinition: true
 ## 在新的目录创建 vault
 I want to start clean with a new vault at a custom location: Run `Dendron: Initialize Workspace` from the command prompt (or click this link) to start from a clean slate
 
-或者是 `Dendron: Change Workspace`.
+或者是 `Dendron: Change Workspace`。注意，此操作只能用于切换到初始化后的 Workspace。
 
 ## Tag
 #入门
