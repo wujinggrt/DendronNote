@@ -1,8 +1,8 @@
 ---
 id: po1d50dtr8zzbao0sn1duvh
-title: Learn
+title: LearnDendron
 desc: ''
-updated: 1737536699110
+updated: 1739164777493
 created: 1737484383438
 ---
 
@@ -156,6 +156,11 @@ enableAutoCreateOnDefinition: true
 使用：在笔记文件的 `#tag-name` 处，按住 ctrl，鼠标悬停或点击，会得到标记为 tag-name 的所有笔记列表，并悬停在左侧侧边栏的 BACKLINKS 处。
 
 参考 [Dendron使用教程-01 给你的笔记打上Tag - 走遍山水路的文章 - 知乎](https://zhuanlan.zhihu.com/p/669141439)
+
+## 在新的目录创建 vault
+I want to start clean with a new vault at a custom location: Run `Dendron: Initialize Workspace` from the command prompt (or click this link) to start from a clean slate
+
+或者是 `Dendron: Change Workspace`.
 
 ## Tag
 #入门

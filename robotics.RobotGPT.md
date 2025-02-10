@@ -2,7 +2,7 @@
 id: cw7phhbd8lq6r7ufng7qyfu
 title: RobotGPT
 desc: ''
-updated: 1737478015412
+updated: 1738183945837
 created: 1732554047855
 ---
 # RobotGPT: Robot Manipulation Learning from ChatGPT
@@ -62,3 +62,6 @@ LLM 扮演的角色：Subgoals Manager and Corrector
 2023 CVPR，文本生成动作的工作 Motion VQ-VAE 和 T2M-GPT
 
 优势，对比扩散模型。
+
+# Tag
+#Paper

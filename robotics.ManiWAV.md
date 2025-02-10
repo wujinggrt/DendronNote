@@ -2,7 +2,7 @@
 id: r5ju1vb0062leor5oyxro6b
 title: ManiWAV
 desc: ''
-updated: 1737477969839
+updated: 1738183938058
 created: 1734405541161
 ---
 
@@ -51,3 +51,6 @@ Surface materials: 音频信号用于描述表面材料。基于视觉的策略�
 
 音频延迟匹配：校准思路与UMI一直。数据收集时，音频与视频同时收集。部署时，需要校准与视觉间延迟。通过轻敲夹爪，观察声音与视觉间延迟。如图，发现音频在图像信息收到后的0.06s才收到。校准一个相当的偏移量。
 ![alt text](assets/images/robotics/maniwav/match.png)
+
+# Tag
+#Paper

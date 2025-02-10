@@ -2,7 +2,7 @@
 id: l9050iuij124hjtrwpjiuzu
 title: A3VLM
 desc: ''
-updated: 1737536821129
+updated: 1738183919566
 created: 1733204186925
 ---
 
@@ -78,3 +78,4 @@ Two stage:
 ## Tag
 #Robotics
 #MLLM
+#Paper
