@@ -2,7 +2,7 @@
 id: 1iqcxpxffgr9qltudugozlr
 title: Scanning_skills
 desc: ''
-updated: 1737824549164
+updated: 1739282898266
 created: 1737537971972
 ---
 
@@ -345,6 +345,8 @@ https://zhuanlan.zhihu.com/p/699266280
 ## US
 * [72例超声临床病例解析......](https://mp.weixin.qq.com/s?__biz=MzIyMjE1ODA3MQ==&mid=2247692926&idx=2&sn=87a1aad709a15187e03c038721309f45&chksm=e93284a6da814fd8fa1ebccc1c3106579e1d695182c0b2670956f1fb9af5d616047e8a9bf8fd&scene=27)
 
+## 启发式探索
+insights：根据图片，如果当前图片并不适合，或者角度不满足，在没有视觉的引导，那就选择启发式的方案，随机朝着一个方向尝试。然后回来，选择最有可能的方向来进一步探索。蕴含着强化学习的思想。
 
 ## Tag
 #Robotics
