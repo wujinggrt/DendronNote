@@ -2,7 +2,7 @@
 id: 1iqcxpxffgr9qltudugozlr
 title: Scanning_skills
 desc: ''
-updated: 1739282898266
+updated: 1739347439885
 created: 1737537971972
 ---
 
@@ -347,6 +347,9 @@ https://zhuanlan.zhihu.com/p/699266280
 
 ## 启发式探索
 insights：根据图片，如果当前图片并不适合，或者角度不满足，在没有视觉的引导，那就选择启发式的方案，随机朝着一个方向尝试。然后回来，选择最有可能的方向来进一步探索。蕴含着强化学习的思想。
+
+## 模仿学习和 RL
+机械臂在人体表面上移动的前进、后退、向左和向右，可以尝试强化学习或者模仿学习。最后 LLM 推理模型来调用。
 
 ## Tag
 #Robotics

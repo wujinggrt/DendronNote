@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1739282986987
+updated: 1739311244048
 created: 1738165674608
 ---
 
@@ -32,3 +32,6 @@ https://zhuanlan.zhihu.com/p/22890208704
 
 如何看待李飞飞团队用不到 50 美元训练出媲美 DeepSeek R1 的 AI 推理模型? - Fazzie的回答 - 知乎
 https://www.zhihu.com/question/11450868336/answer/94386028114
+
+大模型强化学习面经 - 一蓑烟雨的文章 - 知乎
+https://zhuanlan.zhihu.com/p/659551066
