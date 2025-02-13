@@ -2,7 +2,7 @@
 id: gqnz9f63oiug596jem6d3m9
 title: ManiSkill-Vitac
 desc: ''
-updated: 1739372974791
+updated: 1739385817942
 created: 1739260392326
 ---
 
@@ -166,8 +166,77 @@ INFO got tac right feature
 
 6 猜测是指代六个线程。vision 和 tac 的最后一个维度分别是 128 和 64，分别对应配置文件中 vision_kwargs:out_dim 和 tac_kwargs:out_dim。可以看到，每个 torch.cat 拼接了最后维度，把左右的视觉触觉拼接起来。
 
+问题：在 `PointNetActor` 中，forward 调用了 `FeaturesExtractorPointCloud` 的 `forward`，得到了 `features`，维度为 (6, 384)，即 `marker_pos`，这与要求的 ndim 至少为三维相悖，所以在调用 `elf.point_net_feature_extractor(marker_pos_input)` 时候会出现错误。
+
+## PointNetActor 如何使用 FeaturesExtractorPointCloud
+```py
+class TD3PolicyForPegInsertionV2(TD3Policy):
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ):
+        super(TD3PolicyForPegInsertionV2, self).__init__(*args, **kwargs)
+        self.features_extractor_kwargs = kwargs.get("features_extractor_kwargs", {})
+
+    def make_actor(self, features_extractor: Optional[BaseFeaturesExtractor] = None) -> PointNetActor:
+        actor_kwargs = self._update_features_extractor(
+            self.actor_kwargs, FeaturesExtractorPointCloud(self.observation_space, **self.features_extractor_kwargs)
+        )
+        return PointNetActor(
+            pointnet_in_dim=4,
+            pointnet_out_dim=32,
+            batchnorm=False,
+            layernorm=True,
+            zero_init_output=False,
+            **actor_kwargs,
+        ).to(self.device)
+
+# 实际来自此 BaseModel
+# /home/lxt-24/miniforge3/envs/mani_vitac/lib/python3.10/site-packages/stable_baselines3/common/policies.py
+class BaseModel(nn.Module):
+    def _update_features_extractor(
+        self,
+        net_kwargs: Dict[str, Any],
+        features_extractor: Optional[BaseFeaturesExtractor] = None,
+    ) -> Dict[str, Any]:
+        """
+        Update the network keyword arguments and create a new features extractor object if needed.
+        If a ``features_extractor`` object is passed, then it will be shared.
+
+        :param net_kwargs: the base network keyword arguments, without the ones
+            related to features extractor
+        :param features_extractor: a features extractor object.
+            If None, a new object will be created.
+        :return: The updated keyword arguments
+        """
+        net_kwargs = net_kwargs.copy()
+        if features_extractor is None:
+            # The features extractor is not shared, create a new one
+            features_extractor = self.make_features_extractor()
+        net_kwargs.update(dict(features_extractor=features_extractor, features_dim=features_extractor.features_dim))
+        return net_kwargs
+```
+可以看到，net_kwargs 更新并使用了 features_extractor 和 features_dim。`PointNetActor` 接收了 features_extractor 作为参数，所以传入的 `FeaturesExtractorPointCloud` 由它管理，并在 `self.extract_features()` 中调用。
+
 ## PointNetActor
 ```py
+class PointNetActor(Actor):
+    def __init__(
+        self,
+        observation_space: gym.spaces.Space,
+        action_space: gym.spaces.Box,
+        features_extractor: nn.Module,
+        pointnet_in_dim: int,
+        pointnet_out_dim: int,
+        ...
+    ):
+    ...
+        self.point_net_feature_extractor = PointNetFeatureExtractor(
+            dim=pointnet_in_dim, out_dim=pointnet_out_dim, batchnorm=batchnorm
+        )
+    ...
+
     def forward(self, obs: torch.Tensor) -> torch.Tensor:
         with torch.set_grad_enabled(False):
             marker_pos = self.extract_features(obs, self.features_extractor)
@@ -187,7 +256,195 @@ INFO got tac right feature
 
         return pred
 ```
-可以看到，要求 marker_pos 至少为四维的 Tensor，或者至少三维。
+查看 `forward`，首先调用 `self.extract_features()` 提取特征。但是出现问题，此处只能得到两个维度的 marker_pos。应该至少为四维的 Tensor，或者至少三维。
+
+假设满足条件，marker_pos 应当为四维。拆分后，传给 `self.point_net_feature_extractor()`。考察 `PointNetFeatureExtractor`：
+```py
+class PointNetFeatureExtractor(nn.Module):
+    """
+    this is a latent feature extractor for point cloud data
+    need to distinguish this from other modules defined in feature_extractors.py
+    those modules are only used to extract the corresponding input (e.g. point flow, manual feature, etc.) from original observations
+    """
+    def forward(self, marker_pos):
+        """
+        :param marker_pos: Tensor, size (batch, num_points, 4)
+        :return:
+        """
+        ...
+```
+可以看到，需要三维，至少是二维（可以当做 batch 为 1）。最后一个维度为 4 可以体现点云数据用 4 维表示一点。
+
+### 理清 Bug 和数据不匹配问题
+`FeaturesExtractorPointCloud` 把 obs 加工得到二维数据，marker_pos，不满组 `PointNetFeatureExtractor` 的需求。而 `FeaturesExtractorPointCloud` 内部也是由多个 `PointNetFeatureExtractor` 提取左右视觉和触觉特征。`PointNetFeatureExtractor` 最终输出维度为 (batch, out_dim)。其中，视觉和触觉的 out_dim 分别为 128 和 64。
+
+#### 视觉
+```py
+class FeaturesExtractorPointCloud(BaseFeaturesExtractor):
+    def __init__(self, ...):
+        ...
+        self.point_net_vision1 = PointNetFeatureExtractor(
+            dim=vision_dim, out_dim=vision_out_dim, batchnorm=vision_batchnorm
+        )
+        self.point_net_vision2 = PointNetFeatureExtractor(
+            dim=vision_dim, out_dim=vision_out_dim, batchnorm=vision_batchnorm
+        )
+        ...
+        # 左右触觉共享参数，用一个模型
+        self.point_net_tac = PointNetFeatureExtractor(dim=tac_dim, out_dim=tac_out_dim, batchnorm=tac_batchnorm)
+        ...
+
+    def forward(self, obs):
+        tactile_left, tactile_right, point_cloud, unsqueezed = self.parse_obs(obs)
+        vision_feature_1 = self.point_net_vision1(point_cloud[:, 0])  # object 1
+        vision_feature_2 = self.point_net_vision2(point_cloud[:, 1])  # object 2
+
+        tactile_left_feature = self.point_net_tac(tactile_left)
+        tactile_right_feature = self.point_net_tac(tactile_right)
+        tactile_feature = torch.cat([tactile_left_feature, tactile_right_feature], dim=-1)
+        ...
+```
+
+考察 obs：
+```sh
+INFO In FeaturesExtractorPointCloud, obs.keys() is
+dict_keys(['depth_picture', 'gt_direction', 'gt_offset', 'marker_flow', 'object_point_cloud', 'point_cloud', 'relative_motion', 'rgb_picture'])
+INFO key: depth_picture, v.size() is torch.Size([6, 480, 640])
+INFO key: gt_direction, v.size() is torch.Size([6, 1])
+INFO key: gt_offset, v.size() is torch.Size([6, 4])
+INFO key: marker_flow, v.size() is torch.Size([6, 2, 2, 128, 2])
+INFO key: object_point_cloud, v.size() is torch.Size([6, 2, 128, 3])
+INFO key: point_cloud, v.size() is torch.Size([6, 480, 640, 3])
+INFO key: relative_motion, v.size() is torch.Size([6, 4])
+INFO key: rgb_picture, v.size() is torch.Size([6, 3, 480, 640])
+INFO tactile_left size is torch.Size([6, 128, 4])
+INFO tactile_right size is torch.Size([6, 128, 4])
+INFO point_cloud size is torch.Size([6, 2, 128, 3])
+INFO unsqueezed is False
+INFO vision point net vision 1
+INFO forward marker_pos shape is torch.Size([6, 128, 3])
+INFO forward marker_pos shape is torch.Size([6, 128, 3])
+INFO vision point net vision 2
+INFO forward marker_pos shape is torch.Size([6, 128, 3])
+INFO forward marker_pos shape is torch.Size([6, 128, 3])
+INFO point net tac with tac left
+INFO forward marker_pos shape is torch.Size([6, 128, 4])
+INFO forward marker_pos shape is torch.Size([6, 128, 4])
+INFO point net tac with tac right
+INFO forward marker_pos shape is torch.Size([6, 128, 4])
+INFO forward marker_pos shape is torch.Size([6, 128, 4])
+INFO got tac right feature
+```
+在 obs 中，object_point_cloud 为 torch.Size([6, 2, 128, 3])，显然第二维 2 代表左右视觉。而 depth_picture 和 point_cloud 并没有明显的左右，都是对应的 (6, 480, 640)，猜测是单个视觉信息。
+
+```py
+    def parse_obs(self, obs: dict):
+        obs = obs.copy()
+        marker_flow = obs["marker_flow"]
+        # 左右视觉相关，应当是 [6, 2, 128, 3]
+        point_cloud = torch.Tensor(obs["object_point_cloud"])
+
+        unsqueezed = False
+        if marker_flow.ndim == 4:
+            # 为了保证 marker_flow 为五个维度
+            assert point_cloud.ndim == 3
+            marker_flow = torch.unsqueeze(marker_flow, 0)
+            point_cloud = point_cloud.unsqueeze(0)
+            unsqueezed = True
+
+        # list 的两个切片分别是 [6, 2, 128, 2]，在最后一个维度拼接
+        # 得到 [6, 2, 128, 4]，猜测最后一个维度代表两个器件
+        fea = torch.cat([marker_flow[:, :, 0, ...], marker_flow[:, :, 1, ...]], dim=-1)
+        # 第二维分别代表左右触觉
+        # 两个分别是 [6, 128, 4]
+        tactile_left, tactile_right = (
+            fea[:, 0],
+            fea[:, 1],
+        )  # (batch_size, marker_num, 4[u0,v0,u1,v1])
+
+        point_cloud = point_cloud * self.vision_scale
+
+        return tactile_left, tactile_right, point_cloud, unsqueezed
+```
+
+point_cloud 是 [6, 2, 128, 3] 的。传入给视觉的特征提取模型 point[:, 0] 与 point[:, 1]，代表左右。触觉同理。分别得到的输出是 [batch, vision_out_dim] 和 [batch, tac_out_dim]，yaml 设置的分别是 128 和 64，即 [6, 128] 和 [6, 64]。随后再最后一个维度把左右特征 cat 起来，分别 layernorm 处理，再把视觉与触觉 cat 起来，得到 features，维度为 [6, 384]。
+
+明显，得到特征是 [6, 384] 的。再考察 `class PointNetActor(Actor): forward(self, obs: torch.Tensor) -> torch.Tensor:`：
+```py
+    def forward(self, obs: torch.Tensor) -> torch.Tensor:
+        with torch.set_grad_enabled(False):
+            # [6, 384]，每个 batch 有一个总的 feature
+            # 作者的意图是什么？
+            marker_pos = self.extract_features(obs, self.features_extractor)
+
+        if marker_pos.ndim == 3:
+            marker_pos = torch.unsqueeze(marker_pos, dim=0)
+
+        # batch_num 应当为 6
+        batch_num = marker_pos.shape[0]
+        # 此处又开始区分左右了，是否应当调整为区分左右的 marker_pos
+        l_marker_pos = marker_pos[:, 0, ...]
+        r_marker_pos = marker_pos[:, 1, ...]
+        # 在第一维度堆叠，分别处理左右
+        marker_pos_input = torch.cat([l_marker_pos, r_marker_pos], dim=0)
+        point_flow_fea = self.point_net_feature_extractor(marker_pos_input)
+        l_point_flow_fea = point_flow_fea[:batch_num, ...]
+        r_point_flow_fea = point_flow_fea[batch_num:, ...]
+        point_flow_fea = torch.cat([l_point_flow_fea, r_point_flow_fea], dim=-1)
+        pred = self.mlp_policy(point_flow_fea)
+
+        return pred
+```
+查看代码，可以看到输出还是区分左右。调整 `FeaturesExtractorPointCloud` 最后不要合并左右。修改如下：
+```py
+class FeaturesExtractorPointCloud(BaseFeaturesExtractor):
+    def __init__(self, ...):
+        ...
+        # self.vision_feature_dim = vision_out_dim * 2
+        self.vision_feature_dim = vision_out_dim
+        ...
+        # self.tac_feature_dim = tac_out_dim * 2
+        self.tac_feature_dim = tac_out_dim
+        # 调整 layernorm
+        self.layernorm_vision = nn.LayerNorm(self.vision_feature_dim)
+        self.layernorm_tac = nn.LayerNorm(self.tac_feature_dim)
+        ...
+
+    def forward(...):
+        ...
+        # vision_feature = torch.cat([vision_feature_1, vision_feature_2], dim=-1)
+        # [6, 2, 128]
+        vision_feature = torch.stack([vision_feature_1, vision_feature_2], dim=1)
+        ...
+        # tactile_feature = torch.cat([tactile_left_feature, tactile_right_feature], dim=-1)
+        # [6, 2, 64]
+        tactile_feature = torch.stack([tactile_left_feature, tactile_right_feature], dim=1)
+        ...
+```
+
+此时 Actor 方面问题解决了。但是 Critic 抛出问题，CustomCritic: q1_forward 出现错误，size 不匹配。
+
+## CustomCritic
+在 q1_forward 打断点，查看 feature 的 size。
+```py
+class CustomCritic(BaseModel):
+    def q1_forward(self, obs: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
+        """
+        Only predict the Q-value using the first network.
+        This allows to reduce computation when all the estimates are not needed
+        (e.g. when updating the policy in TD3).
+        """
+        with torch.no_grad():
+            features = self.extract_features(obs, self.features_extractor)
+        return self.q_networks[0](torch.cat([features, actions], dim=1))
+```
+
+self.features_extractor 是 FeatureExtractorState。传入的 obs 与 PointNetActor 类似，比如 object_point_cloud 的维度是 [8, 2, 128, 3]，8 是 batch，2 是左右，128 是 point num，3 应当是表示的维度。actions 是 [1, 4]。求得 features 维度 [8, 9]，随后 cat 出错，actions 的第一维与 features 第一维 8 不符合。解决如下：
+```py
+        if actions.size(0) == 1:
+            actions = actions.repeat(features.size(0), 1)
+```
+
 
 ## Critic
 ```py

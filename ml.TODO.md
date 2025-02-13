@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1739311244048
+updated: 1739377194474
 created: 1738165674608
 ---
 
@@ -35,3 +35,6 @@ https://www.zhihu.com/question/11450868336/answer/94386028114
 
 大模型强化学习面经 - 一蓑烟雨的文章 - 知乎
 https://zhuanlan.zhihu.com/p/659551066
+
+RoboGrasp：一种用于稳健机器人控制的通用抓取策略 - 黄浴的文章 - 知乎
+https://zhuanlan.zhihu.com/p/22946605267
