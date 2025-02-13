@@ -2,7 +2,7 @@
 id: gqnz9f63oiug596jem6d3m9
 title: ManiSkill-Vitac
 desc: ''
-updated: 1739385817942
+updated: 1739445623577
 created: 1739260392326
 ---
 
@@ -335,7 +335,7 @@ INFO forward marker_pos shape is torch.Size([6, 128, 4])
 INFO forward marker_pos shape is torch.Size([6, 128, 4])
 INFO got tac right feature
 ```
-在 obs 中，object_point_cloud 为 torch.Size([6, 2, 128, 3])，显然第二维 2 代表左右视觉。而 depth_picture 和 point_cloud 并没有明显的左右，都是对应的 (6, 480, 640)，猜测是单个视觉信息。
+在 obs 中，object_point_cloud 为 torch.Size([6, 2, 128, 3])，显然第二维 2 代表左右视觉。而 depth_picture 和 point_cloud 并没有明显的左右，都是对应的 (6, 480, 640)，猜测是单个视觉信息。relative_motion 则是二维的，[batch, 4]，每条是一个四维的。用于在网络中，添加到 features 之后，补充特征的维度，+4。128 是 marker_num。
 
 ```py
     def parse_obs(self, obs: dict):
@@ -424,6 +424,11 @@ class FeaturesExtractorPointCloud(BaseFeaturesExtractor):
 
 此时 Actor 方面问题解决了。但是 Critic 抛出问题，CustomCritic: q1_forward 出现错误，size 不匹配。
 
+## 重新审视网络结构
+在 PointNetActor 中，已经有 extract_features，由 CNN 提取了视觉和触觉特征。但是没有融合，只是做了拼接。而原版的 PointNetActor 在获取了 features 之后，再次使用卷积网络提取特征。这样算力和显存吃紧。
+
+总结，extract_features 为 CNN 提取了左右视觉触觉特征。尝试直接用 MLP 把这些 feature 按照展开来处理，把 [batch, 2, 128+64] 展为 [batch, 2 * (128+64)] 处理。
+
 ## CustomCritic
 在 q1_forward 打断点，查看 feature 的 size。
 ```py
@@ -445,6 +450,22 @@ self.features_extractor 是 FeatureExtractorState。传入的 obs 与 PointNetAc
             actions = actions.repeat(features.size(0), 1)
 ```
 
+## 重写 Actor
+
+触觉的每个 marker_point 为四维，对应 obs 中的 marker_flow。
+
+point cloud 即 vision，对应 obs 中的 object_point_cloud，则三维，[6, 2, 128, 3]
+
+根据官网的 Tracks 2 提示，在拿动和插入开始之前，触觉会变化。此时需要依赖触觉和视觉。但是靠近 hole 并插入执行后，tactile 总是保持不变，此时应该使用 vision 数据来决策。由 Realsense D415 提供视觉信息，即 obs 中的 depth_picture，[6, 480, 640] 和 point_cloud [6, 480, 640, 3]。
+
+obs 中的 gt_direction 和 gt_offset 代表真实值，应当用于 Critic 中。
+
+
+## 调参
+
+对 Conv 使用 nn.init.xavier_normal_ 和 nn.init.xavier_uniform_ 初始化，对 RGBD 使用改良后的版本，use_attention，use_coord_conv。
+
+可以调整 critic 的逻辑。
 
 ## Critic
 ```py
