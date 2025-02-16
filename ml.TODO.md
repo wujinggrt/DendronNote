@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1739377194474
+updated: 1739693336284
 created: 1738165674608
 ---
 
@@ -38,3 +38,11 @@ https://zhuanlan.zhihu.com/p/659551066
 
 RoboGrasp：一种用于稳健机器人控制的通用抓取策略 - 黄浴的文章 - 知乎
 https://zhuanlan.zhihu.com/p/22946605267
+
+ICLR oral
+Open-World Reinforcement Learning over
+Long Short-Term Imagination
+https://qiwang067.github.io/ls-imagine
+https://arxiv.org/pdf/2410.03618
+insights: 做 US 时候，潜意识里人是能够估计人体的 affordance 图，知道大致范围。是否可以弄个 WorldModel？LLM
+ 只能生成下一个 token，当做 short，嵌入另一个小模型来做 long term imagination。
