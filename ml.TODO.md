@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1739693336284
+updated: 1739716633966
 created: 1738165674608
 ---
 
@@ -46,3 +46,7 @@ https://qiwang067.github.io/ls-imagine
 https://arxiv.org/pdf/2410.03618
 insights: 做 US 时候，潜意识里人是能够估计人体的 affordance 图，知道大致范围。是否可以弄个 WorldModel？LLM
  只能生成下一个 token，当做 short，嵌入另一个小模型来做 long term imagination。
+
+DexVLA
+https://dex-vla.github.io/
+https://arxiv.org/abs/2502.05855
