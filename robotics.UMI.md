@@ -2,7 +2,7 @@
 id: u0ydqn2ohvl9vw86t1e8mt8
 title: UMI
 desc: ''
-updated: 1739854679697
+updated: 1739877420527
 created: 1739810960614
 ---
 
@@ -51,3 +51,149 @@ PD2 相对 EE pose。为了避免依赖于具体的具身平台，作者提出�
 3. 相对 girpper 间的自我感知。在双臂场景，policy 提供两个 gripper 的相对 pose 对双臂协作的任务成功率至关重要。gripper 间感知通过建地图-再定位的数据，根据 IMU 构建场景级别的坐标系统。每个新场景下，首先收集视频，并用于建图。随后，收集的演示数据会重定位到相同的地图，并分享同一坐标系统。
 
 Insight：是否可以把这种相对融合为部分相对和部分绝对？就像在中间位置，设置锚点，相对则考虑动作增量，绝对考虑初始位置与目标的距离关系。在动作序列中，**随机**采样动作序列中的几个位置，作为绝对位置参考，就像 Long Short-Term 的 Long，而**相对**轨迹则贯穿始终，就像 Short-Term 部分。
+
+## Repo
+[github](https://github.com/real-stanford/universal_manipulation_interface)
+
+## 数据准备 pipeline
+我们的项目使用了动捕，不需要 SLAM 的部分。数据准备脚本运行示例：
+```sh
+(umi)$ wget --recursive --no-parent --no-host-directories --cut-dirs=2 --relative --reject="index.html*" https://real.stanford.edu/umi/data/example_demo_session/
+(umi)$ python run_slam_pipeline.py example_demo_session
+# 数据准备之后，生成 replay buffer，得到 dataset.zarr.zip，作为训练策略的输入
+(umi)$ python scripts_slam_pipeline/07_generate_replay_buffer.py -o example_demo_session/dataset.zarr.zip example_demo_session
+```
+
+数据收集细节参考 [link](https://swanky-sphere-ad1.notion.site/UMI-Data-Collection-Instruction-4db1a1f0f2aa4a2e84d9742720428b4c)
+
+数据保存：
+```py
+# scripts_slam_pipeline/07_generate_replay_buffer.py
+```
+
+## 训练
+```sh
+# Single-GPU
+(umi)$ python train.py --config-name=train_diffusion_unet_timm_umi_workspace task.dataset_path=example_demo_session/dataset.zarr.zip
+# Multi-GPU
+(umi)$ accelerate --num_processes <ngpus> train.py --config-name=train_diffusion_unet_timm_umi_workspace task.dataset_path=example_demo_session/dataset.zarr.zip
+```
+
+配置文件 train_diffusion_unet_timm_umi_workspace 在目录 diffusion_policy/config 下；数据源修改 task.dataset_path 覆盖配置文件的路径即可。或者到 diffusion_policy/config 下的具体任务配置中修改默认路径为自己手机的数据。
+
+### ReplaceBuffer
+根据 diffusion_policy/config/task/umi_bimanual.yaml，使用了 diffusion_policy/dataset/umi_dataset.py:UmiData 类：
+```yaml
+dataset_path: &dataset_path data_workspace/fold_cloth/20231226_mirror_swap.zarr.zip
+...
+dataset:
+  _target_: diffusion_policy.dataset.umi_dataset.UmiDataset
+  dataset_path: *dataset_path
+  ...
+```
+
+```py
+class UmiDataset(BaseDataset):
+    def __init__(self,
+        ...
+        dataset_path: str,
+        ...
+    ):
+        ...
+        if cache_dir is None:
+            # load into memory store
+            with zarr.ZipStore(dataset_path, mode='r') as zip_store:
+                replay_buffer = ReplayBuffer.copy_from_store(
+                    src_store=zip_store, 
+                    store=zarr.MemoryStore()
+                )
+```
+UmiDataset 收到 dataset_path 之后，得到了 zarr.zip 文件，于是使用 zarr.ZipStore 打开，初始化 ReplayBuffer：
+
+```py
+# diffusion_policy/common/replay_buffer.py
+class ReplayBuffer:
+    def __init__(self, root: Union[zarr.Group, Dict[str,dict]]):
+    # Dummy constructor. Use copy_from* and create_from* class methods instead.
+    def __init__(self, root: Union[zarr.Group, Dict[str, dict]]):
+        """
+        Dummy constructor. Use copy_from* and create_from* class methods instead.
+        """
+        ...
+        for key, value in root["data"].items():
+            assert value.shape[0] == root["meta"]["episode_ends"][-1]
+        self.root = root
+```
+
+创建空的 ReplayBuffer。
+```py
+    @classmethod
+    def create_empty_zarr(cls, storage=None, root=None):
+        if root is None:
+            if storage is None:
+                storage = zarr.MemoryStore()
+            root = zarr.group(store=storage)
+        data = root.require_group("data", overwrite=False)
+        meta = root.require_group("meta", overwrite=False)
+        if "episode_ends" not in meta:
+            episode_ends = meta.zeros("episode_ends", shape=(0,), dtype=np.int64, compressor=None, overwrite=False)
+        return cls(root=root)
+```
+可以看到，
+
+### 训练时 Dataset 初始化
+```py
+    @classmethod
+    def copy_from_store(
+        cls,
+        src_store,
+        store=None,
+        keys=None,
+        chunks: Dict[str, tuple] = dict(),
+        compressors: Union[dict, str, numcodecs.abc.Codec] = dict(),
+        if_exists="replace",
+        **kwargs,
+    ):
+        """
+        Load to memory.
+        """
+        src_root = zarr.group(src_store)
+        root = None
+        if store is None:
+            ...
+        else:
+            root = zarr.group(store=store)
+            # copy without recompression
+            n_copied, n_skipped, n_bytes_copied = zarr.copy_store(
+                source=src_store, dest=store, source_path="/meta", dest_path="/meta", if_exists=if_exists
+            )
+            data_group = root.create_group("data", overwrite=True)
+            if keys is None:
+                keys = src_root["data"].keys()
+            for key in keys:
+                value = src_root["data"][key]
+                cks = cls._resolve_array_chunks(chunks=chunks, key=key, array=value)
+                cpr = cls._resolve_array_compressor(compressors=compressors, key=key, array=value)
+                if cks == value.chunks and cpr == value.compressor:
+                    # copy without recompression
+                    this_path = "/data/" + key
+                    n_copied, n_skipped, n_bytes_copied = zarr.copy_store(
+                        source=src_store, dest=store, source_path=this_path, dest_path=this_path, if_exists=if_exists
+                    )
+                else:
+                    # copy with recompression
+                    n_copied, n_skipped, n_bytes_copied = zarr.copy(
+                        source=value, dest=data_group, name=key, chunks=cks, compressor=cpr, if_exists=if_exists
+                    )
+        buffer = cls(root=root)
+        return buffer
+```
+需要使用 copy_from* 和 create_from* 构建 ReplayBuffer 对象，ctor 只是一个 dummy。
+
+
+## 部署
+### 硬件设置
+
+
+## Tag
+#Paper
