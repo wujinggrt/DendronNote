@@ -1,8 +1,8 @@
 ---
 id: qon8owvfwcckh0l0fl9e8ee
-title: OPEN-WORLD REINFORCEMENT LEARNING OVER LONG SHORT-TERM IMAGINATION
+title: LongShortTermImagination
 desc: ''
-updated: 1739756219770
+updated: 1739791629456
 created: 1739694710359
 ---
 
@@ -25,9 +25,13 @@ RL 中，instant state transitions（瞬时状态转移） 和 jumpy state trans
 #### 3.2 AFFORDANCE MAP AND INTRINSIC REWARD
 根据视觉观察和文本任务定义，引导 agent 的注意力聚焦于任务相关的区域。Affordance map 突出了区域与任务的关联性。
 
-Affordance map computation via virtual exploration. 使用滑动边框扫描各个图片，不断在边框内放大，取出这些图片作为伪视频帧，以此对应长距离状态转移。随后根据文本描述的具体任务的目标，使用 MineCLIP 的奖励模型，评估视频切片与任务的相关性，生成 affordance map。
+Affordance map computation via virtual exploration. 使用滑动边框扫描各个图片，不断在边框内放大，取出这些图片作为伪视频帧，以此对应长距离状态转移。随后根据文本描述的具体任务的目标，使用 MineCLIP 的奖励模型，评估视频切片与任务的相关性，生成 affordance map，用作探索的先验知识。
 
-![fig2](assets/images/rl.OPEN-WORLD REINFORCEMENT LEARNING OVER LONG SHORT-TERM IMAGINATION/fig2.png)
+![fig2](assets/images/rl.LongShortTermImagination/fig2.png)
+
+如 Fig 2(a)，模拟和评估探索，不依赖成功的轨迹。使用缩小了 15% 的宽和高的滑动边框，从左至右、从上至下的遍历当前观察的图像，覆盖了可能的区域。滑动边框朝着水平和垂直方向移动 9 步。对每个位置，不断放大感兴趣区域，得到 16 个如此图片，它们是边框标注的，经过调整尺寸到原来图像大小后，用来模拟 agent 向着目的位置移动的视觉转移，
+
+首先，采用一个随机的 agent 与任务相关的环境交互，进一步收集数据。在观察的时间步 $$t$$ 得到的观察 $$o_t$$。使用一个滑动边框，其维度为观察图像的 15% 的宽和高，从左至右，从上至下地遍历整个观察图像。滑动边框水平和垂直地移动 9 步，在每个维度都覆盖每个潜在区域 (potential region)。作者每个观察 $$o_t$$ 的滑动边框中都囊括的位置，裁剪出 16 张图像。这些图像缩小了视场角，聚焦了区域，随后对这些图像重新调整到与观察图像大小的维度。如图 Fig 2(a) 上面部分，16 个 frames 模拟了探索。这 16 张有序的图像，用来模拟 agent 向着滑动边框确定的目的位置移动的视觉转移。重新调整的图像记为 $$x_t^k (0 <= k < 16)$$。使用 MineCLIP 模型计算这些图片集合 (视频帧) 与任务文本描述的相关性。随后量化了边框的 affordance value，最后得到潜在探索的感兴趣区域。Affordance value 根据感兴趣区域的边框数量求出。
 
 
 ## Tag

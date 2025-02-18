@@ -2,7 +2,7 @@
 id: gqnz9f63oiug596jem6d3m9
 title: ManiSkill-Vitac
 desc: ''
-updated: 1739445623577
+updated: 1739766667060
 created: 1739260392326
 ---
 
@@ -11,6 +11,9 @@ created: 1739260392326
 arguments.py 中，从`solve_argument_confict()`中，优先使用传入命令行的参数，再考虑 yaml 配置文件的参数。
 
 在 evaluation.py 中，offset_list 是测试集数据。用于初始化环境。考察是否能够把测试集数据添加进入训练集。
+
+## TODO
+研究为什么训练集全部失败，而验证集能够部分成功。
 
 ## Track 2: Tactile-Vision-Fusion Manipulation
 In this track, the experimental setup remains unchanged. However, compared to the only tactile task, a Realsense D415 is used to provide visual information, and the distance between the peg and the hole is increased. The gripper needs to determine which hole to insert the peg into based on the shape of the gripped peg. Since the tactile information remains the same during the approach to the hole, **the task primarily relies on visual data for decision-making.**

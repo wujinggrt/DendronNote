@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1739716633966
+updated: 1739794188655
 created: 1738165674608
 ---
 
@@ -50,3 +50,6 @@ insights: 做 US 时候，潜意识里人是能够估计人体的 affordance 图
 DexVLA
 https://dex-vla.github.io/
 https://arxiv.org/abs/2502.05855
+
+人型机器人行走
+https://why618188.github.io/beamdojo/
