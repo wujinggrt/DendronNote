@@ -2,7 +2,7 @@
 id: u0ydqn2ohvl9vw86t1e8mt8
 title: UMI
 desc: ''
-updated: 1739881969079
+updated: 1739901797365
 created: 1739810960614
 ---
 
@@ -71,17 +71,7 @@ Insight：是否可以把这种相对融合为部分相对和部分绝对？就�
 # scripts_slam_pipeline/07_generate_replay_buffer.py
 ```
 
-## 训练
-```sh
-# Single-GPU
-(umi)$ python train.py --config-name=train_diffusion_unet_timm_umi_workspace task.dataset_path=example_demo_session/dataset.zarr.zip
-# Multi-GPU
-(umi)$ accelerate --num_processes <ngpus> train.py --config-name=train_diffusion_unet_timm_umi_workspace task.dataset_path=example_demo_session/dataset.zarr.zip
-```
-
-配置文件 train_diffusion_unet_timm_umi_workspace 在目录 diffusion_policy/config 下；数据源修改 task.dataset_path 覆盖配置文件的路径即可。或者到 diffusion_policy/config 下的具体任务配置中修改默认路径为自己手机的数据。
-
-### ReplaceBuffer
+### ReplaceBuffer 设计
 根据 diffusion_policy/config/task/umi_bimanual.yaml，使用了 diffusion_policy/dataset/umi_dataset.py:UmiData 类：
 ```yaml
 dataset_path: &dataset_path data_workspace/fold_cloth/20231226_mirror_swap.zarr.zip
@@ -114,18 +104,89 @@ UmiDataset 收到 dataset_path 之后，得到了 zarr.zip 文件，于是使用
 # diffusion_policy/common/replay_buffer.py
 class ReplayBuffer:
     def __init__(self, root: Union[zarr.Group, Dict[str,dict]]):
-    # Dummy constructor. Use copy_from* and create_from* class methods instead.
-    def __init__(self, root: Union[zarr.Group, Dict[str, dict]]):
-        """
-        Dummy constructor. Use copy_from* and create_from* class methods instead.
-        """
+        """ Dummy constructor. Use copy_from* and create_from* class methods instead.  """
         ...
+        # 注意，zarr 2.16 的 zarr.Group 才有 items() 接口，3.0.3 版本没有
+        # 只有 keys 方法
+        # 此方法主要验证 root 数据的 episode 是否长度正确。
         for key, value in root["data"].items():
             assert value.shape[0] == root["meta"]["episode_ends"][-1]
         self.root = root
 ```
 
-创建空的 ReplayBuffer。
+属性和初始化、保存和加载，都只关注与 Zarr 的情况，暂时不考虑 NumPy 保存的情况。
+
+#### 属性
+```py
+class ReplayBuffer:
+    ...
+    @cached_property
+    def data(self):
+        return self.root["data"]
+
+    @cached_property
+    def meta(self):
+        return self.root["meta"]
+
+    @property
+    def episode_ends(self):
+        return self.meta["episode_ends"]
+    
+    # buffer 保存的框架
+    @property
+    def backend(self):
+        backend = "numpy"
+        if isinstance(self.root, zarr.Group):
+            backend = "zarr"
+        return backend
+
+    # =========== our API ==============
+    # 以下内容提供给 Dataset 访问。
+    @property
+    def n_steps(self):
+        if len(self.episode_ends) == 0:
+            return 0
+        return self.episode_ends[-1]
+
+    @property
+    def n_episodes(self):
+        # zarr 3.0，Group 无 __len__ 属性，要用 size
+        return len(self.episode_ends)
+
+    @property
+    def chunk_size(self):
+        if self.backend == "zarr":
+            return next(iter(self.data.arrays()))[-1].chunks[0]
+        return None
+
+    @property
+    def episode_lengths(self):
+        ends = self.episode_ends[:]
+        ends = np.insert(ends, 0, 0)
+        lengths = np.diff(ends)
+        return lengths
+```
+
+#### episode_ends 细节
+episode_ends 记录每条 episode 数据的末尾 index，并且是 exclusive 的。在 data 下，每条 episode 的观察和动作数据都堆叠拼接在第一维度。考察初始化时，缓冲区没有 episode，所以长度为 0，即 shape (0,)，没有任何元素：
+```py
+episode_ends = meta.zeros("episode_ends", shape=(0,), dtype=np.int64, compressor=None, overwrite=False)
+```
+
+扩散策略的示例数据：
+data/pusht_cchi_v7_replay.zarr
+ ├── data
+ │   ├── action (25650, 2) float32
+ │   ├── img (25650, 96, 96, 3) float32
+ │   ├── keypoint (25650, 9, 2) float32
+ │   ├── n_contacts (25650, 1) float32
+ │   └── state (25650, 5) float32
+ └── meta
+     └── episode_ends (206,) int64
+
+关注 action，img，keypoint 等数据第一维，其实是多条 episodes 数据在第一维度堆叠拼接起来。meta/episode_ends 记录每个 episode 在第一维的末尾 index。注意，是 exclusive 的。
+
+#### 初始化：创建空的 ReplayBuffer
 ```py
     @classmethod
     def create_empty_zarr(cls, storage=None, root=None):
@@ -139,9 +200,55 @@ class ReplayBuffer:
             episode_ends = meta.zeros("episode_ends", shape=(0,), dtype=np.int64, compressor=None, overwrite=False)
         return cls(root=root)
 ```
-可以看到，
 
-### 训练时 Dataset 初始化
+#### 保存
+把当前 ReplayBuffer 对象的内容拷贝到 store 中。
+```py
+    def save_to_store(
+        self,
+        store,
+        chunks: Optional[Dict[str, tuple]] = dict(),
+        compressors: Union[str, numcodecs.abc.Codec, dict] = dict(),
+        if_exists="replace",
+        **kwargs,
+    ):
+        root = zarr.group(store)
+        if self.backend == "zarr":
+            # 拷贝 meta 的内容
+            n_copied, n_skipped, n_bytes_copied = zarr.copy_store(
+                source=self.root.store, dest=store, source_path="/meta", dest_path="/meta", if_exists=if_exists
+            )
+        else:
+            ...
+
+        # 接下来拷贝 data 部分 Group 的内容。
+        data_group = root.create_group("data", overwrite=True)
+        for key, value in self.root["data"].items():
+            cks = self._resolve_array_chunks(chunks=chunks, key=key, array=value)
+            cpr = self._resolve_array_compressor(compressors=compressors, key=key, array=value)
+            if isinstance(value, zarr.Array):
+                if cks == value.chunks and cpr == value.compressor:
+                    # copy without recompression
+                    this_path = "/data/" + key
+                    n_copied, n_skipped, n_bytes_copied = zarr.copy_store(
+                        source=self.root.store,
+                        dest=store,
+                        source_path=this_path,
+                        dest_path=this_path,
+                        if_exists=if_exists,
+                    )
+                else:
+                    # copy with recompression
+                    n_copied, n_skipped, n_bytes_copied = zarr.copy(
+                        source=value, dest=data_group, name=key, chunks=cks, compressor=cpr, if_exists=if_exists
+                    )
+            else:
+                # numpy
+                _ = data_group.array(name=key, data=value, chunks=cks, compressor=cpr)
+        return store
+```
+
+#### 加载保存的数据：训练时 Dataset 初始化
 ```py
     @classmethod
     def copy_from_store(
@@ -189,6 +296,115 @@ class ReplayBuffer:
         return buffer
 ```
 需要使用 copy_from* 和 create_from* 构建 ReplayBuffer 对象，ctor 只是一个 dummy。
+
+#### episode 数据添加、删除、查询
+```py
+    def add_episode(
+        self,
+        data: Dict[str, np.ndarray],
+        chunks: Optional[Dict[str, tuple]] = dict(),
+        compressors: Union[str, numcodecs.abc.Codec, dict] = dict(),
+    ):
+        assert len(data) > 0
+        is_zarr = self.backend == "zarr"
+
+        # episode_ends 有多少个元素
+        curr_len = self.n_steps
+        episode_length = None
+        for key, value in data.items():
+            # 至少第一维是 episode 的长度
+            assert len(value.shape) >= 1
+            if episode_length is None:
+                episode_length = len(value)
+            else:
+                # 保证一个 episode 的各个数据必须有相同的 episode_length
+                # 比如 action, img, keypoint 等等
+                assert episode_length == len(value)
+        new_len = curr_len + episode_length
+
+        # 逐个添加到 ReplayBuffer 的 data 中，并修改 meta/episode_ends
+        for key, value in data.items():
+            # new_len 是 episode 长，后面便是维度
+            new_shape = (new_len,) + value.shape[1:]
+            # create array
+            if key not in self.data:
+                if is_zarr:
+                    cks = self._resolve_array_chunks(chunks=chunks, key=key, array=value)
+                    cpr = self._resolve_array_compressor(compressors=compressors, key=key, array=value)
+                    arr = self.data.zeros(name=key, shape=new_shape, chunks=cks, dtype=value.dtype, compressor=cpr)
+                else:
+                    ...
+            else:
+                arr = self.data[key]
+                assert value.shape[1:] == arr.shape[1:]
+                # same method for both zarr and numpy
+                if is_zarr:
+                    # 扩张，随后复制后面部分
+                    arr.resize(new_shape)
+                else:
+                    arr.resize(new_shape, refcheck=False)
+            # copy data
+            arr[-value.shape[0] :] = value
+
+        # append to episode ends
+        episode_ends = self.episode_ends
+        if is_zarr:
+            episode_ends.resize(episode_ends.shape[0] + 1)
+        else:
+            episode_ends.resize(episode_ends.shape[0] + 1, refcheck=False)
+        episode_ends[-1] = new_len
+
+        # rechunk
+        if is_zarr:
+            if episode_ends.chunks[0] < episode_ends.shape[0]:
+                # 按照 1.5 倍扩张 chunks 大小，会重新拷贝和复制 self.meta
+                rechunk_recompress_array(self.meta, "episode_ends", chunk_length=int(episode_ends.shape[0] * 1.5))
+
+    def drop_episode(self):
+        is_zarr = self.backend == "zarr"
+        episode_ends = self.episode_ends[:].copy()
+        assert len(episode_ends) > 0
+        start_idx = 0
+        if len(episode_ends) > 1:
+            start_idx = episode_ends[-2]
+        for key, value in self.data.items():
+            new_shape = (start_idx,) + value.shape[1:]
+            if is_zarr:
+                value.resize(new_shape)
+            else:
+                value.resize(new_shape, refcheck=False)
+        if is_zarr:
+            self.episode_ends.resize(len(episode_ends) - 1)
+        else:
+            self.episode_ends.resize(len(episode_ends) - 1, refcheck=False)
+```
+
+## 数据预处理：保存训练数据
+### 保存数据为 ReplayBuffer
+在 scripts_slam_pipeline/07_generate_replay_buffer.py 中，首先创建空的 zarr：
+```py
+def main(input, output, out_res, out_fov, compression_level, 
+         no_mirror, mirror_swap, num_workers):
+    ...
+    # 创建空的 ReplayBuffer，子 Group 中，data 为空，meta 有 arrays episode_ends，也是空的。
+    # root.tree()
+    # /
+    # ├── data
+    # └── meta
+    #     └── episode_ends (0,) int64
+    out_replay_buffer = ReplayBuffer.create_empty_zarr(
+        storage=zarr.MemoryStore())
+```
+
+## 训练
+```sh
+# Single-GPU
+(umi)$ python train.py --config-name=train_diffusion_unet_timm_umi_workspace task.dataset_path=example_demo_session/dataset.zarr.zip
+# Multi-GPU
+(umi)$ accelerate --num_processes <ngpus> train.py --config-name=train_diffusion_unet_timm_umi_workspace task.dataset_path=example_demo_session/dataset.zarr.zip
+```
+
+配置文件 train_diffusion_unet_timm_umi_workspace 在目录 diffusion_policy/config 下；数据源修改 task.dataset_path 覆盖配置文件的路径即可。或者到 diffusion_policy/config 下的具体任务配置中修改默认路径为自己手机的数据。
 
 
 ## 部署

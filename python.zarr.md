@@ -2,7 +2,7 @@
 id: 7cd9he4w15xq7jbt88b3xp4
 title: Zarr
 desc: ''
-updated: 1739896379823
+updated: 1739899539804
 created: 1739872667023
 ---
 
@@ -79,6 +79,7 @@ zarr.load('data/example-2.zarr')
 import zarr
 
 store = zarr.storage.MemoryStore()
+# 3.0 才有 zarr.create_group()，否则 zarr.group()
 root = zarr.create_group(store=store)
 r2 = zarr.group(store=store)
 print(root, r2)
@@ -155,13 +156,21 @@ data
 5 directories, 4 files
 ```
 
-#### attrs 
+#### zarr.<Array|Group>.attrs 
 Zarr arrays 和 groups 有 attrs，能够提供自定义的 key/value 属性。由于 Zarr 使用 JSON 存储 array 的 attributes，所以 value 必须是 JSON 可序列化的对象。
 
 注意，子 Group 不算属性。
 
 #### zarr.Group.keys()
-返回一个生成器，遍历此 Group 对象的成员 Group 的 name。
+返回一个生成器，遍历此 Group 对象的成员 Group 的 name。也可以直接使用`in`判断是否存在对应的 name：
+```py
+meta = root.require_group("meta", overwrite=False)
+if "episode_ends" not in meta:
+    episode_ends = meta.zeros("episode_ends", shape=(0,), dtype=np.int64, compressor=None, overwrite=False)
+```
+
+#### zarr.Group.store
+获取内在维护的 zarr.store，比如 MemoryStore，ZipStore 等。
 
 #### zarr.Group.require_group()
 ```py
