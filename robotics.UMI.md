@@ -2,7 +2,7 @@
 id: u0ydqn2ohvl9vw86t1e8mt8
 title: UMI
 desc: ''
-updated: 1739901797365
+updated: 1739969494663
 created: 1739810960614
 ---
 
@@ -54,6 +54,9 @@ Insight：是否可以把这种相对融合为部分相对和部分绝对？就�
 
 ## Repo
 [github](https://github.com/real-stanford/universal_manipulation_interface)
+
+## 环境配置
+注意，根据 conda_environment.yaml 来配置。注意，需要使用 Python 3.9，其他版本可能难以解决依赖问题。
 
 ## 数据准备 pipeline
 我们的项目使用了动捕，不需要 SLAM 的部分。数据准备脚本运行示例：
@@ -116,7 +119,7 @@ class ReplayBuffer:
 
 属性和初始化、保存和加载，都只关注与 Zarr 的情况，暂时不考虑 NumPy 保存的情况。
 
-#### 属性
+#### 属性和类 dict API
 ```py
 class ReplayBuffer:
     ...
@@ -165,6 +168,28 @@ class ReplayBuffer:
         ends = np.insert(ends, 0, 0)
         lengths = np.diff(ends)
         return lengths
+
+    # =========== dict-like API ==============
+    def __repr__(self) -> str:
+        if self.backend == "zarr":
+            return str(self.root.tree())
+        else:
+            return super().__repr__()
+
+    def keys(self):
+        return self.data.keys()
+
+    def values(self):
+        return self.data.values()
+
+    def items(self):
+        return self.data.items()
+
+    def __getitem__(self, key):
+        return self.data[key]
+
+    def __contains__(self, key):
+        return key in self.data
 ```
 
 #### episode_ends 细节
@@ -201,7 +226,7 @@ data/pusht_cchi_v7_replay.zarr
         return cls(root=root)
 ```
 
-#### 保存
+#### 保存到 Store
 把当前 ReplayBuffer 对象的内容拷贝到 store 中。
 ```py
     def save_to_store(
@@ -396,6 +421,273 @@ def main(input, output, out_res, out_fov, compression_level,
         storage=zarr.MemoryStore())
 ```
 
+## 数据加载
+```py
+class UmiDataset(BaseDataset):
+    def __init__(self,
+        # 配置文件，比如 diffusion_policy/config/task/umi_bimanual.yaml:shape_meta: &shape_meta
+        shape_meta: dict,
+        dataset_path: str,
+        cache_dir: Optional[str]=None,
+        pose_repr: dict={},
+        action_padding: bool=False,
+        temporally_independent_normalization: bool=False,
+        repeat_frame_prob: float=0.0,
+        seed: int=42,
+        val_ratio: float=0.0,
+        max_duration: Optional[float]=None
+    ):
+        if cache_dir is None:
+        # load into memory store
+        with zarr.ZipStore(dataset_path, mode='r') as zip_store:
+            replay_buffer = ReplayBuffer.copy_from_store(
+                src_store=zip_store, 
+                store=zarr.MemoryStore()
+            )
+        # 读取 yaml 配置文件到内存
+        self.num_robot = 0
+        rgb_keys = list()
+        ...
+        obs_shape_meta = shape_meta['obs']
+        for key, attr in obs_shape_meta.items():
+            # solve obs type
+            type = attr.get('type', 'low_dim')
+            if type == 'rgb':
+            # rgb 格式通常是高纬的数据，比如 (3, 224, 224)
+                rgb_keys.append(key)
+            elif type == 'low_dim':
+            # low_dim 通常是维度较低的内容，比如 pose 数据，远小于图像的维度，比如 (3,)
+                lowdim_keys.append(key)
+            # 根据 key 是否为 eef_pos 来判断末端执行器数量，确定机器人数量
+            if key.endswith('eef_pos'):
+                self.num_robot += 1
+            # solve obs_horizon
+            horizon = shape_meta['obs'][key]['horizon']
+            key_horizon[key] = horizon
+            # 其他部分
+            ...
+        # action 部分设置
+        key_horizon['action'] = shape_meta['action']['horizon']
+        ...
+        
+        # 遮盖，部分 episode 充当验证集的角色
+        # val_mask 是 shape 为 (n_episodes,) 的 np.array，类型为 bool
+        # 比如 [False, False, ..., True, ...] 的类型
+        val_mask = get_val_mask(...)
+        # 验证集即取反
+        train_mask = ~val_mask
+
+        self.sampler_lowdim_keys = list()
+        for key in lowdim_keys:
+            if not 'wrt' in key:
+                self.sampler_lowdim_keys.append(key)
+    
+        for key in replay_buffer.keys():
+            if key.endswith('_demo_start_pose') or key.endswith('_demo_end_pose'):
+                self.sampler_lowdim_keys.append(key)
+                query_key = key.split('_')[0] + '_eef_pos'
+                key_horizon[key] = shape_meta['obs'][query_key]['horizon']
+                key_latency_steps[key] = shape_meta['obs'][query_key]['latency_steps']
+                key_down_sample_steps[key] = shape_meta['obs'][query_key]['down_sample_steps']
+
+        sampler = SequenceSampler(
+            shape_meta=shape_meta,
+            replay_buffer=replay_buffer,
+            rgb_keys=rgb_keys,
+            lowdim_keys=self.sampler_lowdim_keys,
+            key_horizon=key_horizon,
+            key_latency_steps=key_latency_steps,
+            key_down_sample_steps=key_down_sample_steps,
+            episode_mask=train_mask,
+            action_padding=action_padding,
+            repeat_frame_prob=repeat_frame_prob,
+            max_duration=max_duration
+        )
+        # 保存在对象的 field
+        self.shape_meta = shape_meta
+        self.replay_buffer = replay_buffer
+        self.rgb_keys = rgb_keys
+        ...
+        self.sampler = sampler
+        ...
+```
+
+魔法函数 __getitem__ 用到了 self.sampler，根据 keys 从 replay_buffer 中索引对应 index 的数据，并且组织为了 horizon 的情况。
+
+### SequenceSampler
+diffusion_policy/common/sampler.py:SequenceSampler
+```py
+class SequenceSampler:
+    def __init__(self,
+        shape_meta: dict,
+        replay_buffer: ReplayBuffer,
+        rgb_keys: list,
+        lowdim_keys: list,
+        key_horizon: dict,
+        key_latency_steps: dict,
+        key_down_sample_steps: dict,
+        episode_mask: Optional[np.ndarray]=None,
+        action_padding: bool=False,
+        repeat_frame_prob: float=0.0,
+        max_duration: Optional[float]=None
+    ):
+        episode_ends = replay_buffer.episode_ends[:]
+        ...
+        # 创建索引，用于后续从 buffer 读取数据。包括 (current_idx, start_idx, end_idx)
+        # start_idx 和 end_idx 则是确定了 episode 的起始区间
+        # current_idx 则属于 [start_idx, end_idx)
+        # 总体来说，indices 包含了 buffer 中所有条目。current_idx 则是从 0 到 最后一个。
+        indices = list()
+        for i in range(len(episode_ends)):
+            # before_first_grasp = True # initialize for each episode
+            if episode_mask is not None and not episode_mask[i]:
+                # 此 episode 不需要
+                continue
+            # 第一个特殊处理
+            start_idx = 0 if i == 0 else episode_ends[i-1]
+            end_idx = episode_ends[i]
+            ...
+            for current_idx in range(start_idx, end_idx):
+                if not action_padding and end_idx < current_idx + (key_horizon['action'] - 1) * key_down_sample_steps['action'] + 1:
+                    continue
+                # if gripper_width[current_idx] < gripper_width_threshold:
+                #     before_first_grasp = False
+                indices.append((current_idx, start_idx, end_idx))
+        # load low_dim to memory and keep rgb as compressed zarr array
+        self.replay_buffer = dict()
+        self.num_robot = 0
+        for key in lowdim_keys:
+            if key.endswith('eef_pos'):
+                # 记录 buffer 中包含机器人的数量
+                self.num_robot += 1
+
+            if key.endswith('pos_abs'):
+                # 处理细节
+                ...
+            elif key.endswith('quat_abs'):
+                ...
+            else:
+                # 简单加载
+                self.replay_buffer[key] = replay_buffer[key][:]
+        for key in rgb_keys:
+            self.replay_buffer[key] = replay_buffer[key]
+        
+        if 'action' in replay_buffer:
+            # 一般都是 replay
+            self.replay_buffer['action'] = replay_buffer['action'][:]
+        else:
+            # 第一次加载时，没有 action 的 key，所以需要准备好 action
+            # 根据 eef_pos，即末端执行器 pose 来准备即可。
+            # construct action (concatenation of [eef_pos, eef_rot, gripper_width])
+            actions = list()
+            for robot_idx in range(self.num_robot):
+                for cat in ['eef_pos', 'eef_rot_axis_angle']:
+                    key = f'robot{robot_idx}_{cat}'
+                    if key in self.replay_buffer:
+                        # 比如 robot0_eef_pos, robot0_eef_rot_axis_angle，这两者在 yaml 配置为 shape: [3]，
+                        # 分别得到 (n, 3) 的 zarr.core.Array
+                        actions.append(self.replay_buffer[key])
+            # 最后，self.num_robot 为 2 时，actions 是 [(n, 3), (n, 3), (n, 3), (n, 3)]
+            # 拼接后得到 (n, 12)
+            self.replay_buffer['action'] = np.concatenate(actions, axis=-1)
+
+        # 保存到对象中
+        self.action_padding = action_padding
+        self.indices = indices
+        ...
+```
+
+如果有 action_padding，那么在 start_idx 时，horizon 可能囊括的动作不够填充 horizon，所以拷贝填充到首处。
+
+最后得到的 self.replay_buffer 的 meta 包含了 episode_ends；而 data，即类字典的接口中， self.replay_buffer.data 中，包含了 action (n, 12) 和 原来的部分（参考 yaml 配置文件中的 shape_meta.obs 的内容。注意，obs 中的 key 可能并不会全部存在于 buffer，而是）。
+
+```py
+    def sample_sequence(self, idx):
+        current_idx, start_idx, end_idx = self.indices[idx]
+
+        result = dict()
+
+        obs_keys = self.rgb_keys + self.lowdim_keys
+        if self.ignore_rgb_is_applied:
+            obs_keys = self.lowdim_keys
+
+        # observation
+        for key in obs_keys:
+            input_arr = self.replay_buffer[key]
+            this_horizon = self.key_horizon[key]
+            this_latency_steps = self.key_latency_steps[key]
+            this_downsample_steps = self.key_down_sample_steps[key]
+            
+            if key in self.rgb_keys:
+                assert this_latency_steps == 0
+                num_valid = min(this_horizon, (current_idx - start_idx) // this_downsample_steps + 1)
+                slice_start = current_idx - (num_valid - 1) * this_downsample_steps
+
+                output = input_arr[slice_start: current_idx + 1: this_downsample_steps]
+                assert output.shape[0] == num_valid
+                
+                # solve padding
+                if output.shape[0] < this_horizon:
+                    padding = np.repeat(output[:1], this_horizon - output.shape[0], axis=0)
+                    output = np.concatenate([padding, output], axis=0)
+            else:
+                idx_with_latency = np.array(
+                    [current_idx - idx * this_downsample_steps + this_latency_steps for idx in range(this_horizon)],
+                    dtype=np.float32)
+                idx_with_latency = idx_with_latency[::-1]
+                idx_with_latency = np.clip(idx_with_latency, start_idx, end_idx - 1)
+                interpolation_start = max(int(idx_with_latency[0]) - 5, start_idx)
+                interpolation_end = min(int(idx_with_latency[-1]) + 2 + 5, end_idx)
+
+                if 'rot' in key:
+                    # rotation
+                    rot_preprocess, rot_postprocess = None, None
+                    if key.endswith('quat'):
+                        rot_preprocess = st.Rotation.from_quat
+                        rot_postprocess = st.Rotation.as_quat
+                    elif key.endswith('axis_angle'):
+                        rot_preprocess = st.Rotation.from_rotvec
+                        rot_postprocess = st.Rotation.as_rotvec
+                    else:
+                        raise NotImplementedError
+                    slerp = st.Slerp(
+                        times=np.arange(interpolation_start, interpolation_end),
+                        rotations=rot_preprocess(input_arr[interpolation_start: interpolation_end]))
+                    output = rot_postprocess(slerp(idx_with_latency))
+                else:
+                    interp = si.interp1d(
+                        x=np.arange(interpolation_start, interpolation_end),
+                        y=input_arr[interpolation_start: interpolation_end],
+                        axis=0, assume_sorted=True)
+                    output = interp(idx_with_latency)
+                
+            result[key] = output
+
+        # repeat frame before first grasp
+        # if self.repeat_frame_prob != 0.0:
+        #     if before_first_grasp and random.random() < self.repeat_frame_prob:
+        #         for key in obs_keys:
+        #             result[key][:-1] = result[key][-1:]
+
+        # aciton
+        input_arr = self.replay_buffer['action']
+        action_horizon = self.key_horizon['action']
+        action_latency_steps = self.key_latency_steps['action']
+        assert action_latency_steps == 0
+        action_down_sample_steps = self.key_down_sample_steps['action']
+        slice_end = min(end_idx, current_idx + (action_horizon - 1) * action_down_sample_steps + 1)
+        output = input_arr[current_idx: slice_end: action_down_sample_steps]
+        # solve padding
+        if not self.action_padding:
+            assert output.shape[0] == action_horizon
+        elif output.shape[0] < action_horizon:
+            padding = np.repeat(output[-1:], action_horizon - output.shape[0], axis=0)
+            output = np.concatenate([output, padding], axis=0)
+        result['action'] = output
+
+        return result
+```
+
 ## 训练
 ```sh
 # Single-GPU
@@ -406,6 +698,55 @@ def main(input, output, out_res, out_fov, compression_level,
 
 配置文件 train_diffusion_unet_timm_umi_workspace 在目录 diffusion_policy/config 下；数据源修改 task.dataset_path 覆盖配置文件的路径即可。或者到 diffusion_policy/config 下的具体任务配置中修改默认路径为自己手机的数据。
 
+### 查看数据格式
+```py
+store = zarr.storage.ZipStore("dataset.zarr.zip", mode="r")
+root = zarr.group(store)
+for k, v in root.items():
+    print(f"k: v is {k}: {v}")
+data
+meta
+```
+data 和 meta 都是 Group，对应的 keys 如下：
+
+```
+data:
+	camera0_rgb
+	robot0_demo_end_pose
+	robot0_demo_start_pose
+	robot0_eef_pos
+	robot0_eef_rot_axis_angle
+meta
+	episode_ends
+```
+
+考察具体的数据：
+```py
+data["robot0_eef_pos"]
+<zarr.core.Array '/data/robot0_eef_pos' (33755, 3) float32>
+```
+文件组织为所有 episode 都拼接在第一维度。每个 eef_pose 使用 3 维向量表达。与配置文件 diffusion_policy/config/task/umi_bimanual.yaml 一致：
+```yaml
+shape_meta: &shape_meta
+  obs:
+    camera0_rgb:
+      shape: [3, 224, 224]
+      ...
+      type: rgb
+      ...
+    robot0_eef_pos:
+      shape: [3]
+      ...
+```
+
+推测，camera0_rgb 应该是 zarr.Array，shape 为 (33755, 3, 224, 224)。
+
+```py
+meta.tree()
+meta
+ └── episode_ends (128,) int64
+```
+meta 部分，可以看到有 128 条 episode_ends，指出了 128 条 episode 的位置。
 
 ## 部署
 ### 硬件设置
