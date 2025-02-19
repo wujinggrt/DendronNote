@@ -2,7 +2,7 @@
 id: u0ydqn2ohvl9vw86t1e8mt8
 title: UMI
 desc: ''
-updated: 1739969494663
+updated: 1739974264250
 created: 1739810960614
 ---
 
@@ -421,7 +421,57 @@ def main(input, output, out_res, out_fov, compression_level,
         storage=zarr.MemoryStore())
 ```
 
-## 数据加载
+### 查看数据格式
+```py
+store = zarr.storage.ZipStore("dataset.zarr.zip", mode="r")
+root = zarr.group(store)
+for k, v in root.items():
+    print(f"k: v is {k}: {v}")
+data
+meta
+```
+data 和 meta 都是 Group，对应的 keys 如下：
+
+```
+data:
+	camera0_rgb
+	robot0_demo_end_pose
+	robot0_demo_start_pose
+	robot0_eef_pos
+	robot0_eef_rot_axis_angle
+meta
+	episode_ends
+```
+
+考察具体的数据：
+```py
+data["robot0_eef_pos"]
+<zarr.core.Array '/data/robot0_eef_pos' (33755, 3) float32>
+```
+文件组织为所有 episode 都拼接在第一维度。每个 eef_pose 使用 3 维向量表达。与配置文件 diffusion_policy/config/task/umi_bimanual.yaml 一致：
+```yaml
+shape_meta: &shape_meta
+  obs:
+    camera0_rgb:
+      shape: [3, 224, 224]
+      ...
+      type: rgb
+      ...
+    robot0_eef_pos:
+      shape: [3]
+      ...
+```
+
+推测，camera0_rgb 应该是 zarr.Array，shape 为 (33755, 3, 224, 224)。
+
+```py
+meta.tree()
+meta
+ └── episode_ends (128,) int64
+```
+meta 部分，可以看到有 128 条 episode_ends，指出了 128 条 episode 的位置。
+
+## 数据加载：UmiDataset
 ```py
 class UmiDataset(BaseDataset):
     def __init__(self,
@@ -482,6 +532,7 @@ class UmiDataset(BaseDataset):
             if not 'wrt' in key:
                 self.sampler_lowdim_keys.append(key)
     
+        # 把 buffer 中 data 下的 keys 取出。
         for key in replay_buffer.keys():
             if key.endswith('_demo_start_pose') or key.endswith('_demo_end_pose'):
                 self.sampler_lowdim_keys.append(key)
@@ -581,6 +632,7 @@ class SequenceSampler:
             # construct action (concatenation of [eef_pos, eef_rot, gripper_width])
             actions = list()
             for robot_idx in range(self.num_robot):
+                # 数据一定要有 eef_pos 和 eef_rot_axis_angle 来表达 action
                 for cat in ['eef_pos', 'eef_rot_axis_angle']:
                     key = f'robot{robot_idx}_{cat}'
                     if key in self.replay_buffer:
@@ -599,7 +651,7 @@ class SequenceSampler:
 
 如果有 action_padding，那么在 start_idx 时，horizon 可能囊括的动作不够填充 horizon，所以拷贝填充到首处。
 
-最后得到的 self.replay_buffer 的 meta 包含了 episode_ends；而 data，即类字典的接口中， self.replay_buffer.data 中，包含了 action (n, 12) 和 原来的部分（参考 yaml 配置文件中的 shape_meta.obs 的内容。注意，obs 中的 key 可能并不会全部存在于 buffer，而是）。
+最后得到的 self.replay_buffer 的 meta 包含了 episode_ends；而 data，即类字典的接口中， self.replay_buffer.data 中，包含了 action (n, 12) 和 原来的部分（参考 yaml 配置文件中的 shape_meta.obs 的内容。注意，obs 中的 key 可能比保存的 buffer 文件多，于是需要从中选择 buffer 才有的部分。潜在的设计问题：如果保存的数据中，与配置文件不同，那么可能出错，于是会在 buffer 的 ctor 中 assert）。
 
 ```py
     def sample_sequence(self, idx):
@@ -691,62 +743,17 @@ class SequenceSampler:
 ## 训练
 ```sh
 # Single-GPU
-(umi)$ python train.py --config-name=train_diffusion_unet_timm_umi_workspace task.dataset_path=example_demo_session/dataset.zarr.zip
+(umi)$ python train.py --config-name=train_diffusion_unet_timm_umi_workspace \
+    task.dataset_path=example_demo_session/dataset.zarr.zip
 # Multi-GPU
-(umi)$ accelerate --num_processes <ngpus> train.py --config-name=train_diffusion_unet_timm_umi_workspace task.dataset_path=example_demo_session/dataset.zarr.zip
+(umi)$ accelerate --num_processes <ngpus> train.py \
+    --config-name=train_diffusion_unet_timm_umi_workspace \
+    task.dataset_path=example_demo_session/dataset.zarr.zip
 ```
 
 配置文件 train_diffusion_unet_timm_umi_workspace 在目录 diffusion_policy/config 下；数据源修改 task.dataset_path 覆盖配置文件的路径即可。或者到 diffusion_policy/config 下的具体任务配置中修改默认路径为自己手机的数据。
 
-### 查看数据格式
-```py
-store = zarr.storage.ZipStore("dataset.zarr.zip", mode="r")
-root = zarr.group(store)
-for k, v in root.items():
-    print(f"k: v is {k}: {v}")
-data
-meta
-```
-data 和 meta 都是 Group，对应的 keys 如下：
 
-```
-data:
-	camera0_rgb
-	robot0_demo_end_pose
-	robot0_demo_start_pose
-	robot0_eef_pos
-	robot0_eef_rot_axis_angle
-meta
-	episode_ends
-```
-
-考察具体的数据：
-```py
-data["robot0_eef_pos"]
-<zarr.core.Array '/data/robot0_eef_pos' (33755, 3) float32>
-```
-文件组织为所有 episode 都拼接在第一维度。每个 eef_pose 使用 3 维向量表达。与配置文件 diffusion_policy/config/task/umi_bimanual.yaml 一致：
-```yaml
-shape_meta: &shape_meta
-  obs:
-    camera0_rgb:
-      shape: [3, 224, 224]
-      ...
-      type: rgb
-      ...
-    robot0_eef_pos:
-      shape: [3]
-      ...
-```
-
-推测，camera0_rgb 应该是 zarr.Array，shape 为 (33755, 3, 224, 224)。
-
-```py
-meta.tree()
-meta
- └── episode_ends (128,) int64
-```
-meta 部分，可以看到有 128 条 episode_ends，指出了 128 条 episode 的位置。
 
 ## 部署
 ### 硬件设置
