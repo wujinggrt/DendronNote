@@ -2,7 +2,7 @@
 id: u0ydqn2ohvl9vw86t1e8mt8
 title: UMI
 desc: ''
-updated: 1739978559759
+updated: 1740020324525
 created: 1739810960614
 ---
 
@@ -653,31 +653,32 @@ class SequenceSampler:
 
 最后得到的 self.replay_buffer 的 meta 包含了 episode_ends；而 data，即类字典的接口中， self.replay_buffer.data 中，包含了 action (n, 12) 和 原来的部分（参考 yaml 配置文件中的 shape_meta.obs 的内容。注意，obs 中的 key 可能比保存的 buffer 文件多，于是需要从中选择 buffer 才有的部分。潜在的设计问题：如果保存的数据中，与配置文件不同，那么可能出错，于是会在 buffer 的 ctor 中 assert）。
 
+#### sample_sequence()
 ```py
     def sample_sequence(self, idx):
+        # int, int, int
         current_idx, start_idx, end_idx = self.indices[idx]
-
         result = dict()
-
         obs_keys = self.rgb_keys + self.lowdim_keys
         if self.ignore_rgb_is_applied:
             obs_keys = self.lowdim_keys
-
         # observation
         for key in obs_keys:
+            # 得到 (n, dim) 等信息。dim 可能是 low_dim 情况下的 3，rgb 情况下的 [3, 224, 224]
             input_arr = self.replay_buffer[key]
             this_horizon = self.key_horizon[key]
             this_latency_steps = self.key_latency_steps[key]
+            # 下采样，跳过一些步，用于对其延迟，比如 60Hz 采样到 30Hz
             this_downsample_steps = self.key_down_sample_steps[key]
             
             if key in self.rgb_keys:
                 assert this_latency_steps == 0
                 num_valid = min(this_horizon, (current_idx - start_idx) // this_downsample_steps + 1)
                 slice_start = current_idx - (num_valid - 1) * this_downsample_steps
-
+                # 切片
+                # step 跳步用于对齐
                 output = input_arr[slice_start: current_idx + 1: this_downsample_steps]
                 assert output.shape[0] == num_valid
-                
                 # solve padding
                 if output.shape[0] < this_horizon:
                     padding = np.repeat(output[:1], this_horizon - output.shape[0], axis=0)
@@ -733,12 +734,98 @@ class SequenceSampler:
         if not self.action_padding:
             assert output.shape[0] == action_horizon
         elif output.shape[0] < action_horizon:
+            # 在开始的动作中，动作数量较少，即切片 [start_idx:current_idx]
+            # 如果 padding，则复制前面部分。
             padding = np.repeat(output[-1:], action_horizon - output.shape[0], axis=0)
             output = np.concatenate([output, padding], axis=0)
         result['action'] = output
 
         return result
 ```
+最后，result 是一个 dict，包含了 'action'，内容为 eef_pos 和 eef_rot_axis_angle 部分。包含的 'obs' 为各类的 camera0_rgb 等。
+
+### __getitem__()
+```py
+    def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
+        if not self.threadpool_limits_is_applied:
+            threadpool_limits(1)
+            self.threadpool_limits_is_applied = True
+        data = self.sampler.sample_sequence(idx)
+
+        obs_dict = dict()
+        for key in self.rgb_keys:
+            if key not in data:
+                continue
+            # move channel last to channel first
+            # T,H,W,C
+            # convert uint8 image to float32
+            obs_dict[key] = np.moveaxis(data[key], -1, 1).astype(np.float32) / 255.
+            # T,C,H,W
+            del data[key]
+        for key in self.sampler_lowdim_keys:
+            obs_dict[key] = data[key].astype(np.float32)
+            del data[key]
+        
+        # generate relative pose between two ees
+        for robot_id in range(self.num_robot):
+            ...
+        # generate relative pose with respect to episode start
+        for robot_id in range(self.num_robot):
+            ...
+        del_keys = list()
+        for key in obs_dict:
+            if key.endswith('_demo_start_pose') or key.endswith('_demo_end_pose'):
+                del_keys.append(key)
+        for key in del_keys:
+            del obs_dict[key]
+        actions = list()
+        # 最后维度中，每个 robot 对应一个 eef_pose 和 eef_rot_axis_angle，并且在最后维度展平。
+        dim_a = data['action'].shape[-1] // self.num_robot  # 现在每个机器人的动作维度可能是9
+
+        for robot_id in range(self.num_robot):
+            idx_start = robot_id * dim_a
+            idx_end = (robot_id + 1) * dim_a
+
+            # 提取每个机器人的动作数据。最后维度
+            action_per_robot = data['action'][..., idx_start:idx_end]
+            # 假设动作维度为9，包括3个位置和6个旋转
+            action_pos = action_per_robot[..., :3]
+            action_rot6d = action_per_robot[..., 3:9]
+            action_mat = pose_to_mat(np.concatenate([action_pos, action_rot6d], axis=-1))
+
+            # 处理相对观测和动作
+            obs_pose_mat = convert_pose_mat_rep(
+                pose_mat,
+                base_pose_mat=pose_mat[-1],
+                pose_rep=self.obs_pose_repr,
+                backward=False)
+            action_pose_mat = convert_pose_mat_rep(
+                action_mat,
+                base_pose_mat=pose_mat[-1],
+                pose_rep=self.obs_pose_repr,
+                backward=False)
+
+            # 转换为pos + rot6d表示
+            obs_pose = mat_to_pose10d(obs_pose_mat)
+            action_pose = mat_to_pose10d(action_pose_mat)
+
+            # 不再包含夹爪宽度数据，直接添加action_pose
+            actions.append(action_pose)
+
+            # 更新观测字典
+            obs_dict[f'robot{robot_id}_eef_pos'] = obs_pose[:, :3]
+            obs_dict[f'robot{robot_id}_eef_rot_axis_angle'] = obs_pose[:, 3:]
+
+        # 将所有机器人的动作拼接
+        data['action'] = np.concatenate(actions, axis=-1)
+
+        torch_data = {
+            'obs': dict_apply(obs_dict, torch.from_numpy),
+            'action': torch.from_numpy(data['action'].astype(np.float32))
+        }
+        return torch_data
+```
+最后返回的字典中，包含两个 key，obs 和 action，这样便可开始训练策略。key 都是 torch.Tensor 的。
 
 ## 训练
 ```sh
