@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1739968773089
+updated: 1740042646839
 created: 1738165674608
 ---
 
@@ -56,3 +56,9 @@ https://why618188.github.io/beamdojo/
 
 多智能体协作综述
 https://arxiv.org/abs/2501.06322
+
+SMAC-R1：在MARL中复现R1时刻 - 赵鉴的文章 - 知乎，星际争霸
+https://zhuanlan.zhihu.com/p/24922558098
+
+笔记：MoBA 与 Native Sparse Attention - 刀刀宁的文章 - 知乎
+https://zhuanlan.zhihu.com/p/24774848974

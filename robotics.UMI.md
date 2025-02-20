@@ -2,7 +2,7 @@
 id: u0ydqn2ohvl9vw86t1e8mt8
 title: UMI
 desc: ''
-updated: 1740020324525
+updated: 1740038557866
 created: 1739810960614
 ---
 
@@ -51,6 +51,8 @@ PD2 相对 EE pose。为了避免依赖于具体的具身平台，作者提出�
 3. 相对 girpper 间的自我感知。在双臂场景，policy 提供两个 gripper 的相对 pose 对双臂协作的任务成功率至关重要。gripper 间感知通过建地图-再定位的数据，根据 IMU 构建场景级别的坐标系统。每个新场景下，首先收集视频，并用于建图。随后，收集的演示数据会重定位到相同的地图，并分享同一坐标系统。
 
 Insight：是否可以把这种相对融合为部分相对和部分绝对？就像在中间位置，设置锚点，相对则考虑动作增量，绝对考虑初始位置与目标的距离关系。在动作序列中，**随机**采样动作序列中的几个位置，作为绝对位置参考，就像 Long Short-Term 的 Long，而**相对**轨迹则贯穿始终，就像 Short-Term 部分。
+
+## 为什么能够泛化到不同平台
 
 ## Repo
 [github](https://github.com/real-stanford/universal_manipulation_interface)
