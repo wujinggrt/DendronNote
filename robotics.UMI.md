@@ -2,7 +2,7 @@
 id: u0ydqn2ohvl9vw86t1e8mt8
 title: UMI
 desc: ''
-updated: 1739974264250
+updated: 1739978559759
 created: 1739810960614
 ---
 
@@ -753,7 +753,8 @@ class SequenceSampler:
 
 配置文件 train_diffusion_unet_timm_umi_workspace 在目录 diffusion_policy/config 下；数据源修改 task.dataset_path 覆盖配置文件的路径即可。或者到 diffusion_policy/config 下的具体任务配置中修改默认路径为自己手机的数据。
 
-
+## TODO
+什么是 rot ？旋转矩阵？
 
 ## 部署
 ### 硬件设置
