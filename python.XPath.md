@@ -2,7 +2,7 @@
 id: lyr2i1azrkyi8fossrsnpwd
 title: XPath
 desc: ''
-updated: 1740074869657
+updated: 1740075376646
 created: 1740073452503
 ---
 
@@ -16,7 +16,7 @@ XPath (XML Path Language) 用于在 XML 和 HTML 文档中查找信息。
 | 表达式   | 描述                                                 | 示例                | 结果                                                                 |
 | -------- | ---------------------------------------------------- | ------------------- | -------------------------------------------------------------------- |
 | nodename | 当前节点的所有节点                                   | bookstore           | 选取 bookstore 下所有子节点                                          |
-| /        | 当前节点下的某节点 | /bookstore          | 节点下所有 bookstore 节点，孙子节点匹配不到                        |
+| /        | 当前节点下的某节点 | /bookstore          | 当前节点即根节点，查找其下孩子中所有 bookstore 节点，孙子节点匹配不到                        |
 | //       | 全局选节点                                           | //book              | 当前节点下的全局查找 book 节点，可以与当前节点有间隔，是孙子节点都可 |
 | @        | 选取节点属性                                         | //title[@lang='en'] | 节点 title 的 lang 属性为 en                                         |
 
@@ -135,3 +135,7 @@ print(result[0].text)
 result =html.xpath('//li[last()-1]/a/text()')
 print(result)
 ```
+
+其他例子：
+* `x1 = "//span[contains(./descendant::a/text(), '赖明星')]"`，contains 内使用节点轴
+* `doc.xpath(r'//*[re:match(@id, "postmessage_\d+")]', namespace={"re": "http://exslt.org/regular-expressions"})` 正则

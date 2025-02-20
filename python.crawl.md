@@ -2,7 +2,7 @@
 id: lhfq7vmtcpki5mf3wzt260c
 title: Crawl
 desc: ''
-updated: 1740073821146
+updated: 1740075460239
 created: 1740068017716
 ---
 
@@ -81,3 +81,4 @@ Cookie 给服务器提供了鉴别用户的依据，从而 Session 跟踪存储�
 
 会话 Cookie 放置在浏览器，关闭浏览器即失效；持久 Cookie 保存在硬盘，下次继续使用。没有严格之分，只是 Max-Age 或 Expire 决定 Cookie 失效时间。一些持久化登录只是把有效时间设置很长。
 
+一般使用 selenium.webdriver 登录，获取 cookies 后用 httpx 登录。
