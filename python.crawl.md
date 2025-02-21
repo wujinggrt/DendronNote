@@ -2,7 +2,7 @@
 id: lhfq7vmtcpki5mf3wzt260c
 title: Crawl
 desc: ''
-updated: 1740075460239
+updated: 1740076014261
 created: 1740068017716
 ---
 
@@ -82,3 +82,22 @@ Cookie 给服务器提供了鉴别用户的依据，从而 Session 跟踪存储�
 会话 Cookie 放置在浏览器，关闭浏览器即失效；持久 Cookie 保存在硬盘，下次继续使用。没有严格之分，只是 Max-Age 或 Expire 决定 Cookie 失效时间。一些持久化登录只是把有效时间设置很长。
 
 一般使用 selenium.webdriver 登录，获取 cookies 后用 httpx 登录。
+
+## Pyppeteer
+比 selenium 更方便的工具，不需要安装驱动等工具。`pip install pyppeteer`即可。
+
+```py
+import asyncio
+from pyppeteer import launch
+from pyquery import PyQuery as pq
+ 
+async def main():
+    browser = await launch()
+    page = await browser.newPage()
+    await page.goto('http://quotes.toscrape.com/js/')
+    doc = pq(await page.content())
+    print('Quotes:', doc('.quote').length)
+    await browser.close()
+ 
+asyncio.get_event_loop().run_until_complete(main())
+```
