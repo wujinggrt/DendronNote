@@ -2,7 +2,7 @@
 id: svc1e8p1tntyfmp9t9sygdn
 title: DexVLA
 desc: ''
-updated: 1740047256820
+updated: 1740130067952
 created: 1740021087668
 ---
 
@@ -53,16 +53,22 @@ DexVLA 模型主要基于 Transformer 语言模型主干。遵循 VLM 模型的�
 
 在实验中，通过结合特定任务的后训练和自生成推理能力来解决一系列具有挑战性的多阶段任务。对于其中一些任务，数据在预训练中存在，但需要进行微调才能掌握。对于一些任务，预训练中没有数据。本次评估中的任务如图 4 所示。
 
-## Insights
+## 见解
 是否可以独立地，直接地模仿学习或强化学习。随后嵌入到 VLA 中。
 
 思路就像训练 LLaVA 的视觉的 projector？
 
+另外地，数据增强的方式，是否可以在执行后，收集数据，通过分割视频或图片中的机械臂和操作的物体，随后换背景图片，以此扩充训练数据，得到在不同场景下泛化和抗干扰的能力。
+
+VLM 输出 latent token，就像 CLIP Vision Encoder 输出 token 一样。VLM 作为任务规划器。
 
 ## Ref
 ScaleDP arXiv:2409.14411, 2024.
 
-## Tag
+## Tag and Ref
+[[robotics.Helix：用于通才人形机器人控制的_VLM]]
+[[llm.Qwen2_5-VL]]
+
 #Paper
 #Robotics
 #VLA

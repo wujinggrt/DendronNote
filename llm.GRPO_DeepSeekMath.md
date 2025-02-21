@@ -1,8 +1,8 @@
 ---
 id: wgv9wpy2umwsjvmcmt97jcg
-title: DeepSeekMath
+title: GRPO_DeepSeekMath
 desc: ''
-updated: 1738429266615
+updated: 1740147604132
 created: 1738233120668
 ---
 
@@ -82,6 +82,6 @@ RL 范式朝向统一，比如 SFT、RFT、DPO、PPO、GRPO，都是求出最大
 【手撕LLM-GRPO】你只管给Reward, 剩下的交给RL（附代码） - 小冬瓜AIGC的文章 - 知乎
 https://zhuanlan.zhihu.com/p/20812786520
 
-# Tag
+## Tag
 #Paper
 #GRPO

@@ -2,7 +2,7 @@
 id: qon8owvfwcckh0l0fl9e8ee
 title: LongShortTermImagination
 desc: ''
-updated: 1739791629456
+updated: 1740131211777
 created: 1739694710359
 ---
 
@@ -36,3 +36,4 @@ Affordance map computation via virtual exploration. 使用滑动边框扫描各�
 
 ## Tag
 #Paper
+#RL
