@@ -6,8 +6,6 @@ updated: 1740142386464
 created: 1740130485350
 ---
 
-来自星动纪元工作。
-
 通过异步处理，VLM 低频思考，清凉的动作策略模型高频响应，解决时延不匹配问题。
 
 ![fig1](assets/images/robotics.HiRT_使用分层机器人Transformer提示机器人控制/fig1.png)
