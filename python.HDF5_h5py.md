@@ -2,7 +2,7 @@
 id: spdyvdpzn03gdr0e9qabkp7
 title: HDF5_h5py
 desc: ''
-updated: 1740166250503
+updated: 1740166572753
 created: 1740160885848
 ---
 
@@ -31,6 +31,9 @@ dset = f.create_dataset("mydataset", (100,), dtype="i")
 # 需要关闭文件对象
 f.close()
 ```
+
+注意，创建 `File` 时，参数 `rdcc_nbytes` 是 h5py 中 `File` 对象的**原始数据分块缓存大小**参数，全称为 *Raw Data Chunk Cache nbytes*。它控制 HDF5 库在内存中为**分块数据集（chunked datasets）** 保留的缓存空间大小。
+
 
 官方推荐使用 with as 语句:
 ```py
