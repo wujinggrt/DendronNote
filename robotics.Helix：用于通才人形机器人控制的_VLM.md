@@ -2,7 +2,7 @@
 id: c11ttawlltxe671k5e99ldq
 title: Helix：用于通才人形机器人控制的_VLM
 desc: ''
-updated: 1740128132931
+updated: 1740131331604
 created: 1740123321005
 ---
 
@@ -76,3 +76,12 @@ Helix 以 200 Hz 协调 35 DoF 的动作空间，控制从单个手指运动到�
 
 ## Insights
 启动之后，是否可以继续像 LLM 一样强化学习？LLM 的预训练预料来自网络，VLA 来自 LLM 和模仿学习的人类数据。
+
+## Tag and Ref
+[[robotics.DexVLA]]
+[[llm.Qwen2_5-VL]]
+[[robotics.Insights]]
+[[robotics.HiRT_使用分层机器人Transformer提示机器人控制]]
+
+#Robotics
+#VLA

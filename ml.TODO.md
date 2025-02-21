@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1740116899828
+updated: 1740140963895
 created: 1738165674608
 ---
 
@@ -59,11 +59,23 @@ https://zhuanlan.zhihu.com/p/24922558098
 笔记：MoBA 与 Native Sparse Attention - 刀刀宁的文章 - 知乎
 https://zhuanlan.zhihu.com/p/24774848974
 
+
+伯克利大学与清华团队发布具身智能新的方案-HiRT - lamboo的文章 - 知乎
+https://zhuanlan.zhihu.com/p/25375865923
+
+## RL
 在线强化学习改进VLA模型 - 黄浴的文章 - 知乎
 https://zhuanlan.zhihu.com/p/23993973779
 
-Figure 的工作：Helix：用于通才人形机器人控制的视觉-语言-动作模型 - 黄浴的文章 - 知乎
-https://zhuanlan.zhihu.com/p/25263273644
-
 面向长范围交互式 LLM 智体的强化学习 - 黄浴的文章 - 知乎
 https://zhuanlan.zhihu.com/p/24109661682
+
+TRL 
+https://huggingface.co/docs/trl/main/en/index
+
+GPRO, R1
+https://github.com/philschmid/deep-learning-pytorch-huggingface/blob/main/training/mini-deepseek-r1-aha-grpo.ipynb
+
+## PyTorch 技巧
+一文学会 Pytorch 中的 einsum - 梁德澎的文章 - 知乎
+https://zhuanlan.zhihu.com/p/361209187

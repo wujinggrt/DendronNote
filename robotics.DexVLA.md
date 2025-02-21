@@ -2,7 +2,7 @@
 id: svc1e8p1tntyfmp9t9sygdn
 title: DexVLA
 desc: ''
-updated: 1740123335262
+updated: 1740130067952
 created: 1740021087668
 ---
 
@@ -65,7 +65,10 @@ VLM 输出 latent token，就像 CLIP Vision Encoder 输出 token 一样。VLM �
 ## Ref
 ScaleDP arXiv:2409.14411, 2024.
 
-## Tag
+## Tag and Ref
+[[robotics.Helix：用于通才人形机器人控制的_VLM]]
+[[llm.Qwen2_5-VL]]
+
 #Paper
 #Robotics
 #VLA

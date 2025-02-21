@@ -2,7 +2,7 @@
 id: po1d50dtr8zzbao0sn1duvh
 title: LearnDendron
 desc: ''
-updated: 1739169153799
+updated: 1740129836204
 created: 1737484383438
 ---
 
@@ -52,11 +52,16 @@ created: 1737484383438
 └── project1.tasks.task2.md
 ```
 
-查找：ctrl+shift+p 打开命令面板，输入 dendron lookup 便可找到 Dendron: Lookup Note 的选项，选择回车即可查找笔记。我在 whichkey 中设置了，使用 space+n+l 便可执行此命令。
+### 查找
+ctrl+shift+p 打开命令面板，输入 dendron lookup 便可找到 Dendron: Lookup Note 的选项，选择回车即可查找笔记。我在 whichkey 中设置了，使用 space+n+l 便可执行此命令。
 
-创建链接 (wikilinks)：鼠标悬停在 wikilinks 上可以预览内容。切回上一个 Note （可以在树状图中单机，或使用 Lookup Note 打开），随后在笔记中输入 `[[`，会弹出提示生成链接，链接为在 workspace 的各个文件。比如：[[tutorial]]。
+### 创建链接 (wikilinks)
+鼠标悬停在 wikilinks 上可以预览内容。切回上一个 Note （可以在树状图中单机，或使用 Lookup Note 打开），随后在笔记中输入 `[[`，会弹出提示生成链接，链接为在 workspace 的各个文件。比如：[[tutorial]]。
 
-导航链接：在 vim 插件环境，normal 模式可以用 ctrl+] 挑战对应文件。或者 ctrl+click。
+![wikilinks](assets/images/LearnDendron/wikilinks.png)
+
+### 导航链接
+在 vim 插件环境，normal 模式可以用 `ctrl+]` 挑战对应文件。或者 `ctrl+click`。
 
 ## 粘贴图像文件
 使用 Windows 时，使用 Windows 商店的 snipaste 软件 F1 截屏，可以方便地粘贴。
