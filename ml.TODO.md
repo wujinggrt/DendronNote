@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1740042646839
+updated: 1740116899828
 created: 1738165674608
 ---
 
@@ -47,10 +47,6 @@ https://arxiv.org/pdf/2410.03618
 insights: 做 US 时候，潜意识里人是能够估计人体的 affordance 图，知道大致范围。是否可以弄个 WorldModel？LLM
  只能生成下一个 token，当做 short，嵌入另一个小模型来做 long term imagination。
 
-DexVLA
-https://dex-vla.github.io/
-https://arxiv.org/abs/2502.05855
-
 人型机器人行走
 https://why618188.github.io/beamdojo/
 
@@ -62,3 +58,12 @@ https://zhuanlan.zhihu.com/p/24922558098
 
 笔记：MoBA 与 Native Sparse Attention - 刀刀宁的文章 - 知乎
 https://zhuanlan.zhihu.com/p/24774848974
+
+在线强化学习改进VLA模型 - 黄浴的文章 - 知乎
+https://zhuanlan.zhihu.com/p/23993973779
+
+Figure 的工作：Helix：用于通才人形机器人控制的视觉-语言-动作模型 - 黄浴的文章 - 知乎
+https://zhuanlan.zhihu.com/p/25263273644
+
+面向长范围交互式 LLM 智体的强化学习 - 黄浴的文章 - 知乎
+https://zhuanlan.zhihu.com/p/24109661682

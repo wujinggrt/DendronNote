@@ -2,7 +2,7 @@
 id: svc1e8p1tntyfmp9t9sygdn
 title: DexVLA
 desc: ''
-updated: 1740052488893
+updated: 1740123335262
 created: 1740021087668
 ---
 
@@ -59,6 +59,8 @@ DexVLA 模型主要基于 Transformer 语言模型主干。遵循 VLM 模型的�
 思路就像训练 LLaVA 的视觉的 projector？
 
 另外地，数据增强的方式，是否可以在执行后，收集数据，通过分割视频或图片中的机械臂和操作的物体，随后换背景图片，以此扩充训练数据，得到在不同场景下泛化和抗干扰的能力。
+
+VLM 输出 latent token，就像 CLIP Vision Encoder 输出 token 一样。VLM 作为任务规划器。
 
 ## Ref
 ScaleDP arXiv:2409.14411, 2024.
