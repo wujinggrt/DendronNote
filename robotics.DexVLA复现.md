@@ -2,7 +2,7 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA复现
 desc: ''
-updated: 1740206306943
+updated: 1740234940345
 created: 1740053039805
 ---
 
@@ -141,6 +141,139 @@ def generate_h5(
 
 ### Qwen2-VL
 项目文件 qwen2_vla/models/modeling_qwen2_vla.py 是从 huggingface 的 transformers 库中 transformers/models/qwen2_vl/modeling_qwen2_vl.py 复制而来，并根据需求做出修改。
+
+在文件末尾的 Qwen2VLForConditionalGenerationForVLA 中，作者做出了修改。原版的只有 `self.visual, self.model, self.vocab_size, self.lm_head, self.rope_deltas` 等 fields。作者添加了 `self.padding_side, self.using_file, ...`。
+
+```py
+class Qwen2VLForConditionalGenerationForVLA(Qwen2VLPreTrainedModel, GenerationMixin):
+    _tied_weights_keys = ["lm_head.weight"]
+
+    def __init__(self, config):
+        super().__init__(config)
+        self.visual = Qwen2VisionTransformerPretrainedModel._from_config(
+            config.vision_config, attn_implementation=config._attn_implementation
+        )
+        self.model = Qwen2VLModel(config)
+        self.vocab_size = config.vocab_size
+
+        self.padding_side = "left"  # set it to left by default, user can use setter to change padding_sides
+        self.using_film = config.using_film
+
+        self.llm_loss_weight = config.llm_loss_weight
+
+        if isinstance(config.policy_head_config, dict):
+            config.policy_head_config = AutoConfig.for_model(**config.policy_head_config)
+        self.policy_head = AutoModel.from_config(config=config.policy_head_config)
+
+        self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
+
+        # Initialize weights and apply final processing
+        self.post_init()
+        if config.policy_head_config.model_type == "scale_dp_policy":
+            self.policy_head.init_weights()
+        # 来自于 Fusion 模块
+        self.input_action_proj = ActionProjector(config.hidden_size, config.hidden_size)
+
+        if self.using_film:
+            # Initialize projection layers and condition modulation layers
+            # 嵌入 condition，即文本的 embedding。主要是放缩和偏移。
+            self.reasoning_action_proj = ActionProjector(config.hidden_size, config.hidden_size)
+            self.reasoning_film = FiLM(feature_dim=config.hidden_size, condition_dim=config.hidden_size)
+
+```
+
+修改了部分 `forward()`：
+
+```py
+    def forward(self, ...) -> Union[Tuple, Qwen2VLCausalLMOutputWithPast]:
+        ...
+        outputs = self.model(
+            input_ids=None,
+            position_ids=position_ids,
+            attention_mask=attention_mask,
+            past_key_values=past_key_values,
+            inputs_embeds=inputs_embeds,
+            use_cache=use_cache,
+            output_attentions=output_attentions,
+            output_hidden_states=True,
+            return_dict=return_dict,
+        )
+
+        # VLA 输出的内容
+        hidden_states = outputs[0]
+        if tinyvla: # dex-vla supports tinyvla-style VLA
+            return hidden_states
+
+        logits = self.lm_head(hidden_states)
+        logits = logits.float()
+
+        llm_loss = None
+
+        # cross-entropy loss for VLM
+        if labels is not None:
+            # Shift so that tokens < n predict n
+            shift_logits = logits[..., :-1, :].contiguous()
+            shift_labels = labels[..., 1:].contiguous()
+            # Flatten the tokens
+            loss_fct = CrossEntropyLoss()
+            shift_logits = shift_logits.view(-1, self.config.vocab_size)
+            shift_labels = shift_labels.view(-1)
+            # Enable model parallelism
+            shift_labels = shift_labels.to(shift_logits.device)
+            llm_loss = loss_fct(shift_logits, shift_labels)
+
+        # for evaluation
+        if is_eval:
+            loss = None
+            if not return_dict:
+                output = (logits,) + outputs[1:]
+                return (loss,) + output if loss is not None else output
+
+            return Qwen2VLCausalLMOutputWithPast(
+                loss=loss,
+                logits=logits,
+                past_key_values=outputs.past_key_values,
+                hidden_states=outputs.hidden_states,
+                attentions=outputs.attentions,
+                rope_deltas=rope_deltas,
+            )
+        
+        if self.using_film:
+            action_hidden_states = self.film_forward(labels=labels, input_ids=input_ids,
+                                                     hidden_states=hidden_states)
+        else: 
+            action_hidden_states = hidden_states
+
+        ret = self.policy_head(actions=actions, hidden_states=action_hidden_states, states=states, is_pad=is_pad)
+
+        loss = {'loss': ret['loss'] + self.llm_loss_weight * llm_loss,
+                'llm_loss': llm_loss,
+                'action_loss': ret['loss']}
+        if not return_dict:
+            output = (logits,) + outputs[1:]
+            return (loss,) + output if loss is not None else output
+
+        torch.cuda.empty_cache()
+        gc.collect()
+        del input_ids
+        del attention_mask
+        del position_ids
+        del past_key_values
+        del inputs_embeds
+        del labels
+        del pixel_values
+        del image_grid_thw
+        del actions
+        del states
+        return Qwen2VLCausalLMOutputWithPast(
+            loss=loss,
+            logits=logits,
+            past_key_values=outputs.past_key_values,
+            hidden_states=outputs.hidden_states,
+            attentions=outputs.attentions,
+            rope_deltas=rope_deltas,
+        )
+```
 
 ## 视觉编码器条件化
 两个方案：
