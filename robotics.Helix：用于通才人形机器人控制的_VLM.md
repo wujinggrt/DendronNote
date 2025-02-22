@@ -2,7 +2,7 @@
 id: c11ttawlltxe671k5e99ldq
 title: Helix：用于通才人形机器人控制的_VLM
 desc: ''
-updated: 1740131331604
+updated: 1740201567156
 created: 1740123321005
 ---
 
@@ -44,7 +44,7 @@ S1 是 80 M 参数的交叉注意力 encoder-decoder Transformer，用于低级�
 S1 以 200 Hz 输出完整上半身人形控制，包括所需的手腕姿势、手指屈曲和外展控制以及躯干和头部方向目标。在动作空间中附加一个合成的“任务完成百分比”动作，当作终止条件，从而容易排序多个学东西的行为。
 
 ### 训练
-Helix 完全是端到端啊训练的，将原始像素和文本命令映射到具有标准回归损失 (starndard regression loss) 的连续动作 (continuous)。通过用于调节 S1 行为 (condition S1's behavior) 的潜通信向量 (latent communication vector)，梯度从 S1 反向传播为到 S2，从而允许对这两个组件联合优化 (joint optimization)。Helix 不需要特定任务的适配，保持单个训练阶段和单个神经网络权重集，无需单独动作头或每个任务的微调。
+Helix 使用完全的端到端啊训练，将原始像素和文本命令映射到具有标准回归损失 (starndard regression loss) 的连续动作 (continuous actions)。通过用于调节 S1 行为 (condition S1's behavior) 的潜通信向量 (latent communication vector)，梯度从 S1 反向传播为到 S2，从而允许对这两个组件联合优化 (joint optimization)。Helix 不需要特定任务的适配，保持单个训练阶段和单个神经网络权重集，无需单独动作头或每个任务的微调。
 
 训练时，在 S1 和 S2 输入之间添加时间偏移 (offset)。此偏移经过标定，以匹配 S1 和 S2 部署推理延迟之间差距，确保部署期间的实时控制要求准确反映。
 
@@ -80,7 +80,7 @@ Helix 以 200 Hz 协调 35 DoF 的动作空间，控制从单个手指运动到�
 ## Tag and Ref
 [[robotics.DexVLA]]
 [[llm.Qwen2_5-VL]]
-[[robotics.Insights]]
+[[insights.Robotics]]
 [[robotics.HiRT_使用分层机器人Transformer提示机器人控制]]
 
 #Robotics

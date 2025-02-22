@@ -40,7 +40,7 @@ HiRT 有两个主要组件：理解模块和执行模块。
 ## Tag and link
 [[robotics.DexVLA]]
 [[robotics.Helix：用于通才人形机器人控制的_VLM]]
-[[robotics.Insights]]
+[[insights.Robotics]]
 
 #VLA
 #Robotics

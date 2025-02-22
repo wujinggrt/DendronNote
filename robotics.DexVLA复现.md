@@ -2,7 +2,7 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA复现
 desc: ''
-updated: 1740195988782
+updated: 1740206306943
 created: 1740053039805
 ---
 
@@ -139,6 +139,9 @@ def generate_h5(
 
 模型结构，在 VLM 末尾增加一个 policy head；而 Helix 直接输出 token，当作 policy 模型的 latent vector。
 
+### Qwen2-VL
+项目文件 qwen2_vla/models/modeling_qwen2_vla.py 是从 huggingface 的 transformers 库中 transformers/models/qwen2_vl/modeling_qwen2_vl.py 复制而来，并根据需求做出修改。
+
 ## 视觉编码器条件化
 两个方案：
 - FiLM 层 (CNN 架构)：在 EfficientNet 的隐藏层
@@ -159,9 +162,11 @@ HiRT 发表了论文，解决了 VLM 模型与策略模型生成速度不匹配�
 
 下一步打算：先复现，后修改，不断逼近 Helix 的方案。
 
+
 ## Tag and Ref
 [[robotics.DexVLA]]
 [[robotics.Helix：用于通才人形机器人控制的_VLM]]
 [[robotics.HiRT_使用分层机器人Transformer提示机器人控制]]
+[[insights.Robotics]]
 
 #复现
