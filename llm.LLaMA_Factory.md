@@ -10,5 +10,5 @@ created: 1740210050475
 ## Link and Ref
 [Github](https://github.com/hiyouga/LLaMA-Factory)
 
-[[llm.DeepSpeed]]
+[[llm.DeepSpeed_核心概念]]
 [[llm.Megatron]]

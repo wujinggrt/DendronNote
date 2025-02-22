@@ -2,7 +2,7 @@
 id: po1d50dtr8zzbao0sn1duvh
 title: LearnDendron
 desc: ''
-updated: 1740129836204
+updated: 1740226287837
 created: 1737484383438
 ---
 
@@ -54,6 +54,8 @@ created: 1737484383438
 
 ### 查找
 ctrl+shift+p 打开命令面板，输入 dendron lookup 便可找到 Dendron: Lookup Note 的选项，选择回车即可查找笔记。我在 whichkey 中设置了，使用 space+n+l 便可执行此命令。
+
+支持模糊搜索，比如本 `LearDendron.md` 笔记，可以在查找的文本框输入 `Learn Dend`，便可看到候选的。
 
 ### 创建链接 (wikilinks)
 鼠标悬停在 wikilinks 上可以预览内容。切回上一个 Note （可以在树状图中单机，或使用 Lookup Note 打开），随后在笔记中输入 `[[`，会弹出提示生成链接，链接为在 workspace 的各个文件。比如：[[tutorial]]。
@@ -161,6 +163,19 @@ enableAutoCreateOnDefinition: true
 使用：在笔记文件的 `#tag-name` 处，按住 ctrl，鼠标悬停或点击，会得到标记为 tag-name 的所有笔记列表，并悬停在左侧侧边栏的 BACKLINKS 处。
 
 参考 [Dendron使用教程-01 给你的笔记打上Tag - 走遍山水路的文章 - 知乎](https://zhuanlan.zhihu.com/p/669141439)
+
+## Template
+比如，我想要每次创建，都在文件末尾加上 `## Ref and Tag`，用于索引和打标签。可以使用模板实现可复用的工作。创建笔记时选择 `Create New with Template` 即可。
+
+### 创建 Template
+把模板看做一个简单的笔记文件即可。创建一个笔记文件后，`Create New with Template` 便可选择此笔记文件作为模板，会生成内容一致的笔记。
+
+命名一般参考 `template.<template_name>.md`。
+
+### 变量替换
+
+###
+
 
 ## 在新的目录创建 vault
 I want to start clean with a new vault at a custom location: Run `Dendron: Initialize Workspace` from the command prompt (or click this link) to start from a clean slate

@@ -10,4 +10,4 @@ created: 1740209376048
 [Megatron论文和代码详细分析(1) - 迷途小书僮的文章 - 知乎](https://zhuanlan.zhihu.com/p/366906920)
 
 ## Link and Ref
-[[llm.DeepSpeed]]
+[[llm.DeepSpeed_核心概念]]
