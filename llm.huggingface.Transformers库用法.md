@@ -58,7 +58,16 @@ class Qwen2VLForConditionalGeneration(Qwen2VLPreTrainedModel, GenerationMixin):
 
 `GenerationMixin` 要求子类自行实现各类方法，以便它的 `generate()` 调用。
 
+```py
+# transformers/generation/utils.py
+```
+
+参考 [](https://huggingface.co/blog/zh/how-to-generate)。
+
 ## 补充材料
 [Quicktour](https://huggingface.co/docs/transformers/main/zh/quicktour)
 
 ## Ref and Tag
+
+#阅读代码
+#Code

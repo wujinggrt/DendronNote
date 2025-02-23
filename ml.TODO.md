@@ -65,6 +65,8 @@ https://zhuanlan.zhihu.com/p/25375865923
 
 https://github.com/Peterwangsicheng/RoboBERT
 
+DeepSpeed 的 ZeRO 解读。
+
 ## RL
 在线强化学习改进VLA模型 - 黄浴的文章 - 知乎
 https://zhuanlan.zhihu.com/p/23993973779

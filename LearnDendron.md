@@ -174,7 +174,9 @@ enableAutoCreateOnDefinition: true
 
 ### 变量替换
 
-###
+## 结合 vim 插件，在 md 笔记输入中文笔记技巧
+
+使用 `<leader>w` 实现插入状态的保存和回到普通状态。编辑笔记后，首先按 `shift` 把输入法切换到英文状态，随后 `<leader>w` 回到 normal 状态，并且英文状态适合操作和执行 vim 各类功能。适应之后，笔记可以操作得丝滑。
 
 
 ## 在新的目录创建 vault
