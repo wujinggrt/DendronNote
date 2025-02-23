@@ -467,6 +467,28 @@ Transformers 和 DeepSpeed 提供两个相同的 schedulers：
 }
 ```
 
+### Save model weights
+
+保存主要的全精度 fp32 权重到自定义的检查点优化器文件，模式通常为 `global_step*/*optim_states.pt`，保存与普通检查点。
+
+#### fp16
+
+ZeRO-2 训练的模型以 fp16 保存了 pytorch_model.bin 权重。为了以权重为 fp16 保存 ZeRO-3 训练的模型，需要设置 `"stage3_gather_16bit_weights_on_model_save":true`，因为模型权重被 partitioned 到多张 GPUs。此外，`Trainer` 不会保存权重为 fp16，不会创建 pytorch_model.bin 文件。因为 DeepSpeed 的 state_dict 包含了 placeholder，而非真实的权重，所以不会加载它们。
+
+```json
+{
+    "zero_optimization": {
+        "stage3_gather_16bit_weights_on_model_save": true
+    }
+}
+```
+
+#### fp32
+
+训练时，一般不该保存，因为太消耗内存。通常在训练完成后保存 fp32 权重。如果有空余的 CPU 内存，也可保存。
+
+TODO。
+
 ## Ref and Tag
 
 [Huggingface: DeepSpeed 集成](https://huggingface.co/docs/transformers/v4.49.0/en/deepspeed)
