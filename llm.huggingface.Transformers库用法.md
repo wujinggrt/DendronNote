@@ -2,7 +2,7 @@
 id: 17qvnqry352fhhwxcp3imco
 title: Transformers库用法
 desc: ''
-updated: 1740227363633
+updated: 1740292845358
 created: 1740205377695
 ---
 
@@ -46,6 +46,17 @@ print(encoded_input)
                     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
                     [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]]}
 ```
+
+## GenerationMixin
+transformers 的库中，自回归文本生成模型大多数继承了 `GenerationMixin`，包含一系列工具，比如 `generate()` 方法。
+
+```py
+class Qwen2VLForConditionalGeneration(Qwen2VLPreTrainedModel, GenerationMixin):
+    _tied_weights_keys = ["lm_head.weight"]
+    ...
+```
+
+`GenerationMixin` 要求子类自行实现各类方法，以便它的 `generate()` 调用。
 
 ## 补充材料
 [Quicktour](https://huggingface.co/docs/transformers/main/zh/quicktour)

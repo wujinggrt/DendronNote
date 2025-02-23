@@ -63,6 +63,8 @@ https://zhuanlan.zhihu.com/p/24774848974
 伯克利大学与清华团队发布具身智能新的方案-HiRT - lamboo的文章 - 知乎
 https://zhuanlan.zhihu.com/p/25375865923
 
+https://github.com/Peterwangsicheng/RoboBERT
+
 ## RL
 在线强化学习改进VLA模型 - 黄浴的文章 - 知乎
 https://zhuanlan.zhihu.com/p/23993973779
