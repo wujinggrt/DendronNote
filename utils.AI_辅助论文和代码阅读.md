@@ -2,7 +2,7 @@
 id: 8uriumohgfxd1icere7lvus
 title: AI_辅助论文和代码阅读
 desc: ''
-updated: 1740379727048
+updated: 1740414859028
 created: 1740377066945
 ---
 
@@ -29,11 +29,32 @@ created: 1740377066945
 
 具体工程上时 "Human in the Loop"，不懂就问，换角度问，换方法问，直到弄懂。可能包含许多较“傻”的问题，但 AI 有耐心。把有价值的部分摘录到笔记即可。
 
+提问的思路中，可以采用如下思路：
+1. 对比，对比现在不同的工作，过去的工作，对比不同的方法，从而找到优劣，可能有 insights。
+2. 推广。在 XX 场景下，情况更复杂的场景下，是否还能有效？
+3. 深挖。XX 算法在 XX 超越人类水平的现象，但 score 仍然低于人类，说明什么问题？
+4. 直接提问。如何理解 "Prioritized experience replay is a promising approach ..." (没理解的论文原话) 这句话？
+
+比如：
+- 为什么 XX 比 XX 更适合作为 XX ？
+- XX 的 XX 机制有什么作用？
+- 
+
 ## 伪代码实现
 
 最后，一般让 AI 尝试使用代码复现论文逻辑。一般没有经理复现大多数论文，主要在于更好地理解，也可看做用另一种视角解读论文。代码基本不可用，甚至有错误，旨在大致流程和逻辑体现思想即可。
 
 可以使用 gpt4o/gemini，o1/claude/deepseek/doubao 等。
+
+## 提升 AI 回答质量
+
+关键在于高效地提问和有效的上下文，比如传入论文的 PDF。
+
+## 示例
+
+【论文解读】Qwen2.5-VL：更「真实」的全能视觉语言模型 - tomsheep的文章 - 知乎
+https://zhuanlan.zhihu.com/p/25296368487
+
 
 ## Ref and Tag
 [论文解读工作流](https://zhuanlan.zhihu.com/p/16619370854)

@@ -2,7 +2,7 @@
 id: eszoks0gixjd0fjyul4wh10
 title: Robotics
 desc: ''
-updated: 1740374733317
+updated: 1740416004206
 created: 1740293600917
 ---
 
@@ -41,5 +41,7 @@ DexVLA 本质还是 VLM 预测并调用技能库。重要的还是让模型具�
 最后会只需要 Decoder 吗？当数据足够大，是否可以参考语音工作 ([Step-Audio](https://github.com/stepfun-ai/Step-Audio)) 的对齐。
 
 DexVLA 附录的消融实验指出，对扩散专家的预训练是十分重要的。所以对 policy 要预训练。扩散专家引入了文本，可以引入 token 作为 Condition，但是粒度更小。粒度越小，policy 的动作 horizon 越小，那么要求 VLM 规划的范围越大 (即包含更多的 step，潜 token 更多）。把规划输出文字变为规划输出 token，可以使得控制动作的粒度更小，这在动作上是一个 tradeoff，因为动作难以对应多个文本，文本表示内容太多了，应当压缩为 token 来给 policy 提供条件。token 要可解释，起到精简的效果。token 就像神经递质。
+
+安全和可靠性，验证 token 是否正确生成；token 是否正确执行。
 
 ## Ref and Tag
