@@ -2,7 +2,7 @@
 id: 0da424ysmswufl4406wj1dt
 title: transformers_Trainer
 desc: ''
-updated: 1740301523116
+updated: 1740375931564
 created: 1740301523116
 ---
 
@@ -131,6 +131,90 @@ CUDA_VISIBLE_DEVICES=0,2 python -m torch.distributed.launch trainer-program.py .
 export CUDA_VISIBLE_DEVICES=0,2
 python -m torch.distributed.launch trainer-program.py ...
 ```
+
+## TrainingArguments
+
+[transformers.TrainingArguments](https://huggingface.co/docs/transformers/v4.49.0/en/main_classes/trainer#transformers.TrainingArguments) 是一个 `@dataclass`，通常使用 `transformers.HfArgumentParser` 把此 class 转换为 [argparse](https://docs.python.org/3/library/argparse#module-argparse) 参数，从而可以在命令行中覆盖。
+
+### transformers.HfArgumentParser
+
+它能够与 Python 原生的 argparser 无缝连接，将 dataclass 解析为参数。构造函数接受一个可迭代的 dataclass 的参数，其它则是 kwargs。
+
+```py
+class HfArgumentParser(ArgumentParser):
+    """ 是 argparser.ArgumentParser 子类。 """
+    def __init__(
+        self, 
+        dataclass_types: Optional[Union[DataClassType, Iterable[DataClassType]]] = None, **kwargs):
+        ...
+
+    def parse_args_into_dataclasses(
+        self,
+        args=None,
+        return_remaining_strings=False,
+        look_for_args_file=True,
+        args_filename=None,
+        args_file_flag=None,
+    ) -> Tuple[DataClass, ...]:
+        ...
+```
+
+方法 `def parse_args_into_dataclasses()` 解析命令行参数到指定 dataclass 类型的实例。一般传入的 dataclass 都会指定默认值，且会被传入的命令行参数覆盖。返回的元组包含对应传入参数 DataClassType 顺序的 dataclass 类型实例。如果指定，元组还包含其他相关内容，具体参考源码或文档。
+
+用法比如：
+
+```py
+@dataclass
+class ModelArguments:
+    model_name_or_path: Optional[str] = field(default="facebook/opt-125m")
+    ...
+@dataclass
+class DataArguments:
+    lazy_preprocess: bool = False
+    ...
+@dataclass
+class TrainingArguments(transformers.TrainingArguments):
+    using_ema: bool = field(default=False) # whether to use ema update whole module, default to false
+    ...
+@dataclass
+class ActionHeadArguments:
+    policy_head_type: str = field(default="scale_dp_policy") # or unet_diffusion_policy
+    ...
+
+def parse_param():
+    parser = transformers.HfArgumentParser(
+        (ModelArguments, DataArguments, TrainingArguments, ActionHeadArguments))
+    # 随后便可像数据类一样访问 model_args, data_args, ... 的各个 field，
+    # 就像 argparse 解析出来返回的参数一样
+    model_args, data_args, training_args, action_head_args = parser.parse_args_into_dataclasses()
+    ...
+    return (
+        model_args,
+        data_args,
+        training_args,
+        action_head_args,
+        config,
+        bnb_model_from_pretrained_args,
+    )
+
+if __name__ == "__main__":
+    (
+        model_args,
+        data_args,
+        training_args,
+        action_head_args,
+        model_config,
+        bnb_model_from_pretrained_args,
+    ) = parse_param()
+    config = {
+        "model_args": model_args,
+        "data_args": data_args,
+        "training_args": training_args,
+        "action_head_args": action_head_args,
+        "bnb_model_from_pretrained_args": bnb_model_from_pretrained_args,
+
+```
+
 
 ## Ref and Tag
 [[llm.huggingface.Transformers库用法]]

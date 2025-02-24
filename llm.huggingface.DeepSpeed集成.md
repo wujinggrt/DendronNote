@@ -2,7 +2,7 @@
 id: p6pfuzn9vki5iiiseciacrh
 title: DeepSpeed集成
 desc: ''
-updated: 1740323635850
+updated: 1740371577012
 created: 1740323635850
 ---
 
@@ -295,7 +295,36 @@ Activation and gradient checkpointing 对速度和显存做了权衡，以解决
 
 ### 精度
 
-DeepSpeed 支持 fp32, fp16, bf16 混合精度。
+DeepSpeed 支持 fp32, fp16, bf16 混合精度。fp32 和 fp16 参考 IEEE 754 标准。bf 16 则是新的格式，相比 fp16，bf16 的阶码更大，但是尾数更小，就像一把更长的尺子，但是精度欠缺。根据实践，训练时用 bp16, 收敛的影响不大。推理 fp16 更精准。而 DeepSee 使用了 fp8 训练，速度更快，但是还未形成易用的框架。
+
+#### 浮点数表达
+
+参考维基百科的 [bfloat16 floating-point format](https://en.wikipedia.org/wiki/Bfloat16_floating-point_format)，bfloat16 (brain floating point) 占用 16 bits，但是阶码比 fp16 大，是与 fp32 一样的 8 位。但是尾码较小，所以精度较差。由于 bf16 表示范围更大，所以比 fp16 更低概率遇见 NaN 和 OverFlow 的问题。
+
+fp32 格式如下：
+
+![ieee_754_fp32](assets/images/llm.huggingface.DeepSpeed集成/ieee_754_fp32.png)
+
+
+![fp16_bp16](assets/images/llm.huggingface.DeepSpeed集成/fp16_bp16.png)
+
+- fp32 计算: $(-1)^{sign} \times 2^{exponent-127} \times 1.fraction(1.fraction(2进制))$ 。
+- fp16 计算: $(-1)^{sign} \times 2^{exponent-15} \times 1.fraction(1.fraction(2进制))$ 。
+- bf16 计算: $(-1)^{sign} \times 2^{exponent-127} \times 1.fraction(1.fraction(2进制))$ 。
+
+注意，并非所有硬件支持 bf16，在 Nvidia GPU，只有在 Ampere 架构之后的 GPU 才支持。可以用如下代码判断：
+
+```py
+import transformers
+transformers.utils.import_utils.is_torch_bf16_gpu_available()
+# 结果为True就是支持
+
+# 查看在 PyTorch 如何表示
+import torch
+torch.finfo(torch.bfloat16)
+# 结果
+finfo(resolution=0.01, min=-3.38953e+38, max=3.38953e+38, eps=0.0078125, smallest_normal=1.17549e-38, tiny=1.17549e-38, dtype=bfloat16)
+```
 
 #### fp32
 
@@ -343,7 +372,7 @@ DeepSpeed 支持 fp32, fp16, bf16 混合精度。
 
 使用 bf16，需要至少 DeepSpeed==0.6.0.bf16 有着和 fp32 一样的 dynamic range，且不需要 loss scaling。然而，使用 bf16 且 [gradient accumulation](https://huggingface.co/docs/transformers/v4.49.0/en/deepspeed?precision=bf16&zero-config=ZeRO-3&opt-sched=scheduler#gradient-accumulation) 时，梯度以 bf16 方式累积，可能并非期望，因为此格式的低精度可能造成带有损失的累积。
 
-bf16 可在配置文件设置，也可在命令行传入为: `--bf16` or `--bf16_full_eval`。
+bf16 可在配置文件设置 (参考如下)，也可在命令行传入为: `--bf16` or `--bf16_full_eval`。
 
 ```json
 {
