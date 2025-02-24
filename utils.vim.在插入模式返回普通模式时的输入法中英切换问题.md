@@ -2,7 +2,7 @@
 id: yp5eibjkz0etviz1sy8kae7
 title: 在插入模式返回普通模式时的输入法中英切换问题
 desc: ''
-updated: 1740421773573
+updated: 1740422222125
 created: 1740419087154
 ---
 
@@ -42,7 +42,7 @@ created: 1740419087154
 ```json
     // 在 vim 输入时，从 insert 模式切换回 normal 时，自动切换输入法为英文。
     // {im} 会被替换为 defaultIM 的值（即 1033），从插入模式返回普通模式时，会切换输入法到键盘。
-    // 如果需要切换到其他窗口，比如浏览器，需要输入时，使用 Win + 空格 即可切换输入法。
+    // 如果需要切换到其他窗口，比如浏览器，需要输入时，使用 Win + 空格 或 alt + shift 即可切换输入法。
     "vim.autoSwitchInputMethod.enable": true,
     "vim.autoSwitchInputMethod.defaultIM": "1033", // 2052 代表中文，1033 代表英文
     "vim.autoSwitchInputMethod.obtainIMCmd": "C:\\Users\\10945\\im-select.exe",

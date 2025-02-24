@@ -2,7 +2,7 @@
 id: lvhxgyuvwyw5soqj59gc045
 title: LLaMA-Factory
 desc: ''
-updated: 1740418775671
+updated: 1740423717017
 created: 1740375991093
 ---
 
@@ -314,7 +314,126 @@ CUDA_VISIBLE_DEVICES=0 llamafactory-cli train \
 
 ### 参数解释
 
+| 参数名称 | 参数说明 |
+|---|--------|
+| stage | 当前训练的阶段，枚举值，有“sft”,"pt","rm","ppo"等，代表了训练的不同阶段，这里我们是有监督指令微调，所以是sft |
+| do_train | 是否是训练模式 |
+| dataset | 使用的数据集列表，所有字段都需要按上文在data_info.json里注册，多个数据集用","分隔 |
+| dataset_dir | 数据集所在目录，这里是 data，也就是项目自带的data目录 |
+| finetuning_type | 微调训练的类型，枚举值，有"lora","full","freeze"等，这里使用 lora |
+| output_dir | 训练结果保存的位置 |
+| cutoff_len | 训练数据集的长度截断 |
+| per_device_train_batch_size | 每个设备上的batch size，最小是1，如果GPU 显存够大，可以适当增加 |
+| fp16 | 使用半精度混合精度训练 |
+| max_samples | 每个数据集采样多少数据 |
+| val_size | 随机从数据集中抽取多少比例的数据作为验证集 |
 
+精度相关的参数还有bf16 和pure_bf16，但是要注意有的老显卡，比如V100就无法支持bf16，会导致程序报错或者其他错误。
+
+### 执行训练
+
+训练时，按照 logging_steps 参数设置定时输出训练日志，包含当前 loss，进度等。完成后，可以在 output_dir 下看到内容，主要包含三个部分：
+1. adapter 开头的是 LoRA 保存的结果，后续用于模型推理融合。
+2. training_loss 和 trainer_log 记录训练过程指标。
+3. 其他是训练的参数备份。
+
+## 动态合并 LoRA 的推理
+
+参数改自 [llama3_lora_sft.yaml](https://link.zhihu.com/?target=https%3A//github.com/hiyouga/LLaMA-Factory/blob/main/examples/inference/llama3_lora_sft.yaml)。训练结束后，向左动态验证，可以尝试推理，但是需要通过参数 `--finetuning_type lora` 告诉系统，使用了 LoRA 训练，并将 LoRA 模型路径指出：
+
+```bash
+CUDA_VISIBLE_DEVICES=0 llamafactory-cli webchat \
+    --model_name_or_path /media/codingma/LLM/llama3/Meta-Llama-3-8B-Instruct \
+    --adapter_name_or_path ./saves/LLaMA3-8B/lora/sft  \
+    --template llama3 \
+    --finetuning_type lora
+```
+
+如果不适用 webui，使用命令行交互，使用：
+
+```bash
+CUDA_VISIBLE_DEVICES=0 llamafactory-cli chat \
+    --model_name_or_path /media/codingma/LLM/llama3/Meta-Llama-3-8B-Instruct \
+    --adapter_name_or_path ./saves/LLaMA3-8B/lora/sft  \
+    --template llama3 \
+    --finetuning_type lora
+```
+
+![chat_lora](assets/images/llm.LLaMA-Factory/chat_lora.png)
+
+## 批量预测和训练效果评估
+
+上面的人工交互偏感性，没办法批量预测批量输入，使用自动化的 bleu 和 rouge 等常用文本生成指标评估。需要安装如下库：
+
+```bash
+pip install jieba rouoge-chinese nltk
+```
+
+参数改自 [llama3_lora_predict.yaml](https://link.zhihu.com/?target=https%3A//github.com/hiyouga/LLaMA-Factory/blob/main/examples/train_lora/llama3_lora_predict.yaml)。
+
+```bash
+CUDA_VISIBLE_DEVICES=0 llamafactory-cli train \
+    --stage sft \
+    --do_predict \
+    --model_name_or_path /media/codingma/LLM/llama3/Meta-Llama-3-8B-Instruct \
+    --adapter_name_or_path ./saves/LLaMA3-8B/lora/sft  \
+    --eval_dataset alpaca_gpt4_zh,identity,adgen_local \
+    --dataset_dir ./data \
+    --template llama3 \
+    --finetuning_type lora \
+    --output_dir ./saves/LLaMA3-8B/lora/predict \
+    --overwrite_cache \
+    --overwrite_output_dir \
+    --cutoff_len 1024 \
+    --preprocessing_num_workers 16 \
+    --per_device_eval_batch_size 1 \
+    --max_samples 20 \
+    --predict_with_generate
+```
+
+与训练脚本主要的参数区别如下两个
+
+| 参数名称 | 参数说明 |
+|---|---|
+| do_predict | 现在是预测模式 |
+| predict_with_generate | 现在用于生成文本 |
+| max_samples | 每个数据集采样多少用于预测对比 |
+
+最后可在 output_dir 看到内容。
+
+## LoRA 模型合并到处
+
+把训练的 LoRA 与原始大模型融合并到处，需要使用如下命令。参数改编自 [llama3_lora_sft.yaml](https://github.com/hiyouga/LLaMA-Factory/blob/main/examples/merge_lora/llama3_lora_sft.yaml)。
+
+```bash
+CUDA_VISIBLE_DEVICES=0 llamafactory-cli export \
+    --model_name_or_path /media/codingma/LLM/llama3/Meta-Llama-3-8B-Instruct \
+    --adapter_name_or_path ./saves/LLaMA3-8B/lora/sft  \
+    --template llama3 \
+    --finetuning_type lora \
+    --export_dir megred-model-path \
+    --export_size 2 \
+    --export_device cpu \
+    --export_legacy_format False
+```
+
+## 一站式 webui board
+
+仅支持单机<单卡|多卡>。启动如下命令：
+
+```bash
+CUDA_VISIBLE_DEVICES=0 llamafactory-cli webui
+```
+
+![webui_整合](assets/images/llm.LLaMA-Factory/webui_整合.png)
+
+可以看到，多个不同的功能模块在 tab 间整合。配置参数后，在 train 页面，预览命令功能，将训练脚本到处，支持多 GPU 训练。
+
+![preparing_training](assets/images/llm.LLaMA-Factory/preparing_training.png)
+
+训练完成后，点击“刷新适配器”，可找到模型历史上的 LoRA 模型文件，后续再训练或执行 chat，会一起加载。
+
+![lora_model_file](assets/images/llm.LLaMA-Factory/lora_model_file.png)
 
 ## Ref and Tag
 [Github](https://github.com/hiyouga/LLaMA-Factory)
