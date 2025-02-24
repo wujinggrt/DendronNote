@@ -2,7 +2,7 @@
 id: lvhxgyuvwyw5soqj59gc045
 title: LLaMA-Factory
 desc: ''
-updated: 1740406633800
+updated: 1740418775671
 created: 1740375991093
 ---
 
@@ -113,14 +113,14 @@ sudo ufw deny 7860/tcp
 
 |动作参数枚举|参数说明|
 |---|---|
-|version|显示版本信息|
-|train|命令行版本训练|
-|chat|命令行版本推理chat|
-|export|模型合并和导出|
-|api|启动API server，供接口调用|
-|eval|使用mmlu等标准数据集做评测|
-|webchat|前端版本纯推理的chat页面|
-|webui|启动LlamaBoard前端页面，包含可视化训练，预测，chat，模型合并多个子页面|
+|`version`|显示版本信息|
+|`train`|命令行版本训练|
+|`chat`|命令行版本推理chat|
+|`export`|模型合并和导出|
+|`api`|启动API server，供接口调用|
+|`eval`|使用mmlu等标准数据集做评测|
+|`webchat`|前端版本纯推理的chat页面|
+|`webui`|启动LlamaBoard前端页面，包含可视化训练，预测，chat，模型合并多个子页面|
 
 另外两个常用参数包含:
 - model_name_or_path 参数名称为 huggingface 或 modelscope 的标准定义，或者是绝对路径。
@@ -179,7 +179,75 @@ sudo ufw deny 7860/tcp
 
 训练的数据最好遵循这种格式，随后在 data/dataset_info.json 中注册。接下来，使用两个具体例子学习。
 
-关于数据集的描述文件，则为：
+### 例子 1：官网仓库下的 data/identity.json
+
+在 data/dataset_info.json，此数据集已默认注册。
+
+```json
+{
+  "identity": {
+    "file_name": "identity.json"
+  },
+  "alpaca_en_demo": {
+    "file_name": "alpaca_en_demo.json"
+  },
+  ...
+}
+```
+
+identity.json 中，"output" 部分包含了大量 `{{name}}` 和 `{{author}}` ，可以使用 sed 或 perl 工具替换为自己名字，微调以认识自己。
+
+替换前：
+
+```json
+[
+  {
+    "instruction": "hi",
+    "input": "",
+    "output": "Hello! I am {{name}}, an AI assistant developed by {{author}}. How can I assist you today?"
+  },
+  ...
+]
+```
+
+替换后：
+
+```bash
+sed -i 's/{{name}}/PonyBot/g'  data/identity.json 
+sed -i 's/{{author}}/LLaMA Factory/g'  data/identity.json 
+```
+
+```json
+{
+  "instruction": "Who are you?",
+  "input": "",
+  "output": "I am PonyBot, an AI assistant developed by LLaMA Factory. How can I assist you today?"
+}
+```
+
+### 例子 2：商品文案生成数据集
+
+数据集 [链接](https://link.zhihu.com/?target=https%3A//cloud.tsinghua.edu.cn/f/b3f119a008264b1cabd1/%3Fdl%3D1)。格式明显，训练目标输入 content (对应 Alpaca 的 prompt)，输出 summary (对应 response)。
+
+```json
+{
+    "content": "类型#裤*版型#宽松*风格#性感*图案#线条*裤型#阔腿裤", 
+    "summary": "宽松的阔腿裤这两年真的吸粉不少，明星时尚达人的心头爱。毕竟好穿时尚，谁都能穿出腿长2米的效果宽松的裤腿，当然是遮肉小能手啊。上身随性自然不拘束，面料亲肤舒适贴身体验感棒棒哒。系带部分增加设计看点，还让单品的设计感更强。腿部线条若隐若现的，性感撩人。颜色敲温柔的，与裤子本身所呈现的风格有点反差萌。"
+}
+```
+
+如果需要放到我们系统使用，需要操作：
+1. 复制数据集到 data 目录下。
+2. 修改 data/dataset_info.json，完成注册。
+
+![adgen_local](assets/images/llm.LLaMA-Factory/adgen_local.png)
+
+途中看到，在 dataset_info.json 最后添加了如此一条。注册完成了三件事：
+1. 自定义数据集的名称为 `adgen_local`，后续训练时，用来查找数据集。
+2. 指出了数据集文件路径。
+3. 定义原数据集的输入输出与所需格式的映射关系。
+
+### 数据描述文件格式
 
 ```json
 "数据集名称": {
@@ -194,7 +262,59 @@ sudo ufw deny 7860/tcp
 }
 ```
 
-### alpaca 和 sharegpt
+### Alpaca 和 ShareGPT 对比
+
+|| Alpaca | ShareGPT |
+|---|---|---|
+| 任务类型 | 格式更适合单轮任务，如指令跟随、问答等。 | 格式更适合多轮对话任务，如聊天机器人、交互式对话等。 |
+| 数据来源 | 数据通常是通过 Self-Instruct 方法生成的，任务指令明确。 | 数据来源于真实用户与模型的对话，更具自然性和多样性。 |
+| 数据结构 | 格式结构简单，适合任务导向的微调。 | 格式结构复杂，适合对话导向的微调。 |
+
+最佳实践：
+- 如果你的目标是微调模型以执行特定任务（如翻译、摘要等），Alpaca 格式可能更适合。
+- 如果你的目标是微调模型以进行自然对话（如聊天机器人），ShareGPT 格式可能更适合。
+
+## 基于 LoRA 的 SFT 指令微调
+
+准备数据集后，开始训练，让模型学会我们定义的“你是谁”，同时学会商品文案生成。从命令行开始，参数来自 [llama3_lora_sft.yaml](https://link.zhihu.com/?target=https%3A//github.com/hiyouga/LLaMA-Factory/blob/main/examples/train_lora/llama3_lora_sft.yaml)，可以查看其与命令行参数的关系。
+
+```bash
+CUDA_VISIBLE_DEVICES=0 llamafactory-cli train \
+    --stage sft \
+    --do_train \
+    --model_name_or_path /media/codingma/LLM/llama3/Meta-Llama-3-8B-Instruct \
+    --dataset alpaca_gpt4_zh,identity,adgen_local \
+    --dataset_dir ./data \
+    --template llama3 \
+    --finetuning_type lora \
+    --output_dir ./saves/LLaMA3-8B/lora/sft \
+    --overwrite_cache \
+    --overwrite_output_dir \
+    --cutoff_len 1024 \
+    --preprocessing_num_workers 16 \
+    --per_device_train_batch_size 2 \
+    --per_device_eval_batch_size 1 \
+    --gradient_accumulation_steps 8 \
+    --lr_scheduler_type cosine \
+    --logging_steps 50 \
+    --warmup_steps 20 \
+    --save_steps 100 \
+    --eval_steps 50 \
+    --evaluation_strategy steps \
+    --load_best_model_at_end \
+    --learning_rate 5e-5 \
+    --num_train_epochs 5.0 \
+    --max_samples 1000 \
+    --val_size 0.1 \
+    --plot_loss \
+    --fp16
+```
+
+完整参数和解释可以参考 `llamafactory-cli train -h`
+
+### 参数解释
+
+
 
 ## Ref and Tag
 [Github](https://github.com/hiyouga/LLaMA-Factory)

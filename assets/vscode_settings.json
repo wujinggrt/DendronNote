@@ -1,0 +1,1383 @@
+{
+    // 避免debug的控制程序step into等控制条遮挡菜单和tab
+    "debug.toolBarLocation": "docked",
+    /* 
+    * normal mode:
+    * E, R 移动右、左标签
+    * K 上插空行
+    * H, L 行首行尾
+    * <space> 打开which key
+    * <leader>q, <leader>Q quit, quit all
+    * <leader><w|e|b> CamelCaseMotion移动，驼峰命名或snake命名移动
+    * <leader>W save, save all
+    * <leader>f format code
+    * <leader>k, <leader>K highlight
+    * sf, sF, show reference, find refernce
+    * gd 显示光标所在函数/方法/类型/宏的信息,go to definition
+    * gi 在右侧的新视图打开函数/方法/宏的实现（竖直分屏）
+    * gt 在右侧的新视图打开类型定义（竖直分屏）
+    * sd 浮窗查看定义，show definition,peekDefinition
+    * sh show call hierarchy
+    * rn rename
+    * <leader>h hover
+    * [d, ]d 查看error的地方
+    * <leader>ca quickFix，修改意见。
+    * <C-0> 查看左侧边栏
+    * ze zen模式开启与关闭
+    * < 和 > 控制缩进
+    *
+    * insert mode:
+    * kj <Esc> 
+    * <leader>w save
+    * <leader>e <Esc>后e再a，相当于编辑模式下的前移光标
+    * <leader>l <Esc>后l再a，相当于编辑模式下的前移光标
+    * <leader>L <Esc>后L再a，移动光标到末尾
+    * <leader>h 相当于光标停在当前位置，用于提示api接口
+    * <leader>m 最大化当前编辑窗口
+    * {; 用于C++中，花括号后还带有;的场景，用于方便输入
+    * <leader>; 快速在末尾添加;并插入新行;
+    * <leader>: 快速在末尾添加分号，不添加新行
+    * ,, 快速在末尾添加逗号
+    *
+    * visual mode:
+    * <space> 打开which key show
+    * <leader>s 相当于VS Code原生的ctrl+d，选中下一个匹配的单词，方便批量替换变量名
+    * <leader>ca quickFix，修改意见。
+    */
+    "vim.leader": ",",
+    "vim.sneak": true,
+    "vim.easymotion": true,
+    "vim.camelCaseMotion.enable": true,
+    "vim.statusBarColorControl": true,
+    "vim.statusBarColors.normal": [
+        "#8FBCBB",
+        "#000"
+    ],
+    "vim.statusBarColors.insert": [
+        "#BF616A",
+        "#000"
+    ],
+    "vim.statusBarColors.visual": [
+        "#B48EAD",
+        "#000"
+    ],
+    "vim.statusBarColors.visualline": [
+        "#B48EAD",
+        "#000"
+    ],
+    "vim.statusBarColors.visualblock": [
+        "#A3BE8C",
+        "#000"
+    ],
+    "vim.statusBarColors.replace": "#D08770",
+    "vim.statusBarColors.commandlineinprogress": "#007ACC",
+    "vim.statusBarColors.searchinprogressmode": "#007ACC",
+    "vim.statusBarColors.easymotionmode": "#007ACC",
+    "vim.statusBarColors.easymotioninputmode": "#007ACC",
+    "vim.statusBarColors.surroundinputmode": "#007ACC",
+    "vim.handleKeys": {
+        "<C-a>": false,
+        "<C-b>": false,
+        "<C-c>": false,
+        "<C-d>": true,
+        "<C-f>": false,
+        "<C-h>": false,
+        "<C-j>": false,
+        "<C-k>": false,
+        "<C-p>": false,
+        "<C-s>": false,
+        "<C-t>": false,
+        "<C-v>": false,
+        "<C-x>": false,
+        "<C-z>": false
+    },
+    "vim.normalModeKeyBindingsNonRecursive": [
+        {
+            // 配合插件camelCaseMotion使用，将w,b功能替换成在camelCase, snake_case
+            // 之间移动
+            "before": [
+                "w"
+            ],
+            "after": [
+                "<leader>",
+                "w"
+            ]
+        },
+        {
+            "before": [
+                "b"
+            ],
+            "after": [
+                "<leader>",
+                "b"
+            ]
+        },
+        {
+            "before": [
+                "E"
+            ],
+            "after": [
+                "g",
+                "T"
+            ]
+        },
+        {
+            "before": [
+                "R"
+            ],
+            "after": [
+                "g",
+                "t"
+            ]
+        },
+        {
+            // 向上插入空行
+            "before": [
+                "K"
+            ],
+            "commands": [
+                "lineBreakInsert"
+            ],
+            "silent": true
+        },
+        {
+            "before": [
+                "H"
+            ],
+            "after": [
+                "_"
+            ]
+        },
+        {
+            "before": [
+                "L"
+            ],
+            "after": [
+                "g",
+                "_"
+            ]
+        },
+        {
+            "before": [
+                "<space>"
+            ],
+            "commands": [
+                "whichkey.show"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "q"
+            ],
+            "commands": [
+                ":q!"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "Q"
+            ],
+            "commands": [
+                ":qa!"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "W"
+            ],
+            "commands": [
+                ":W!"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "f"
+            ],
+            "commands": [
+                "editor.action.formatDocument"
+            ]
+        },
+        // 高亮单词toggle和取消所有
+        {
+            "before": [
+                "<leader>",
+                "k"
+            ],
+            "commands": [
+                "highlight.selectedWords"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "K"
+            ],
+            "commands": [
+                "highlight.clearWords"
+            ]
+        },
+        // 查看引用
+        {
+            "before": [
+                "s",
+                "r"
+            ],
+            "commands": [
+                "editor.action.referenceSearch.trigger"
+            ]
+        },
+        {
+            "before": [
+                "s",
+                "R"
+            ],
+            "commands": [
+                "references-view.findReferences"
+            ]
+        },
+        {
+            // g + d open definition in side view
+            "before": [
+                "g",
+                "d"
+            ],
+            "commands": [
+                "editor.action.revealDefinitionAside"
+            ]
+        },
+        {
+            // g + i open implementation in side view
+            "before": [
+                "g",
+                "i"
+            ],
+            "commands": [
+                "workbench.action.splitEditor",
+                "editor.action.goToImplementation"
+            ]
+        },
+        {
+            // g + t open type definition in side view
+            "before": [
+                "g",
+                "t"
+            ],
+            "commands": [
+                "workbench.action.splitEditor",
+                "editor.action.goToTypeDefinition"
+            ]
+        },
+        {
+            // 小窗口查看定义
+            "before": [
+                "s",
+                "d"
+            ],
+            "commands": [
+                "editor.action.peekDefinition"
+            ]
+        },
+        { // 查看哪些函数调用了此函数
+            "before": [
+                "s",
+                "h"
+            ],
+            "commands": [
+                "references-view.showCallHierarchy"
+            ]
+        },
+        {
+            "before": [
+                "r",
+                "n"
+            ],
+            "commands": [
+                "editor.action.rename"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "e"
+            ],
+            "after": [
+                "<leader>",
+                "<leader>",
+                "s",
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "h"
+            ],
+            "commands": [
+                "editor.action.showHover"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "m"
+            ],
+            "commands": [
+                "workbench.action.toggleMaximizeEditorGroup"
+            ]
+        },
+        // 跳转到代码提示错误地方，并弹出错误提示。
+        // 与ctrl+]跳到定义处相契合。
+        {
+            "before": [
+                "[",
+                "d"
+            ],
+            "commands": [
+                "editor.action.marker.previous"
+            ]
+        },
+        {
+            "before": [
+                "]",
+                "d"
+            ],
+            "commands": [
+                "editor.action.marker.next"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "c",
+                "a"
+            ],
+            "commands": [
+                "editor.action.quickFix"
+            ]
+        },
+        {
+            // zen mode
+            "before": [
+                "z",
+                "e"
+            ],
+            "commands": [
+                "workbench.action.toggleZenMode"
+            ]
+        },
+        {
+            "before": [
+                "j"
+            ],
+            "after": [
+                "g",
+                "j"
+            ]
+        },
+        {
+            "before": [
+                "k"
+            ],
+            "after": [
+                "g",
+                "k"
+            ]
+        },
+        {
+            "before": [
+                "<"
+            ],
+            // "after": [
+            //     "<",
+            //     "<"
+            // ]
+            "commands": [
+                "editor.action.outdentLines"
+            ]
+        },
+        {
+            "before": [
+                ">"
+            ],
+            // "after": [
+            //     ">",
+            //     ">"
+            // ]
+            "commands": [
+                "editor.action.indentLines"
+            ]
+        }
+    ],
+    "vim.insertModeKeyBindingsNonRecursive": [
+        {
+            "before": [
+                "j",
+                "k",
+                "j"
+            ],
+            "after": [
+                "<Down>"
+            ]
+        },
+        {
+            "before": [
+                "j",
+                "k",
+                "k"
+            ],
+            "after": [
+                "<Up>"
+            ]
+        },
+        {
+            "before": [
+                "j",
+                "k",
+                "h"
+            ],
+            "after": [
+                "<Left>"
+            ]
+        },
+        {
+            "before": [
+                "j",
+                "k",
+                "l"
+            ],
+            "after": [
+                "<Right>"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "w"
+            ],
+            "commands": [
+                ":w"
+            ],
+            "after": [
+                "<Esc>"
+            ]
+        },
+        // 编辑模式跳到单词、行尾，方便添加括号
+        {
+            "before": [
+                "<leader>",
+                "e"
+            ],
+            "after": [
+                "<Esc>",
+                "e",
+                "a"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "L"
+            ],
+            "after": [
+                "<Esc>",
+                "A"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "h"
+            ],
+            "commands": [
+                "editor.action.showHover"
+            ]
+        },
+        {
+            // C++ 的和lambda的花括号后有;
+            // class {
+            // };
+            "before": [
+                "{",
+                ";"
+            ],
+            "after": [
+                "{",
+                "}",
+                ";",
+                "<Esc>",
+                "h",
+                "i",
+                "<Enter>"
+            ]
+        },
+        // {
+        //     "before": [
+        //         "<leader>",
+        //         "{"
+        //     ],
+        //     "after": [
+        //         "<Esc>",
+        //         "A",
+        //         "<space>",
+        //         "{",
+        //         "<enter>"
+        //     ]
+        // },
+        {
+            "before": [
+                "<leader>",
+                ";"
+            ],
+            "after": [
+                "<Esc>",
+                "A",
+                ";",
+                "<Esc>",
+                "o"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                ":"
+            ],
+            "after": [
+                "<Esc>",
+                "A",
+                ";"
+            ]
+        },
+        {
+            "before": [
+                ",",
+                ","
+            ],
+            "after": [
+                "<Esc>",
+                "A",
+                ",",
+                "<Esc>",
+                "o"
+            ]
+        }
+    ],
+    "vim.visualModeKeyBindingsNonRecursive": [
+        {
+            "before": [
+                "<space>"
+            ],
+            "commands": [
+                "whichkey.show"
+            ]
+        },
+        // 相当于VS Code原生ctrl+d，选中下一个匹配的单词，方便复制粘贴的时候修改
+        {
+            "before": [
+                "<leader>",
+                "s"
+            ],
+            // Add Selection To Next Find Match
+            "commands": [
+                "editor.action.addSelectionToNextFindMatch"
+            ]
+        },
+        {
+            "before": [
+                "H"
+            ],
+            "after": [
+                "_"
+            ]
+        },
+        {
+            "before": [
+                "L"
+            ],
+            "after": [
+                "g",
+                "_"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "f"
+            ],
+            "commands": [
+                "editor.action.formatSelection"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "c",
+                "a"
+            ],
+            "commands": [
+                "editor.action.quickFix"
+            ]
+        },
+    ],
+    // 在 vim 输入时，从 insert 模式切换回 normal 时，自动切换输入法为英文。
+    // {im} 会被替换为 defaultIM 的值（即 1033），从插入模式返回普通模式时，会切换输入法到键盘。
+    // 如果需要切换到其他窗口，比如浏览器，需要输入时，使用 Win + 空格 即可切换输入法。
+    "vim.autoSwitchInputMethod.enable": true,
+    "vim.autoSwitchInputMethod.defaultIM": "1033", // 2052 代表中文，1033 代表英文
+    "vim.autoSwitchInputMethod.obtainIMCmd": "C:\\Users\\10945\\im-select.exe",
+    "vim.autoSwitchInputMethod.switchIMCmd": "C:\\Users\\10945\\im-select.exe {im}",
+    "whichkey.bindings": [
+        {
+            "key": "a",
+            "name": "AuxiliaryBar...",
+            "type": "bindings",
+            "bindings": [
+                {
+                    "key": "a",
+                    "name": "Toggle auxiliaryBar",
+                    "type": "command",
+                    "command": "workbench.action.toggleAuxiliaryBar"
+                },
+                {
+                    "key": "e",
+                    "name": "Open editors",
+                    "command": "workbench.files.action.focusOpenEditorsView",
+                    "when": "workbench.explorer.openEditorsView.active"
+                },
+                {
+                    "key": "o",
+                    "name": "Outline",
+                    "type": "command",
+                    "command": "outline.focus"
+                }
+            ]
+        },
+        {
+            "key": "b",
+            "name": "Bookmarks...",
+            "type": "bindings",
+            "bindings": [
+                {
+                    "key": "b",
+                    "name": "Toogle",
+                    "command": "bookmarks.toggle",
+                    "type": "command"
+                },
+                {
+                    "key": "B",
+                    "name": "Focus on Explorer View",
+                    "type": "command",
+                    "command": "bookmarksExplorer.focus"
+                },
+                {
+                    "key": "c",
+                    "name": "Clear All Bookmarks",
+                    "type": "command",
+                    "command": "bookmarks.clearFromAllFiles"
+                },
+                {
+                    "key": "l",
+                    "name": "List from all files",
+                    "type": "command",
+                    "command": "bookmarks.listFromAllFiles"
+                },
+                {
+                    "key": "j",
+                    "name": "To the previous bookmark",
+                    "command": "bookmarks.jumpToPrevious",
+                    "type": "command"
+                },
+                {
+                    "key": "k",
+                    "name": "To the next bookmark",
+                    "command": "bookmarks.jumpToNext",
+                    "type": "command"
+                }
+            ]
+        },
+        {
+            "key": "e",
+            "name": "Show tree/explorer view",
+            "type": "conditional",
+            "bindings": [
+                {
+                    "key": "",
+                    "name": "default",
+                    "type": "command",
+                    "command": "workbench.view.explorer"
+                },
+                {
+                    // 注意，when:的冒号和sideBarVisible中间不能有空格。
+                    "key": "when:sideBarVisible && explorerViewletVisible",
+                    "name": "Hide explorer",
+                    "type": "command",
+                    "command": "workbench.action.toggleSidebarVisibility"
+                }
+            ]
+        },
+        {
+            "key": "d",
+            "name": "Debug...",
+            "type": "bindings",
+            "bindings": [
+                {
+                    "key": "d",
+                    "name": "Start debug",
+                    "type": "command",
+                    "command": "workbench.action.debug.start"
+                },
+                {
+                    "key": "q",
+                    "name": "Stop debug",
+                    "type": "command",
+                    "command": "workbench.action.debug.stop"
+                },
+                {
+                    "key": "C",
+                    "name": "Continue debug",
+                    "type": "command",
+                    "command": "workbench.action.debug.continue"
+                },
+                {
+                    "key": "p",
+                    "name": "Pause debug",
+                    "type": "command",
+                    "command": "workbench.action.debug.pause"
+                },
+                {
+                    "key": "r",
+                    "name": "Restart debug",
+                    "type": "command",
+                    "command": "workbench.action.debug.restart"
+                },
+                {
+                    "key": "R",
+                    "name": "Run without debugging",
+                    "type": "command",
+                    "command": "workbench.action.debug.run"
+                },
+                {
+                    "key": "s",
+                    "name": "Step into",
+                    "type": "command",
+                    "command": "workbench.action.debug.stepInto"
+                },
+                {
+                    "key": "n",
+                    "name": "Step over",
+                    "type": "command",
+                    "command": "workbench.action.debug.stepOver"
+                },
+                {
+                    "key": "f",
+                    "name": "Step out",
+                    "type": "command",
+                    "command": "workbench.action.debug.stepOut"
+                },
+                {
+                    "key": "l",
+                    "name": "Add log point",
+                    "type": "command",
+                    "command": "editor.debug.action.addLogPoint"
+                },
+                {
+                    "key": "b",
+                    "name": "Toggle breakpoint",
+                    "type": "command",
+                    "command": "editor.debug.action.toggleBreakpoint"
+                },
+                {
+                    "key": "c",
+                    "name": "Conditional breakpoint",
+                    "type": "command",
+                    "command": "editor.debug.action.conditionalBreakpoint"
+                },
+                {
+                    "key": "B",
+                    "name": "Toggle inline breakpoint",
+                    "type": "command",
+                    "command": "editor.debug.action.toggleInlineBreakpoint"
+                },
+                {
+                    "key": "j",
+                    "name": "Jump to cursor",
+                    "type": "command",
+                    "command": "debug.jumpToCursor"
+                },
+                {
+                    "key": "v",
+                    "name": "REPL",
+                    "type": "command",
+                    "command": "workbench.debug.action.toggleRepl"
+                },
+                {
+                    "key": "w",
+                    "name": "Focus on watch window",
+                    "type": "command",
+                    "command": "workbench.debug.action.focusWatchView"
+                },
+                {
+                    "key": "W",
+                    "name": "Add to watch",
+                    "type": "command",
+                    "command": "editor.debug.action.selectionToWatch"
+                }
+            ]
+        },
+        {
+            "key": "f",
+            "name": "Find...",
+            "type": "bindings",
+            "bindings": [
+                // 相当于ctrl+p
+                {
+                    "command": "workbench.action.quickOpen",
+                    "key": "f",
+                    "name": "Find file",
+                    "type": "command"
+                },
+                {
+                    "command": "workbench.view.search",
+                    "key": "s",
+                    "name": "Search Word",
+                    "type": "command"
+                },
+                // 在本文件中选中文字后使用它，可以快速粘贴到搜索栏
+                {
+                    "command": "search.action.openEditor",
+                    "key": "e",
+                    "name": "New Search Editor",
+                    "type": "command"
+                },
+                // 在本文件中选中文字，然后开始相当于workbench.view.search
+                {
+                    "command": "extension.findInFilesWithSelection",
+                    "key": "S",
+                    "name": "Find in file with selection",
+                    "type": "command"
+                }
+            ]
+        },
+        {
+            "key": "g",
+            "name": "Git...",
+            "type": "bindings",
+            "bindings": [
+                {
+                    "key": "a",
+                    "name": "Accept commit messages",
+                    "type": "command",
+                    "command": "git.commitMessageAccept"
+                },
+                {
+                    "key": "b",
+                    "name": "Checkout",
+                    "type": "command",
+                    "command": "git.checkout"
+                },
+                {
+                    "key": "c",
+                    "name": "Commit",
+                    "type": "command",
+                    "command": "git.commit"
+                },
+                {
+                    "key": "d",
+                    "name": "Delete Branch",
+                    "type": "command",
+                    "command": "git.deleteBranch"
+                },
+                {
+                    "key": "f",
+                    "name": "Fetch",
+                    "type": "command",
+                    "command": "git.fetch"
+                },
+                {
+                    "key": "i",
+                    "name": "Init",
+                    "type": "command",
+                    "command": "git.init"
+                },
+                {
+                    "key": "m",
+                    "name": "Merge",
+                    "type": "command",
+                    "command": "git.merge"
+                },
+                // 前后跳转到没有staged的地方。
+                {
+                    "key": "j",
+                    "name": "Next changed",
+                    "type": "command",
+                    "command": "extension.multiCommand.execute",
+                    "args": {
+                        "sequence": [
+                            "workbench.action.editor.nextChange",
+                            "editor.action.dirtydiff.next"
+                        ]
+                    }
+                },
+                {
+                    "key": "k",
+                    "name": "Previous changed",
+                    "type": "command",
+                    "command": "extension.multiCommand.execute",
+                    "args": {
+                        "sequence": [
+                            "workbench.action.editor.previousChange",
+                            "editor.action.dirtydiff.previous"
+                        ]
+                    }
+                },
+                {
+                    "key": "p",
+                    "name": "Publish",
+                    "type": "command",
+                    "command": "git.publish"
+                },
+                {
+                    "key": "g",
+                    "name": "Show git tab",
+                    "type": "command",
+                    "command": "workbench.view.scm"
+                },
+                // 相当于git add 当前文件，staged所有改动之后，文件就可以commit了。
+                {
+                    "key": "s",
+                    "name": "Stage",
+                    "type": "command",
+                    "command": "git.stage"
+                },
+                {
+                    "key": "S",
+                    "name": "Stage all",
+                    "type": "command",
+                    "command": "git.stageAll"
+                },
+                // 回滚选中modified但没有staged的部分，从snapshot中恢复。
+                // 如果已经staged，那么首先Unstage，在选中，revert即可。
+                {
+                    "key": "r",
+                    "name": "Revert selected",
+                    "type": "command",
+                    "command": "git.revertSelectedRanges"
+                },
+                // 把staged的修改取消。
+                {
+                    "key": "u",
+                    "name": "Unstage",
+                    "type": "command",
+                    "command": "git.unstage"
+                },
+                {
+                    "key": "U",
+                    "name": "Unstage all",
+                    "type": "command",
+                    "command": "git.unstageAll"
+                }
+            ]
+        },
+        {
+            "command": "workbench.action.gotoSymbol",
+            "key": "s",
+            "name": "Search document symbol",
+            "type": "command"
+        },
+        {
+            "command": "workbench.action.showAllSymbols",
+            "key": "S",
+            "name": "Search project symbol",
+            "type": "command"
+        },
+        // 右侧显示整个code的小map条
+        {
+            "key": "m",
+            "name": "minimap",
+            "type": "command",
+            "command": "editor.action.toggleMinimap"
+        },
+        // dendron
+        {
+            "key": "n",
+            "name": "dendron...",
+            "type": "bindings",
+            "bindings": [
+                {
+                    "key": "c",
+                    "name": "Create Note",
+                    "type": "command",
+                    "command": "dendron.createNote",
+                    "when": "dendron:pluginActive"
+                },
+                {
+                    "key": "l",
+                    "name": "Lookup Note",
+                    "type": "command",
+                    "command": "dendron.lookupNote",
+                    "when": "dendron:pluginActive"
+                },
+                {
+                    "key": "d",
+                    "name": "Delete",
+                    "type": "command",
+                    "command": "dendron.delete",
+                    "when": "dendron:pluginActive && shellExecutionSupported"
+                },
+                {
+                    "key": "p",
+                    "name": "Paste Image",
+                    "type": "command",
+                    "command": "extension.pasteImage",
+                    "when": "editorTextFocus && dendron:pluginActive"
+                }
+            ]
+        },
+        // 折叠
+        {
+            "key": "z",
+            "name": "Fold...",
+            "type": "bindings",
+            "bindings": [
+                {
+                    "key": "c",
+                    "name": "Fold",
+                    "type": "command",
+                    "command": "editor.foldRecursively",
+                    "when": "editorTextFocus && foldingEnabled"
+                },
+                {
+                    "key": "C",
+                    "name": "Fold recursively",
+                    "type": "command",
+                    "command": "editor.foldRecursively",
+                    "when": "editorTextFocus && foldingEnabled"
+                },
+                {
+                    "key": "o",
+                    "name": "Unfold",
+                    "type": "command",
+                    "command": "editor.unfold",
+                    "when": "editorTextFocus && foldingEnabled"
+                },
+                {
+                    "key": "O",
+                    "name": "Unfold recursively",
+                    "type": "command",
+                    "command": "editor.unfoldRecursively",
+                    "when": "editorTextFocus && foldingEnabled"
+                },
+                {
+                    "key": "z",
+                    "name": "Toogle fold",
+                    "command": "editor.toggleFold",
+                    "when": "editorTextFocus && foldingEnabled"
+                },
+                {
+                    "key": "Z",
+                    "name": "Fold/Unfold",
+                    "command": "editor.fold",
+                    "when": "editorTextFocus && foldingEnabled"
+                },
+                {
+                    "key": "r",
+                    "name": "Unfold all",
+                    "command": "editor.unfoldAll",
+                    "when": "editorTexocus && foldingEnabled"
+                },
+                {
+                    "key": "1",
+                    "name": "Fold Level 1",
+                    "type": "command",
+                    "command": "editor.foldLevel1",
+                    "when": "editorTextFocus && foldingEnabled"
+                },
+                {
+                    "key": "2",
+                    "name": "Fold Level 2",
+                    "type": "command",
+                    "command": "editor.foldLevel2",
+                    "when": "editorTextFocus && foldingEnabled"
+                },
+                {
+                    "key": "3",
+                    "name": "Fold Level 3",
+                    "type": "command",
+                    "command": "editor.foldLevel3",
+                    "when": "editorTextFocus && foldingEnabled"
+                },
+                {
+                    "key": "4",
+                    "name": "Fold Level 4",
+                    "type": "command",
+                    "command": "editor.foldLevel4",
+                    "when": "editorTextFocus && foldingEnabled"
+                },
+                {
+                    "key": "5",
+                    "name": "Fold Level 5",
+                    "type": "command",
+                    "command": "editor.foldLevel5",
+                    "when": "editorTextFocus && foldingEnabled"
+                },
+                {
+                    "key": "6",
+                    "name": "Fold Level 6",
+                    "type": "command",
+                    "command": "editor.foldLevel6",
+                    "when": "editorTextFocus && foldingEnabled"
+                },
+                {
+                    "key": "7",
+                    "name": "Fold Level 7",
+                    "type": "command",
+                    "command": "editor.foldLevel7",
+                    "when": "editorTextFocus && foldingEnabled"
+                },
+                {
+                    "key": "8",
+                    "name": "Fold Level 8",
+                    "type": "command",
+                    "command": "editor.foldLevel8",
+                    "when": "editorTextFocus && foldingEnabled"
+                },
+                {
+                    "key": "9",
+                    "name": "Fold Level 9",
+                    "type": "command",
+                    "command": "editor.foldLevel9",
+                    "when": "editorTextFocus && foldingEnabled"
+                }
+            ]
+        }
+    ],
+    "[jsonc]": {
+        "editor.quickSuggestions": {
+            "strings": true
+        },
+        "editor.suggest.insertMode": "replace"
+    },
+    "clangd.arguments": [
+        // clangd集成了clang-tidy并且完成了clang-tidy的quick fix功能，
+        // 你可以直接在clangd中使用quickfix来完成clang-tidy的改动
+        "--clang-tidy",
+        "--clang-tidy-checks=performance-*,bugprone-*",
+        // 在后台自动分析文件（基于complie_commands)
+        "--background-index",
+        // 全局补全（会根据代码找到缺失的补充头文件，并建议补充）
+        "--all-scopes-completion",
+        // 补全更详细
+        "--completion-style=detailed",
+        // 输入建议中，已包含头文件的项与还未包含头文件的项会以圆点加以区分
+        "--header-insertion-decorators",
+        // 插入建议时自动引入头文件 iwyu
+        "--header-insertion=iwyu",
+        // pch优化位置，选择memory或disk，memory的更快
+        "--pch-storage=memory",
+        "--ranking-model=decision_forest", // 建议的排序方案：hueristics (启发式), decision_forest (决策树)
+        "--log=error", // or verbose
+        "--j=8", // 后台线程数，可根据机器配置自行调整
+        "--fallback-style=Google", // 默认格式化风格: 在没找到 .clang-format 文件时采用,可用的有 LLVM, Google, Chromium, Mozilla, Webkit, Microsoft, GNU
+        // 补全函数时，将会给参数提供占位符，键入后按 Tab 可以切换到下一占位符，乃至函数末
+        "--function-arg-placeholders=true",
+        "--pretty", // 输出的JSON美观
+        "--query-driver=C:\\Programs\\Qt\\Tools\\mingw1310_64\\bin\\g++.exe",
+        // "--query-driver=C:\\Programs\\Qt\\Tools\\llvm-mingw1706_64\\bin\\clang++.exe",
+        "--compile-commands-dir=${workspaceFolder}/build", // 路径
+    ],
+    // 找不到编译数据库(compile_flags.json 文件)时使用的编译器选项,这样的缺陷是不能直接索引同一项目的不同文件,只能分析系统头文件、当前文件和被include的文件
+    "clangd.fallbackFlags": [
+        "-pedantic",
+        "-Wall",
+        "-Wextra",
+        "-Wcast-align",
+        "-Wdouble-promotion",
+        "-Wformat=2",
+        "-Wimplicit-fallthrough",
+        "-Wmisleading-indentation",
+        "-Wnon-virtual-dtor",
+        "-Wnull-dereference",
+        "-Wold-style-cast",
+        "-Woverloaded-virtual",
+        "-Wpedantic",
+        "-Wshadow",
+        "-Wunused",
+        "-pthread",
+        "-fuse-ld=lld",
+        "-fsanitize=address",
+        "-fsanitize=undefined",
+        "-stdlib=libc++"
+    ],
+    // Qt的文件夹还装了clang-format等
+    // 会被远程设置override，我们单独写override
+    "clangd.path": "C:\\Programs\\Qt\\Tools\\QtCreator\\bin\\clang\\bin\\clangd.exe",
+    "cmake.configureOnOpen": false,
+    // only in user setting files
+    "cmake.showOptionsMovedNotification": false,
+    "cmake.configureSettings": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "YES"
+    },
+    "markdown-preview-enhanced.previewTheme": "github-light.css",
+    // 当前激活的Workspace，显示不同，用于区分打开的多个VS Code
+    "workbench.colorCustomizations": {
+        "titleBar.activeBackground": "#54a3ff",
+        "titleBar.activeForeground": "#ffffff",
+        "statusBar.background": "#8FBCBB",
+        "statusBar.noFolderBackground": "#8FBCBB",
+        "statusBar.debuggingBackground": "#8FBCBB",
+        "statusBar.foreground": "#000",
+        "statusBar.debuggingForeground": "#000"
+    },
+    "editor.unicodeHighlight.allowedCharacters": {
+        "，": true
+    },
+    "[python]": {
+        "editor.rulers": [
+            // ruff默认长度88
+            120
+        ],
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "diffEditor.ignoreTrimWhitespace": false, // 默认使用 Ruff 格式化
+        // "editor.formatOnSave": true, // 保存时自动格式化
+    },
+    // "notebook.formatOnSave.enabled": true, // notebook 保存时自动格式化
+    // ruff默认单行长度88，修改之
+    "ruff.format.args": [
+        "--line-length=120"
+    ],
+    /* Dendron
+    prerequests: 首先，需要同步 wsl2 的剪切板，需要安装 clipboard-cli。sudo apt install -y xclip
+    如果不是 wsl2，是 Windows，Powershell 自己能够完成，不用配置。
+    */
+    // Dendron 中，tag-name 自动补全
+    "editor.suggest.snippetsPreventQuickSuggestions": false,
+    "editor.suggest.showSnippets": true,
+    "editor.tabCompletion": "on",
+    // Dendron Paste Image 设置
+    // 粘贴前询问路劲
+    "pasteImage.showFilePathConfirmInputBox": true,
+    "pasteImage.filePathConfirmInputBoxMode": "onlyName",
+    /*
+    询问 DeepSeek 得到配置。
+    问：在VsCode的settings.json配置文件中，我需要设置Dendron Paste Image在粘贴图片时，在assets/images目录下，
+    粘贴到此笔记文件名的目录下。但是笔记的文件名通常是以.来分隔，请问如何把.分隔的处理为目录的层级
+    */
+    // 将文件名中的 . 替换为 /，生成层级目录。
+    // "pasteImage.path": "${currentFileDir}/assets/images/${currentFileNameWithoutExt}",
+    // "pasteImage.path": "${currentFileDir}/assets/images/${currentFileNameWithoutExt}",
+    "pasteImage.defaultName": "pic",
+    "pasteImage.namePrefix": "${currentFileNameWithoutExt}/",
+    // 强制使用 Unix 风格路径分隔符（/），确保跨平台兼容性。
+    "pasteImage.forceUnixStyleSeparator": true,
+    // 使用绝对路径（以 / 开头），确保 Dendron 能正确解析图片路径。
+    "pasteImage.prefix": "/",
+    // 设置基础路径为工作区根目录，确保路径解析正确。
+    "pasteImage.basePath": "${workspaceRoot}",
+    "pasteImage.insertPattern": "![${imageFileNameWithoutExt}](assets/images/${currentFileNameWithoutExt}/${imageFileName})",
+    // Dendron end
+    "terminal.integrated.defaultProfile.windows": "Command Prompt",
+    // 集成终端右击时选择光标下方的字词，并打开上下文菜单
+    "terminal.integrated.rightClickBehavior": "copyPaste",
+    "todohighlight.isCaseSensitive": false,
+    // 缩放
+    "window.zoomLevel": -1,
+    "diffEditor.wordWrap": "on",
+    // 每行最多显示字符数量，多余的自动换行
+    "editor.wordWrapColumn": 80,
+    // 字符提示线
+    "editor.rulers": [
+        119
+    ],
+    "editor.fontFamily": "CodeNewRoman Nerd Font Mono",
+    "editor.fontSize": 14,
+    // 启用连字体
+    "editor.fontLigatures": true,
+    // 行高：使用 0 根据字号自动计算行高
+    "editor.lineHeight": 0,
+    // 启用括号指导线
+    "editor.guides.bracketPairs": true,
+    // 启用水平括号指导线
+    "editor.guides.bracketPairsHorizontal": "active",
+    // 禁用高亮选中的缩进指导线
+    "editor.guides.highlightActiveIndentation": true,
+    // 禁用缩进指导线
+    "editor.guides.indentation": false,
+    "editor.semanticHighlighting.enabled": true,
+    // 资源管理器不采用紧凑模式
+    "explorer.compactFolders": false,
+    "workbench.iconTheme": "material-icon-theme",
+    // 显示视图头部的操作项
+    "workbench.view.alwaysShowHeaderActions": true,
+    // 默认打开 settings.json 进行设置
+    "workbench.settings.editor": "json",
+    // 编辑器中可以用 enter 接受建议
+    "editor.acceptSuggestionOnEnter": "on",
+    // 始终预先选择第一个建议
+    "editor.suggestSelection": "first",
+    // 自动格式化
+    "editor.formatOnType": true,
+    // 粘贴自动格式化
+    "editor.formatOnPaste": true,
+    // "files.autoSave": "afterDelay", // 自动保存
+    // 控制编辑器在空白字符上显示符号的方式
+    "editor.renderWhitespace": "all", // none, all, boundary, selection
+    "editor.tabSize": 4,
+    "[cpp]": {
+        "editor.tabSize": 2,
+    },
+    // 显示文件目录水平拖动条
+    "workbench.list.horizontalScrolling": true,
+    "git.openRepositoryInParentFolders": "never",
+    "files.exclude": {
+        "**/.git/**": true,
+        "**/node_modules/**": true,
+        "**/.hg/**": true,
+        "**/.svn/**": true,
+        "**/bower_components/**": true,
+        "**/dist/**": true,
+        "**/build/**": true,
+        "**/.github/**": true,
+        "**/.circleci/**": true,
+        "**/out/**": true
+    },
+    "jupyter.askForKernelRestart": false,
+    "git.suggestSmartCommit": false,
+    "git.autofetch": true,
+    "git.confirmSync": false,
+    "redhat.telemetry.enabled": true,
+    "remote.autoForwardPortsSource": "hybrid",
+    "terminal.integrated.fontFamily": "\"CodeNewRoman Nerd Font Mono\"",
+    "workbench.colorTheme": "GitHub Light",
+    "remote.SSH.remotePlatform": {
+        "192.168.123.78": "linux",
+        "desktop": "linux",
+        "192.168.196.53": "linux",
+        "desktop-via-zerotier": "linux",
+        "desktop-via-lan": "linux",
+        "js1.blockelite.cn": "linux",
+        "js2.blockelite.cn": "linux",
+        "192.168.196.52": "linux",
+        "192.168.196.57": "linux",
+        "204-server": "linux",
+        "192.168.1.221": "linux",
+        "wj-24-lan": "linux",
+        "204-server-zerotier": "linux",
+        "192.168.10.204": "linux",
+        "192.168.19.204": "linux",
+        "192.168.196.117": "linux",
+        "lxt-24-196": "linux",
+        "wj-24-196": "linux"
+    },
+    "files.associations": {
+        "*.py": "python"
+    },
+    "notebook.lineNumbers": "on",
+    "markdown-preview-enhanced.codeBlockTheme": "github.css",
+    "projectManager.sortList": "Saved",
+    "Notes.notesLocation": "/home/wujing/projects/async_simple/docs",
+    "security.workspace.trust.untrustedFiles": "open",
+    "diffEditor.hideUnchangedRegions.enabled": true,
+    "editor.minimap.enabled": false
+}
