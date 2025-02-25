@@ -2,7 +2,7 @@
 id: lvhxgyuvwyw5soqj59gc045
 title: LLaMA-Factory
 desc: ''
-updated: 1740423717017
+updated: 1740456646288
 created: 1740375991093
 ---
 
@@ -236,6 +236,7 @@ sed -i 's/{{author}}/LLaMA Factory/g'  data/identity.json
 }
 ```
 
+### 把例子 1 和 2 组织为 Alpaca 格式
 如果需要放到我们系统使用，需要操作：
 1. 复制数据集到 data 目录下。
 2. 修改 data/dataset_info.json，完成注册。
@@ -247,7 +248,7 @@ sed -i 's/{{author}}/LLaMA Factory/g'  data/identity.json
 2. 指出了数据集文件路径。
 3. 定义原数据集的输入输出与所需格式的映射关系。
 
-### 数据描述文件格式
+### Alpaca 数据描述文件格式
 
 ```json
 "数据集名称": {
@@ -262,6 +263,275 @@ sed -i 's/{{author}}/LLaMA Factory/g'  data/identity.json
 }
 ```
 
+### Alpaca 多模态数据集格式
+
+目前仅仅支持单张图像输入，放到 `images` 列。数据集格式如下：
+
+```json
+[
+  {
+    "instruction": "人类指令（必填）",
+    "input": "人类输入（选填）",
+    "output": "模型回答（必填）",
+    "images": [
+      "图像路径（必填）"
+    ]
+  }
+]
+```
+
+注册如下：
+
+```json
+"数据集名称": {
+  "file_name": "data.json",
+  "columns": {
+    "prompt": "instruction",
+    "query": "input",
+    "response": "output",
+    "images": "images"
+  }
+}
+```
+
+### ShareGPT 例子：官网的多模态数据集 mllm_demo.json
+
+我们主要关注数据集 [mllm_demo.json](https://github.com/hiyouga/LLaMA-Factory/blob/main/data/mllm_demo.json) 如何注册到 [data/dataset_info.json](https://github.com/hiyouga/LLaMA-Factory/blob/main/data/dataset_info.json)。
+
+```json
+[
+  {
+    "messages": [
+      {
+        "content": "<image>Who are they?",
+        "role": "user"
+      },
+      {
+        "content": "They're Kane and Gretzka from Bayern Munich.",
+        "role": "assistant"
+      },
+      {
+        "content": "What are they doing?",
+        "role": "user"
+      },
+      {
+        "content": "They are celebrating on the soccer field.",
+        "role": "assistant"
+      }
+    ],
+    "images": [
+      "mllm_demo_data/1.jpg"
+    ]
+  },
+  {
+    "messages": [
+      {
+        "content": "<image>Who is he?",
+        "role": "user"
+      },
+      {
+        "content": "He's Thomas Muller from Bayern Munich.",
+        "role": "assistant"
+      },
+      {
+        "content": "Why is he on the ground?",
+        "role": "user"
+      },
+      {
+        "content": "Because he's sliding on his knees to celebrate.",
+        "role": "assistant"
+      }
+    ],
+    "images": [
+      "mllm_demo_data/2.jpg"
+    ]
+  },
+  ...
+]
+```
+
+images 可以是相对路径，可以是绝对路径。接下来查看如何注册到 data/dataset_info.json。
+
+```json
+{
+  "mllm_demo": {
+    "file_name": "mllm_demo.json",
+    "formatting": "sharegpt",
+    "columns": {
+      "messages": "messages",
+      "images": "images"
+    },
+    "tags": {
+      "role_tag": "role",
+      "content_tag": "content",
+      "user_tag": "user",
+      "assistant_tag": "assistant"
+    }
+  },
+  ...
+}
+```
+
+columns 中的各条解释：
+- `message` 代表列中的信息，默认值是 conversations。
+- `images` 代表图像输入，默认 None。
+
+tags 解释：
+- `role_tag` 指出 `message` 列的每一条内容中，代表身份的字段 (key)，默认值 from。
+- `content_tag` 指出 `message` 列的每一条内容中，代表内容的 key，默认值是 value。
+- `user_tag` 指出 `role_tag`，用户 (提问者) 的角色标识符，即默认是 human。
+- `assistant_tag` 指出 `role_tag` 的助手 (模型) 的橘色标识符，默认 gpt。其他常见值有 `"assistant"`， `"bot"` 等，需要与实际值一致。
+
+### ShareGPT 格式
+
+`ShareGPT` 格式支持更多的角色种类，比如 human, gpt, observation, function 等等。他们构成对象列表，放置在 `conversations` 列。例子：
+
+```json
+{
+  "conversations": [
+    {
+      "from": "human",
+      "value": "你好，我出生于1990年5月15日。你能告诉我我今天几岁了吗？"
+    },
+    {
+      "from": "function_call",
+      "value": "{\"name\": \"calculate_age\", \"arguments\": {\"birthdate\": \"1990-05-15\"}}"
+    },
+    {
+      "from": "observation",
+      "value": "{\"age\": 31}"
+    },
+    {
+      "from": "gpt",
+      "value": "根据我的计算，你今天31岁了。"
+    }
+  ],
+  "tools": "[{\"name\": \"calculate_age\", \"description\": \"根据出生日期计算年龄\", \"parameters\": {\"type\": \"object\", \"properties\": {\"birthdate\": {\"type\": \"string\", \"description\": \"出生日期以YYYY-MM-DD格式表示\"}}, \"required\": [\"birthdate\"]}}]"
+}
+```
+
+框架要求 human 和 observation 必须出现在奇数位置，gpt 和 function 出现在偶数位置。可能代表一问一答。比如：
+
+```json
+[
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "人类指令"
+      },
+      {
+        "from": "function_call",
+        "value": "工具参数"
+      },
+      {
+        "from": "observation",
+        "value": "工具结果"
+      },
+      {
+        "from": "gpt",
+        "value": "模型回答"
+      }
+    ],
+    "system": "系统提示词（选填）",
+    "tools": "工具描述（选填）"
+  }
+]
+```
+
+描述上述为：
+
+```json
+"数据集名称": {
+  "file_name": "data.json",
+  "formatting": "sharegpt",
+  "columns": {
+    "messages": "conversations",
+    "system": "system",
+    "tools": "tools"
+  }
+}
+```
+
+### 注册的描述格式
+
+[data](https://github.com/hiyouga/LLaMA-Factory/tree/main/data)
+
+```json
+"dataset_name": {
+  "hf_hub_url": "the name of the dataset repository on the Hugging Face hub. (if specified, ignore script_url and file_name)",
+  "ms_hub_url": "the name of the dataset repository on the Model Scope hub. (if specified, ignore script_url and file_name)",
+  "script_url": "the name of the directory containing a dataset loading script. (if specified, ignore file_name)",
+  "file_name": "the name of the dataset folder or dataset file in this directory. (required if above are not specified)",
+  "formatting": "the format of the dataset. (optional, default: alpaca, can be chosen from {alpaca, sharegpt})",
+  "ranking": "whether the dataset is a preference dataset or not. (default: False)",
+  "subset": "the name of the subset. (optional, default: None)",
+  "split": "the name of dataset split to be used. (optional, default: train)",
+  "folder": "the name of the folder of the dataset repository on the Hugging Face hub. (optional, default: None)",
+  "num_samples": "the number of samples in the dataset to be used. (optional, default: None)",
+  "columns (optional)": {
+    "prompt": "the column name in the dataset containing the prompts. (default: instruction)",
+    "query": "the column name in the dataset containing the queries. (default: input)",
+    "response": "the column name in the dataset containing the responses. (default: output)",
+    "history": "the column name in the dataset containing the histories. (default: None)",
+    "messages": "the column name in the dataset containing the messages. (default: conversations)",
+    "system": "the column name in the dataset containing the system prompts. (default: None)",
+    "tools": "the column name in the dataset containing the tool description. (default: None)",
+    "images": "the column name in the dataset containing the image inputs. (default: None)",
+    "videos": "the column name in the dataset containing the videos inputs. (default: None)",
+    "audios": "the column name in the dataset containing the audios inputs. (default: None)",
+    "chosen": "the column name in the dataset containing the chosen answers. (default: None)",
+    "rejected": "the column name in the dataset containing the rejected answers. (default: None)",
+    "kto_tag": "the column name in the dataset containing the kto tags. (default: None)"
+  },
+  "tags (optional, used for the sharegpt format)": {
+    "role_tag": "the key in the message represents the identity. (default: from)",
+    "content_tag": "the key in the message represents the content. (default: value)",
+    "user_tag": "the value of the role_tag represents the user. (default: human)",
+    "assistant_tag": "the value of the role_tag represents the assistant. (default: gpt)",
+    "observation_tag": "the value of the role_tag represents the tool results. (default: observation)",
+    "function_tag": "the value of the role_tag represents the function call. (default: function_call)",
+    "system_tag": "the value of the role_tag represents the system prompt. (default: system, can override system column)"
+  }
+}
+```
+
+columns 中的各条解释：
+- `message` 代表列中的信息，默认值是 conversations。
+- `images` 代表图像输入，默认 None。
+
+tags 解释：
+- `role_tag` 指出 `message` 列的每一条内容中，代表身份的字段 (key)，默认值 from。
+- `content_tag` 指出 `message` 列的每一条内容中，代表内容的 key，默认值是 value。
+- `user_tag` 指出 `role_tag`，用户 (提问者) 的角色标识符，即默认是 human。
+- `assistant_tag` 指出 `role_tag` 的助手 (模型) 的橘色标识符，默认 gpt。其他常见值有 `"assistant"`， `"bot"` 等，需要与实际值一致。
+- `observation_tag` 标识模型调用外部工具或函数后的执行结果。当模型生成工具调用（如查询天气）后，返回到结果保存在此 tag 指出的字段。
+- `function_tag` 表示模型生成的工具调用请求（如函数名称、参数等），通常用于触发外部调用工具的执行。
+- `system_tag` 标识系统级别的控制信息或上下文指令，引导模型行为或提供全局信息（如角色设定、任务背景、安全约束等）。这类信息不直接参与对话，但会影响回复风格或逻辑。
+
+observation_tag 例子，指出观察结果：
+```json
+{
+  "conversations": [
+    {"from": "human", "value": "帮我订一张明天北京到上海的机票。"},
+    {"from": "gpt", "value": "<function>book_flight(from=北京, to=上海, date=明天)</function>"},  // 函数调用
+    {"from": "observation", "value": "已成功预订：北京→上海，2023-10-20 08:00"},
+    {"from": "gpt", "value": "机票已为您预订成功！"}
+  ]
+}
+```
+
+system_tag 例子，省去了数据描述部分：
+```json
+{
+  "conversations": [
+    {"from": "system", "value": "你是一个严谨的医学助手，只回答专业问题，不提供猜测。"},  // 系统指令
+    {"from": "human", "value": "感冒了怎么办？"},
+    {"from": "gpt", "value": "建议多休息、补充水分，如症状持续请就医。"}
+  ]
+}
+```
+
 ### Alpaca 和 ShareGPT 对比
 
 || Alpaca | ShareGPT |
@@ -273,6 +543,8 @@ sed -i 's/{{author}}/LLaMA Factory/g'  data/identity.json
 最佳实践：
 - 如果你的目标是微调模型以执行特定任务（如翻译、摘要等），Alpaca 格式可能更适合。
 - 如果你的目标是微调模型以进行自然对话（如聊天机器人），ShareGPT 格式可能更适合。
+
+### 官网
 
 ## 基于 LoRA 的 SFT 指令微调
 
@@ -435,9 +707,50 @@ CUDA_VISIBLE_DEVICES=0 llamafactory-cli webui
 
 ![lora_model_file](assets/images/llm.LLaMA-Factory/lora_model_file.png)
 
+## API Server 启动与调用
+
+基于 vllm 推理时，需要提前将 LoRA 模型 merge，随后指出即可：
+
+```bash
+CUDA_VISIBLE_DEVICES=0 API_PORT=8000 llamafactory-cli api \
+    --model_name_or_path megred-model-path \
+    --template llama3 \
+    --infer_backend vllm \
+    --vllm_enforce_eager
+```
+
+服务启动后，即可按照openai 的API 进行远程访问，主要的区别就是替换 其中的base_url，指向所部署的机器url和端口号即可。
+
+```python
+import os
+from openai import OpenAI
+from transformers.utils.versions import require_version
+
+require_version("openai>=1.5.0", "To fix: pip install openai>=1.5.0")
+
+if __name__ == '__main__':
+    # change to your custom port
+    port = 8000
+    client = OpenAI(
+        api_key="0",
+        base_url="http://localhost:{}/v1".format(os.environ.get("API_PORT", 8000)),
+    )
+    messages = []
+    messages.append({"role": "user", "content": "hello, where is USA"})
+    result = client.chat.completions.create(messages=messages, model="test")
+    print(result.choices[0].message)
+```
+
+## 分布式训练：DDP，DeepSpeed 和 FSDP
+
+[分布式训练](https://llamafactory.readthedocs.io/zh-cn/latest/advanced/distributed.html)
+
+[Github DeepSpeed 配置示例](https://github.com/hiyouga/LLaMA-Factory/tree/main/examples/deepspeed)
+
 ## Ref and Tag
 [Github](https://github.com/hiyouga/LLaMA-Factory)
 [知乎教程](https://zhuanlan.zhihu.com/p/695287607)
+[read the doc](https://llamafactory.readthedocs.io/zh-cn/latest/)
 [与 DeepSpeed 训练 Qwen](https://zhuanlan.zhihu.com/p/714707824)
 
 [[llm.huggingface.DeepSpeed集成]]

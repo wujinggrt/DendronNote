@@ -2,7 +2,7 @@
 id: tfd9jjc8w7feftqzbyc0pud
 title: 微调Qwen2_5_VL
 desc: ''
-updated: 1740396021510
+updated: 1740449151517
 created: 1740209908837
 ---
 

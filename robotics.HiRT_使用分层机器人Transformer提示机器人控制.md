@@ -2,11 +2,11 @@
 id: su38pp1jajdwtirnaqjnhm1
 title: HiRT_使用分层机器人Transformer提示机器人控制
 desc: ''
-updated: 1740142386464
+updated: 1740454423967
 created: 1740130485350
 ---
 
-通过异步处理，VLM 低频思考，清凉的动作策略模型高频响应，解决时延不匹配问题。
+通过异步处理，VLM 低频思考，轻量的动作策略模型高频响应，解决时延不匹配问题。
 
 ![fig1](assets/images/robotics.HiRT_使用分层机器人Transformer提示机器人控制/fig1.png)
 
@@ -36,6 +36,8 @@ HiRT 有两个主要组件：理解模块和执行模块。
 - 异步采样：训练时随机选择历史图像作为 VLM 输入，提升策略对延迟特征的鲁棒性。
 - 目标函数：通过均方误差（MSE）回归末端位姿，二元交叉熵（BCE）分类夹持器状态。
 - 微调策略：VLM 部分使用 LoRA 适配器微调，轻量策略端到端训练。
+
+看起来就是把 VLM 当做了 VL 的 encoder。同时解决时延不匹配问题。
 
 ## Tag and link
 [[robotics.DexVLA]]

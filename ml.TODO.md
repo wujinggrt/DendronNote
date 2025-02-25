@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1740140963895
+updated: 1740449161341
 created: 1738165674608
 ---
 
@@ -66,6 +66,9 @@ https://zhuanlan.zhihu.com/p/25375865923
 https://github.com/Peterwangsicheng/RoboBERT
 
 DeepSpeed 的 ZeRO 解读。
+
+摸着Logic-RL，复现7B - R1  zero - aaaaammmmm的文章 - 知乎
+https://zhuanlan.zhihu.com/p/25982514066
 
 ## RL
 在线强化学习改进VLA模型 - 黄浴的文章 - 知乎
