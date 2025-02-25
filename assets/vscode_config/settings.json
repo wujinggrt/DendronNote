@@ -18,6 +18,8 @@
     * gt 在右侧的新视图打开类型定义（竖直分屏）
     * sd 浮窗查看定义，show definition,peekDefinition
     * sh show call hierarchy
+    * ysw<Space>, ysW<Space 在当前单词两侧添加空格。用于笔记场景，给英文两侧添加空格，与中文分开，阅读美观。比如:
+    * 基础的 DP 方法并不能降低每个设备 (GPU) 上的内存占用。
     * rn rename
     * <leader>h hover
     * [d, ]d 查看error的地方
@@ -237,6 +239,50 @@
             ],
             "commands": [
                 "references-view.findReferences"
+            ]
+        },
+        {
+            // ysw<Space>, ysW<Space 在当前单词两侧添加空格。用于笔记场景，给英文两侧添加空格，与中文分开，阅读美观。比如:
+            // 基础的 DP 方法并不能降低每个设备 (GPU) 上的内存占用。
+            "before": [
+                "y",
+                "s",
+                "w",
+                "<Space>"
+            ],
+            "after": [
+                "v",
+                "i",
+                "w",
+                "<Esc>",
+                "a",
+                "<Space>",
+                "<Esc>",
+                "b",
+                "i",
+                "<Space>",
+                "<Esc>"
+            ]
+        },
+        {
+            "before": [
+                "y",
+                "s",
+                "W",
+                "<Space>"
+            ],
+            "after": [
+                "v",
+                "i",
+                "W",
+                "<Esc>",
+                "a",
+                "<Space>",
+                "<Esc>",
+                "B",
+                "i",
+                "<Space>",
+                "<Esc>"
             ]
         },
         {
@@ -621,6 +667,7 @@
             ]
         },
     ],
+    // https://github.com/daipeihust/im-select
     // 在 vim 输入时，从 insert 模式切换回 normal 时，自动切换输入法为英文。
     // {im} 会被替换为 defaultIM 的值（即 1033），从插入模式返回普通模式时，会切换输入法到键盘。
     // 如果需要切换到其他窗口，比如浏览器，需要输入时，使用 Win + 空格 或 alt + shift 即可切换输入法。
@@ -1286,7 +1333,7 @@
     "terminal.integrated.rightClickBehavior": "copyPaste",
     "todohighlight.isCaseSensitive": false,
     // 缩放
-    "window.zoomLevel": -1,
+    "window.zoomLevel": 0,
     "diffEditor.wordWrap": "on",
     // 每行最多显示字符数量，多余的自动换行
     "editor.wordWrapColumn": 80,
@@ -1328,9 +1375,6 @@
     // 控制编辑器在空白字符上显示符号的方式
     "editor.renderWhitespace": "all", // none, all, boundary, selection
     "editor.tabSize": 4,
-    "[cpp]": {
-        "editor.tabSize": 2,
-    },
     // 显示文件目录水平拖动条
     "workbench.list.horizontalScrolling": true,
     "git.openRepositoryInParentFolders": "never",
@@ -1380,7 +1424,6 @@
     "notebook.lineNumbers": "on",
     "markdown-preview-enhanced.codeBlockTheme": "github.css",
     "projectManager.sortList": "Saved",
-    "Notes.notesLocation": "/home/wujing/projects/async_simple/docs",
     "security.workspace.trust.untrustedFiles": "open",
     "diffEditor.hideUnchangedRegions.enabled": true,
     "editor.minimap.enabled": false

@@ -2,7 +2,7 @@
 id: po1d50dtr8zzbao0sn1duvh
 title: LearnDendron
 desc: ''
-updated: 1740418904270
+updated: 1740465611107
 created: 1737484383438
 ---
 
@@ -56,6 +56,13 @@ created: 1737484383438
 ctrl+shift+p 打开命令面板，输入 dendron lookup 便可找到 Dendron: Lookup Note 的选项，选择回车即可查找笔记。我在 whichkey 中设置了，使用 space+n+l 便可执行此命令。
 
 支持模糊搜索，比如本 `LearDendron.md` 笔记，可以在查找的文本框输入 `Learn Dend`，便可看到候选的。
+
+![candidate_0](assets/images/LearnDendron/candidate_0.png)
+
+在输入完模糊查找的关键字后，提示的内容总是 Create New 和 Create New With Template 在第一和第二候选项，还需要向下两个或向上才能选择。解决方法为在末尾在输入一个空格键，便可把想要的笔记放到第一候选项，回车便可访问。
+
+![candidate_top](assets/images/LearnDendron/candidate_top.png)
+
 
 ### 创建链接 (wikilinks)
 鼠标悬停在 wikilinks 上可以预览内容。切回上一个 Note （可以在树状图中单机，或使用 Lookup Note 打开），随后在笔记中输入 `[[`，会弹出提示生成链接，链接为在 workspace 的各个文件。比如：[[tutorial]]。

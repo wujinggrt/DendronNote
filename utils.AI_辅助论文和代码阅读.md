@@ -2,7 +2,7 @@
 id: 8uriumohgfxd1icere7lvus
 title: AI_辅助论文和代码阅读
 desc: ''
-updated: 1740414859028
+updated: 1740465176817
 created: 1740377066945
 ---
 
@@ -35,10 +35,18 @@ created: 1740377066945
 3. 深挖。XX 算法在 XX 超越人类水平的现象，但 score 仍然低于人类，说明什么问题？
 4. 直接提问。如何理解 "Prioritized experience replay is a promising approach ..." (没理解的论文原话) 这句话？
 
-比如：
+比如参考 cool paper：
+- 这篇论文视图解决什么问题？
+- 有哪些相关研究？
+- 论文如何解决这个问题？
+- 论文做了哪些实验？
+- 有什么可以进一步探索的点？
+- 总结一下论文的主要内容
+
+其他的问题：
 - 为什么 XX 比 XX 更适合作为 XX ？
 - XX 的 XX 机制有什么作用？
-- 
+- 总结一下论文的主要内容
 
 ## 伪代码实现
 

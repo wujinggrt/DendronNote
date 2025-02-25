@@ -2,9 +2,11 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1740449161341
+updated: 1740473469752
 created: 1738165674608
 ---
+
+## LLM
 
 Triton写算子入门 - Arthur的文章 - 知乎
 https://zhuanlan.zhihu.com/p/887257776
@@ -30,22 +32,8 @@ https://github.com/Deep-Agent/R1-V
 多模态R1复现之旅… - pinkman的文章 - 知乎
 https://zhuanlan.zhihu.com/p/22890208704
 
-如何看待李飞飞团队用不到 50 美元训练出媲美 DeepSeek R1 的 AI 推理模型? - Fazzie的回答 - 知乎
-https://www.zhihu.com/question/11450868336/answer/94386028114
-
 大模型强化学习面经 - 一蓑烟雨的文章 - 知乎
 https://zhuanlan.zhihu.com/p/659551066
-
-RoboGrasp：一种用于稳健机器人控制的通用抓取策略 - 黄浴的文章 - 知乎
-https://zhuanlan.zhihu.com/p/22946605267
-
-ICLR oral
-Open-World Reinforcement Learning over
-Long Short-Term Imagination
-https://qiwang067.github.io/ls-imagine
-https://arxiv.org/pdf/2410.03618
-insights: 做 US 时候，潜意识里人是能够估计人体的 affordance 图，知道大致范围。是否可以弄个 WorldModel？LLM
- 只能生成下一个 token，当做 short，嵌入另一个小模型来做 long term imagination。
 
 人型机器人行走
 https://why618188.github.io/beamdojo/
@@ -60,15 +48,20 @@ https://zhuanlan.zhihu.com/p/24922558098
 https://zhuanlan.zhihu.com/p/24774848974
 
 
-伯克利大学与清华团队发布具身智能新的方案-HiRT - lamboo的文章 - 知乎
-https://zhuanlan.zhihu.com/p/25375865923
-
-https://github.com/Peterwangsicheng/RoboBERT
-
 DeepSpeed 的 ZeRO 解读。
 
 摸着Logic-RL，复现7B - R1  zero - aaaaammmmm的文章 - 知乎
 https://zhuanlan.zhihu.com/p/25982514066
+
+## Robotics
+
+MapNav 使用了 GPT 标注图像数据。可以借鉴处理。
+https://arxiv.org/pdf/2502.13451
+
+https://github.com/Peterwangsicheng/RoboBERT
+
+RoboGrasp：一种用于稳健机器人控制的通用抓取策略 - 黄浴的文章 - 知乎
+https://zhuanlan.zhihu.com/p/22946605267
 
 ## RL
 在线强化学习改进VLA模型 - 黄浴的文章 - 知乎

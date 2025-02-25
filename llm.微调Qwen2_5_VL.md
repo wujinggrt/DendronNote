@@ -2,7 +2,7 @@
 id: tfd9jjc8w7feftqzbyc0pud
 title: 微调Qwen2_5_VL
 desc: ''
-updated: 1740449151517
+updated: 1740474499924
 created: 1740209908837
 ---
 
@@ -131,7 +131,7 @@ baseline 原始 Prompt：
 
 
 |Prompt|分数变化|个人想法|
-|------|---|------|
+|---------|---|----|
 |加入更细致的类别说明: label:{实物拍摄(含售后)}, description: {用户用相机实拍的照片，包括用户售后的照片（损坏、缺失、与描述不符），或者其他用相机实拍的图片。}|分数有1个点左右的提升	|在做分类任务时，一个清晰的类别描述很重要。但需要限制Prompt的长度。prompt超过2500字之后模型对Prompt的理解力有降低，会出现重复输出的问题。 这里使用json格式对标签与描述做区分。|
 |Prompt中加入分类原因:在模型训练时，加入人工标注的标签，让模型输出原因，示例:现在请你根据消费者上传的图片及分类标签，并依据该图片的标签:'退货页面', 给出分为该类的原因	|分数有1个点左右的提升|label在前，reason在后会出现标签和最终结果不一致的问题。|
 |Prompt中加入Cot，输出更详细的原因||有轻微的提升|
@@ -162,6 +162,9 @@ baseline 原始 Prompt：
 见解在于，为了保证通识能力不退化，引入了通识数据集 alpaca。alpaca-zh 的中文版本数据集，
 
 ## Link and Ref
+[LLaMA-Factory微调多模态大语言模型教程 - BrownSearch的文章 - 知乎](https://zhuanlan.zhihu.com/p/699777943)
+
+
 [](https://zhuanlan.zhihu.com/p/17193156687)
 [医疗大模型微调银奖，Qwen-VL-Chat](https://zhuanlan.zhihu.com/p/839580322)
 [llama_factory 流程篇——以Qwen为例（阿里云+llama_factory+lora微调大模型 ） - 小王子的文章 - 知乎](https://zhuanlan.zhihu.com/p/714707824)

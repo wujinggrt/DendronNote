@@ -2,7 +2,7 @@
 id: lvhxgyuvwyw5soqj59gc045
 title: LLaMA-Factory
 desc: ''
-updated: 1740456646288
+updated: 1740468362936
 created: 1740375991093
 ---
 
@@ -687,6 +687,12 @@ CUDA_VISIBLE_DEVICES=0 llamafactory-cli export \
     --export_size 2 \
     --export_device cpu \
     --export_legacy_format False
+```
+
+或者在 yaml 中配置后，比如：
+
+```bash
+llamafactory-cli export examples/merge_lora/qwen2vl_lora_sft.yaml
 ```
 
 ## 一站式 webui board
