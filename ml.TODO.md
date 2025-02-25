@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1740473469752
+updated: 1740507110896
 created: 1738165674608
 ---
 
@@ -75,6 +75,9 @@ https://huggingface.co/docs/trl/main/en/index
 
 GPRO, R1
 https://github.com/philschmid/deep-learning-pytorch-huggingface/blob/main/training/mini-deepseek-r1-aha-grpo.ipynb
+
+导航 RL
+https://github.com/Zhefan-Xu/NavRL
 
 ## PyTorch 技巧
 一文学会 Pytorch 中的 einsum - 梁德澎的文章 - 知乎
