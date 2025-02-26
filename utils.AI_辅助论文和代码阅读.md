@@ -2,7 +2,7 @@
 id: 8uriumohgfxd1icere7lvus
 title: AI_辅助论文和代码阅读
 desc: ''
-updated: 1740465176817
+updated: 1740589689001
 created: 1740377066945
 ---
 
@@ -35,6 +35,7 @@ created: 1740377066945
 3. 深挖。XX 算法在 XX 超越人类水平的现象，但 score 仍然低于人类，说明什么问题？
 4. 直接提问。如何理解 "Prioritized experience replay is a promising approach ..." (没理解的论文原话) 这句话？
 
+### 具体 QA
 比如参考 cool paper：
 - 这篇论文视图解决什么问题？
 - 有哪些相关研究？
@@ -56,7 +57,7 @@ created: 1740377066945
 
 ## 提升 AI 回答质量
 
-关键在于高效地提问和有效的上下文，比如传入论文的 PDF。
+关键在于高效地提问和有效的上下文，比如传入论文的 PDF。在理解完 PDF 后，可以上传项目代码，让其帮忙解读。
 
 ## 示例
 

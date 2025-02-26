@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1740568411927
+updated: 1740590277245
 created: 1738165674608
 ---
 
@@ -55,6 +55,9 @@ https://zhuanlan.zhihu.com/p/25982514066
 
 在 Qwen2.5-VL 复现 R1
 https://github.com/om-ai-lab/VLM-R1
+
+【论文解读】LLM-Microscope：揭秘 LLM 中不起眼 Token 的隐藏力量 - tomsheep的文章 - 知乎
+https://zhuanlan.zhihu.com/p/26492642537
 
 ## Robotics
 

@@ -1,12 +1,15 @@
 ---
 id: 4gb9ottxmfh95i6654zy8hq
-title: DexVLA复现
+title: DexVLA_阅读代码和复现
 desc: ''
-updated: 1740239707905
+updated: 1740587985801
 created: 1740053039805
 ---
 
-## 数据准备
+## 阅读代码
+
+### 数据准备
+
 与 act 工作的数据格式一致，转换数据为 HDF5 格式。作者使用 rlds_to_h5py 转换，格式具体如下：
 ```angular2html
 # h5 data structure
