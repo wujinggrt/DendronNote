@@ -2,9 +2,15 @@
 id: tfd9jjc8w7feftqzbyc0pud
 title: 微调Qwen2_5_VL
 desc: ''
-updated: 1740568205604
+updated: 1740568324453
 created: 1740209908837
 ---
+
+## Grounding
+
+### 特殊字符格式
+
+
 
 使用了 Qwen2-VL-7B-Instruct，SFT 框架为 LlaMA-Factory。
 
@@ -186,58 +192,6 @@ deepspeed: examples/deepspeed/ds_z3_offload_config.json
 
 ## 使用 LLaMA-Factory 微调 Qwen 模型
 
-官方提供了文档 [使用LLaMA-Factory微调Qwen模型](https://github.com/QwenLM/Qwen2.5/blob/main/examples/llama-factory/finetune-zh.md)。
-
-### 准备训练数据
-
-自定义的训练数据保存为 json 文件，每行格式为：
-
-```json
-{
-    "messages": [
-        {
-            "role": "system",
-            "content": "You are a helpful assistant."
-        },
-        {
-            "role": "user",
-            "content": "Tell me something about large language models."
-        },
-        {
-            "role": "assistant",
-            "content": "Large language models are a type of language model that is trained on a large corpus of text data. They are capable of generating human-like text and are used in a variety of natural language processing tasks..."
-        },
-        {
-            "role": "user",
-            "content": "How about Qwen2?"
-        },
-        {
-            "role": "assistant",
-            "content": "Qwen2 is a large language model developed by Alibaba Cloud..."
-        }
-      
-    ]
-}
-```
-
-LLaMA-Factory 目录下的 `data/dataset_info.json` 注册自定义训练数据时，在文件尾部添加：
-
-```json
-"qwen_train_data": {
-    "file_name": "PATH-TO-YOUR-TRAIN-DATA",
-    "formatting": "sharegpt",
-    "columns": {
-      "messages": "messages"
-    },
-    "tags": {
-      "role_tag": "role",
-      "content_tag": "content",
-      "user_tag": "user",
-      "assistant_tag": "assistant",
-      "system_tag": "system"
-    }
-}
-```
 
 ### 配置训练参数
 
