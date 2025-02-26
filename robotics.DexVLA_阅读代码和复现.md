@@ -2,7 +2,7 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA_阅读代码和复现
 desc: ''
-updated: 1740600736292
+updated: 1740601485661
 created: 1740053039805
 ---
 
@@ -364,8 +364,30 @@ pickle 是标准库内容其一，用于序列化和反序列化 Python 对象�
 
 模型结构，在 VLM 末尾增加一个 policy head；而 Helix 直接输出 token，当作 policy 模型的 latent vector。
 
-## Qwen2-VL
+## 把扩散专家接到 Qwen2-VL 上
 项目文件 qwen2_vla/models/modeling_qwen2_vla.py 和 qwen2_vla/models/configuration_qwen2_vla.py 改造了 Qwen2-VL 的源码和配置。两个文件都是从 huggingface 的 transformers 库中 transformers/models/qwen2_vl/modeling_qwen2_vl.py 和对应 configuration_qwen2_vla.py 复制而来，并根据需求做出修改。
+
+
+### 扩散专家与 VLM 的连接
+
+输入投影层：在 VLM 模型的输出部分，扩散专家通过一个输入投影层（input_action_proj）将 VLM 的隐藏状态（hidden states）映射到扩散专家的输入空间。这个投影层通常由两个线性层（MLP）组成，带有 LayerNorm 归一化。
+
+FiLM 层：如果启用了 FiLM（Feature-wise Linear Modulation）机制，扩散专家还会通过 FiLM 层将 VLM 的推理信息（reasoning tokens）注入到扩散专家的动作生成过程中。FiLM 层通过缩放和偏移参数来调整扩散专家的输出。
+
+关键代码片段：
+
+```py
+# 输入投影层
+self.input_action_proj = ActionProjector(config.hidden_size, config.hidden_size)
+
+# FiLM 层
+if self.using_film:
+    self.reasoning_action_proj = ActionProjector(config.hidden_size, config.hidden_size)
+    self.reasoning_film = FiLM(feature_dim=config.hidden_size, condition_dim=config.hidden_size)
+
+# 扩散专家调用
+ret = self.policy_head(actions=actions, hidden_states=action_hidden_states, states=states, is_pad=is_pad)
+```
 
 在文件末尾的 Qwen2VLForConditionalGenerationForVLA 中，作者做出了修改。原版的只有 `self.visual, self.model, self.vocab_size, self.lm_head, self.rope_deltas` 等 fields。作者添加了 `self.padding_side, self.using_file, ...`。
 
@@ -523,10 +545,18 @@ HiRT 发表了论文，解决了 VLM 模型与策略模型生成速度不匹配�
 
 ## 借助 DeepSeek 的 QA
 
+上传论文后，Q 如下：
+
 ### 分析 train_vla.py Q
 
 - 以下代码是训练阶段 2 和阶段 3 的入口，请总结数据是如何加载和传入训练的。<粘贴了文件内容>
 - 请总结 main 函数做了哪些工作
+
+以下代码是 DexVLA 项目的 VLA 模型相关文件，作者做出了修改，请问扩散专家是如何接到 VLM 模型的。
+
+配置文件qwen2_vla/models/configuration_qwen2_vla.py如下：
+
+配置文件qwen2_vla/models/modeling_qwen2_vla.py如下：
 
 
 ## Tag and Ref
