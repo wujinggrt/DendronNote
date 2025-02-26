@@ -2,13 +2,15 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA_阅读代码和复现
 desc: ''
-updated: 1740587985801
+updated: 1740600736292
 created: 1740053039805
 ---
 
-## 阅读代码
+## 数据准备
 
-### 数据准备
+### 数据格式
+
+#### HDF5 格式
 
 与 act 工作的数据格式一致，转换数据为 HDF5 格式。作者使用 rlds_to_h5py 转换，格式具体如下：
 ```angular2html
@@ -26,6 +28,35 @@ root
       |-qpos (100,7)
       |-qvel (100,7)
 ```
+
+#### 字段解释
+
+内容来自猜测和结合 DeepSeek：
+- language_raw (1,) —— 原始语言指令，如折叠衬衫。所以当前是一个任务，有一个语言指令，如下每个时间步对应一个子步骤。即此任务的 horizon 为 100。
+- substep_reasonings (100,) —— 子步骤推理，每个时间步对应每个子步骤描述。相比 language_raw，
+
+
+| 字段 | 形状 | 描述 |
+| --- | --- | --- |
+| action | (100,10) | 100 表示时间步数，10 表示动作维度。 |
+| substep_reasonings | (100,) | 100 | 每个时间步对应一个子步骤推理。 |
+| observations |  | 表示时间步数，其他维度表示观测数据。 |
+| - images | | 表示时间步数，其他维度表示图像数据。 |
+| \|- left | (100,480,640,3) | 100 | 表示时间步数，480x640 表示图像分辨率。 |
+| \|- right | (100,480,640,3) | 100 | 表示时间步数，480x640 表示图像分辨率。 |
+| \|- wrist | (100,480,640,3) | 100 | 表示时间步数，480x640 表示图像分辨率。 |
+| - joint_positions | (100,7) | 100 | 表示时间步数，7 表示关节位置维度。 |
+| - qpos | (100,7) | 100 | 表示时间步数，7 表示关节位置维度。 |
+| - qvel | (100,7) | 100 | 表示时间步数，7 表示关节速度维度。 |
+
+joint_positions 和 qpos 关系：
+
+| 维度 | joint_positions | qpos |
+| ---- | --- | --- |
+| 定义     | 关节角度或关节位置。 | 广义坐标位置，可能包含更多自由度信息。 |
+| 用途     | 描述机器人的关节状态。  | 描述机器人系统的完整状态。 |
+| 数据范围 | 通常仅包含关节角度。  | 可能包含关节角度、末端执行器位置等信息。 |
+| 示例     | 7 自由度的机械臂的关节角度。 | 7 自由度的机械臂的关节角度 + 末端执行器位置。 |
 
 ### act-plus-plus 数据格式
 为了了解数据格式，查看仿真环境下的 mobile aloha 如何数据如何组织：
@@ -137,13 +168,204 @@ def generate_h5(
             root[name][...] = array
 ```
 
+## 数据流向和训练调用关系
+
+训练 VLA 的文件参考 train_vla.py，阶段 2 和阶段 3 的训练都用到它。
+
+train_vla.py:main() 是核心入口，负责数据加载到模型训练的整个流程：
+- **初始化与配置加载** —— 加载任务配置，设置随机种子。
+- **数据加载与预处理** —— 加载数据集，使用 `Qwen2VLAProcess` 进行多模态数据预处理。
+- **模型加载** —— 使用 `ml_utils.load_model` 加载预训练的视觉-语言模型和扩散专家。
+- **训练器初始化与训练** —— 初始化 `QWen2VLATrainer`，调用 `trainer.train` 开始训练。
+- **保存训练结果** —— 保存数据集的统计信息和训练后的模型状态。
+
+### 任务配置加载
+
+训练数据通过 `TASK_CONFIGS` 加载配置。此字典在 aloha_scripts/constants.py 文件定义，通过添加条目来指定数据加载：
+
+```py
+TASK_CONFIGS = {
+    'example_tasks': { # for local debug
+        'dataset_dir': [
+            "/media/rl/HDD/data/data/aloha_data/4_cameras_aloha/folding_shirt"
+        ],
+        'episode_len': 1000,  
+        'camera_names': ['cam_high', 'cam_left_wrist', 'cam_right_wrist'] # replacing with your real keys in h5py formatted data
+    }
+}
+...
+```
+
+`TASK_CONFIGS` 包括数据集路径 (dataset_dir)、任务时间步数 (episode_len)、相机视角 (camera_names) 等。
+
+```py
+def main():
+    ...
+    task_config = TASK_CONFIGS[all_config['data_args'].task_name]
+    dataset_dir = task_config['dataset_dir']
+    episode_len = task_config['episode_len']
+    camera_names = task_config['camera_names']
+    ...
+```
+
+`all_config` 根据 `parse_param()` 解析，设置在 train_vla.py 开头的数据类 `ModelArguments`, `DataArguments`, `TrainingArguments`, `ActionHeadArgument`。在设计方面，这里应该单独梳理为一个文件更合适。回到 main()，`all_config['data_args'].task_name` 的 task_name 由 `DataArguments` 决定，可以看到注释，应当对应到 constants.py 文件：
+
+```py
+@dataclass
+class DataArguments:
+    ...
+    task_name: str = field(default="stack_cube_2024_6_2") # task name corresponding to aloha_scripts/constants.py
+    ...
+```
+
+### 数据加载与预处理
+
+#### 数据加载
+
+使用 `load_data` 函数加载训练和验证数据集。
+
+```py
+    # load dataset
+    train_dataset, val_dataset, stats, sampler_params = load_data(
+        dataset_dir,
+        name_filter,
+        camera_names,
+        all_config["training_args"].per_device_train_batch_size,
+        all_config["training_args"].per_device_eval_batch_size,
+        all_config["data_args"].chunk_size,
+        skip_mirrored_data=all_config["data_args"].skip_mirrored_data,
+        config=all_config,
+        stats_dir_l=stats_dir,
+        rank0_print=rank0_print,
+        policy_class=all_config["action_head_args"].policy_head_type,
+        sample_weights=sample_weights,
+        train_ratio=train_ratio,
+        llava_pythia_process=vla_process,
+    )
+```
+
+#### 数据预处理
+
+使用 `Qwen2VLAProcess` 对多模态数据（图像和语言指令）进行预处理。
+
+```py
+    vla_process = Qwen2VLAProcess(
+        tokenizer=tokenizer,
+        multimodal_processor=multimodal_processor,
+        data_args=all_config["data_args"],
+        camera_names=camera_names,
+    )
+```
+
+#### 模型加载
+
+使用 `ml_utils.load_model` 加载预训练的视觉-语言模型（VLM）和扩散专家（Diffusion Expert）。
+
+```py
+    # load qwen2_vl tokenizer
+    tokenizer = transformers.AutoTokenizer.from_pretrained(
+        all_config["model_args"].model_name_or_path,
+    )
+    # load qwen2_vl input processor
+    multimodal_processor = AutoProcessor.from_pretrained(all_config["model_args"].model_name_or_path)
+    # load dexvla model
+    model, data_args = ml_utils.load_model(
+        config=all_config, qwen2_vla_config=model_config, rank0_print=rank0_print, tokenizer=tokenizer
+    )
+```
+
+#### 训练器初始化与训练
+
+接下来，模型调用 `train_bc()`，开始准备训练。
+
+```py
+def main(all_config=None, model_config=None):
+    ...
+    best_ckpt_info = train_bc(
+        train_dataset=train_dataset,
+        model=model,
+        val_dataset=val_dataset,
+        config=all_config,
+        sampler_params=sampler_params,
+        tokenizer=tokenizer,
+        processor=multimodal_processor,
+    )
+    ...
+```
+
+使用 `Qwen2VLADataCollatorForSupervisedDataset` 对数据进行整理，生成模型输入。
+
+```py
+def train_bc(
+    train_dataset=None, val_dataset=None, model=None, config=None, sampler_params=None, tokenizer=None, processor=None
+):
+    """
+    Train a behavior cloning model using the QWen2VLA architecture.
+    """
+    ...
+    data_collator = Qwen2VLADataCollatorForSupervisedDataset(
+        multimodal_processor=processor, computed_type=compute_dtype, tokenizer=tokenizer, video=video
+    )
+```
+
+使用 `QWen2VLATrainer` 初始化训练器，传入模型、数据整理器、训练参数等，开始训练。
+
+```py
+    model.config.use_cache = True
+    model.config.save_pretrained(config["training_args"].output_dir)
+
+    data_module = dict(train_dataset=train_dataset, data_collator=data_collator, eval_dataset=val_dataset)
+    trainer = QWen2VLATrainer(
+        model=model, tokenizer=tokenizer, args=config["training_args"], sampler_params=sampler_params, **data_module
+    )
+
+    trainer.train(resume_from_checkpoint=config["training_args"].resume_from_checkpoint)
+```
+
+#### 保存训练结果
+
+保存模型状态和检查点：
+
+```py
+def train_bc(...):
+    ...
+    trainer.save_state()
+
+    model.config.use_cache = True
+```
+
+保存统计信息：
+
+```py
+def main(...):
+    ...
+    best_ckpt_info = train_bc(...)
+
+    # exit(0)
+    stats_path = os.path.join(all_config["training_args"].output_dir, f"dataset_stats.pkl")
+    with open(stats_path, "wb") as f:
+        pickle.dump(stats, f)
+```
+
+pickle 是标准库内容其一，用于序列化和反序列化 Python 对象。
+
+## 参数配置
+
+参考 train_vla.py:def parse_param()。根据数据类 ModelArguments, DataArguments, TrainingArguments, ActionHeadArguments 解析参数。
+
+## ScaleDP
+
+## 训练器 QWen2VLATrainer
+
+参考 qwen2_vla/train/qwen2_vla_trainer.py。
+
 ## VLM
 使用 [Qwen2-2B-VL](https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct) 作为主干网络。也许可以尝试 [Qwen/Qwen2.5-VL-3B-Instruct](https://huggingface.co/Qwen/Qwen2.5-VL-3B-Instruct)。
 
 模型结构，在 VLM 末尾增加一个 policy head；而 Helix 直接输出 token，当作 policy 模型的 latent vector。
 
-### Qwen2-VL
-项目文件 qwen2_vla/models/modeling_qwen2_vla.py 是从 huggingface 的 transformers 库中 transformers/models/qwen2_vl/modeling_qwen2_vl.py 复制而来，并根据需求做出修改。
+## Qwen2-VL
+项目文件 qwen2_vla/models/modeling_qwen2_vla.py 和 qwen2_vla/models/configuration_qwen2_vla.py 改造了 Qwen2-VL 的源码和配置。两个文件都是从 huggingface 的 transformers 库中 transformers/models/qwen2_vl/modeling_qwen2_vl.py 和对应 configuration_qwen2_vla.py 复制而来，并根据需求做出修改。
 
 在文件末尾的 Qwen2VLForConditionalGenerationForVLA 中，作者做出了修改。原版的只有 `self.visual, self.model, self.vocab_size, self.lm_head, self.rope_deltas` 等 fields。作者添加了 `self.padding_side, self.using_file, ...`。
 
@@ -297,6 +519,14 @@ HiRT 发表了论文，解决了 VLM 模型与策略模型生成速度不匹配�
 可行性：DexVLA 开源，有框架遵循，有复现可能。使用的 VLM 模型是 2B，最近，千问发表了 Qwen2.5-VL 系列。可以使用可能更优秀的 Qwen2.5-3B-Instruct，使用 DeepSpeed，两张显卡猜测能够微调。在数据收集方面，有 pny 做过数据收集，使用的数据格式类似。
 
 下一步打算：先复现，后修改，不断逼近 Helix 的方案。
+
+
+## 借助 DeepSeek 的 QA
+
+### 分析 train_vla.py Q
+
+- 以下代码是训练阶段 2 和阶段 3 的入口，请总结数据是如何加载和传入训练的。<粘贴了文件内容>
+- 请总结 main 函数做了哪些工作
 
 
 ## Tag and Ref
