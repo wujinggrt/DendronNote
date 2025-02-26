@@ -2,11 +2,138 @@
 id: tfd9jjc8w7feftqzbyc0pud
 title: 微调Qwen2_5_VL
 desc: ''
-updated: 1740474499924
+updated: 1740568205604
 created: 1740209908837
 ---
 
 使用了 Qwen2-VL-7B-Instruct，SFT 框架为 LlaMA-Factory。
+
+## 使用 vllm 部署
+
+部署微调的 3B 模型时：
+
+```bash
+❯ CUDA_VISIBLE_DEVICES=0,1 vllm serve merged --port 8000 --host 0.0.0.0 --dtype bfloat16 --limit-mm-per-prompt  image=5,video=5
+...
+ValueError: The model's max seq len (128000) is larger than the maximum number of tokens that can be stored in KV cache (119840). Try increasing `gpu_memory_utilization` or decreasing `max_model_len` when initializing the engine.
+```
+
+发现错误，应当增加 `gpu_memory_utilization` 或减少 `max_model_len`。调整后，启动如下，便可运行：
+
+```bash
+❯ CUDA_VISIBLE_DEVICES=0,1 vllm serve merged --port 8000 --host 0.0.0.0 --dtype bfloat16 --limit-mm-per-prompt  image=5,video=5 --max_model_len=8000 --gpu_memory_utilization=0.9
+```
+
+### 使用 curl
+
+使用 curl 提问：
+
+```bash
+curl http://localhost:8000/v1/chat/completions \
+    -H "Content-Type: application/json" \
+    -d '{
+    "model": "Qwen/Qwen2.5-VL-7B-Instruct",
+    "messages": [
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": [
+        {"type": "image_url", "image_url": {"url": "https://modelscope.oss-cn-beijing.aliyuncs.com/resource/qwen.png"}},
+        {"type": "text", "text": "What is the text in the illustrate?"}
+    ]}
+    ]
+    }'
+```
+
+使用 Python 多进程来执行 curl：
+
+```py
+import subprocess, json
+
+curl_command = """
+curl -s http://localhost:30000/v1/chat/completions \
+  -d '{"model": "meta-llama/Meta-Llama-3.1-8B-Instruct", "messages": [{"role": "user", "content": "What is the capital of France?"}]}'
+"""
+
+response = json.loads(subprocess.check_output(curl_command, shell=True))
+print(response)
+```
+
+注意，-d 参数中的 model 参数，必须是 vllm serve 时指定的，比如例子中的 `merged`。
+
+使用本地图像，推荐使用 OpenAI 的 API 的方式。
+
+### 使用 OpenAI 的 API 提问
+
+```py
+from openai import OpenAI
+
+# Set OpenAI's API key and API base to use vLLM's API server.
+openai_api_key = "EMPTY"
+openai_api_base = "http://localhost:8000/v1"
+
+client = OpenAI(
+    api_key=openai_api_key,
+    base_url=openai_api_base,
+)
+
+chat_response = client.chat.completions.create(
+    model="Qwen/Qwen2.5-VL-7B-Instruct",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": "https://modelscope.oss-cn-beijing.aliyuncs.com/resource/qwen.png"
+                    },
+                },
+                {"type": "text", "text": "What is the text in the illustrate?"},
+            ],
+        },
+    ],
+)
+print("Chat response:", chat_response)
+```
+
+使用本地图片：
+
+```py
+import base64
+from openai import OpenAI
+# Set OpenAI's API key and API base to use vLLM's API server.
+openai_api_key = "EMPTY"
+openai_api_base = "http://localhost:8000/v1"
+client = OpenAI(
+    api_key=openai_api_key,
+    base_url=openai_api_base,
+)
+image_path = "/path/to/local/image.png"
+with open(image_path, "rb") as f:
+    encoded_image = base64.b64encode(f.read())
+encoded_image_text = encoded_image.decode("utf-8")
+base64_qwen = f"data:image;base64,{encoded_image_text}"
+chat_response = client.chat.completions.create(
+    model="Qwen/Qwen2.5-VL-3B-Instruct",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": base64_qwen
+                    },
+                },
+                {"type": "text", "text": "What is the text in the illustrate?"},
+            ],
+        },
+    ],
+)
+print("Chat response:", chat_response)
+```
+
 
 全量微调的参数：
 ```yaml

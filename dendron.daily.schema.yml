@@ -1,0 +1,22 @@
+version: 1
+imports: []
+schemas:
+  - id: daily
+    title: daily
+    parent: root
+    desc: Identifier that will be used when using 'Lookup (Schema)' command.
+    children:
+      - pattern: journal
+        desc: This pattern matches the 'journal' child hierarchy
+        children:
+          - pattern: '[0-2][0-9][0-9][0-9]'
+            desc: This pattern matches the YYYY (year) child hierarchy
+            children:
+              - pattern: '[0-1][0-9]'
+                desc: This pattern matches the MM (month) child hierarchy
+                children:
+                  - pattern: '[0-3][0-9]'
+                    template:
+                      id: templates.daily
+                      type: note
+                    desc: This pattern matches the DD (day) child hierarchy

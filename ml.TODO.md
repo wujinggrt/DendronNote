@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1740473469752
+updated: 1740556836620
 created: 1738165674608
 ---
 
@@ -53,6 +53,9 @@ DeepSpeed 的 ZeRO 解读。
 摸着Logic-RL，复现7B - R1  zero - aaaaammmmm的文章 - 知乎
 https://zhuanlan.zhihu.com/p/25982514066
 
+在 Qwen2.5-VL 复现 R1
+https://github.com/om-ai-lab/VLM-R1
+
 ## Robotics
 
 MapNav 使用了 GPT 标注图像数据。可以借鉴处理。
@@ -62,6 +65,9 @@ https://github.com/Peterwangsicheng/RoboBERT
 
 RoboGrasp：一种用于稳健机器人控制的通用抓取策略 - 黄浴的文章 - 知乎
 https://zhuanlan.zhihu.com/p/22946605267
+
+独家专访｜清华TEA实验室负责人：具身智能入门/转行到底学什么？ - 深蓝学院的文章 - 知乎
+https://zhuanlan.zhihu.com/p/26333134789
 
 ## RL
 在线强化学习改进VLA模型 - 黄浴的文章 - 知乎
@@ -79,3 +85,5 @@ https://github.com/philschmid/deep-learning-pytorch-huggingface/blob/main/traini
 ## PyTorch 技巧
 一文学会 Pytorch 中的 einsum - 梁德澎的文章 - 知乎
 https://zhuanlan.zhihu.com/p/361209187
+
+## Tricks

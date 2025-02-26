@@ -2,7 +2,7 @@
 id: lvhxgyuvwyw5soqj59gc045
 title: LLaMA-Factory
 desc: ''
-updated: 1740468362936
+updated: 1740557449425
 created: 1740375991093
 ---
 
@@ -54,7 +54,7 @@ CUDA_VISIBLE_DEVICES=0 llamafactory-cli webchat --model_name_or_path Qwen/Qwen2.
 
 模板支持情况参考 [Supported Models](https://github.com/hiyouga/LLaMA-Factory?tab=readme-ov-file#supported-models)。
 
-### 从 yaml 加载
+### 从 yaml 加载训练参数
 
 也可保存在 yaml 中，按照官方的样例 [examples/inference/qwen2_vl.yaml](https://github.com/hiyouga/LLaMA-Factory/blob/main/examples/inference/qwen2_vl.yaml)
 
@@ -65,7 +65,11 @@ infer_backend: huggingface  # choices: [huggingface, vllm]
 trust_remote_code: true
 ```
 
-随后直接执行：`llamafactory-cli webchat examples/inference/qwen2_vl.yaml`
+随后直接执行：
+
+```bash
+llamafactory-cli webchat examples/inference/qwen2_vl.yaml
+```
 
 可以通过本机的 IP，比如 http://localhost:7860 访问。对于服务器，可以使用 http://<server addr>:7860 访问。
 
@@ -109,7 +113,7 @@ sudo ufw allow 7860/tcp
 sudo ufw deny 7860/tcp
 ```
 
-## 可选参数
+## llamafactory-cli 可选参数
 
 |动作参数枚举|参数说明|
 |---|---|
@@ -544,8 +548,6 @@ system_tag 例子，省去了数据描述部分：
 - 如果你的目标是微调模型以执行特定任务（如翻译、摘要等），Alpaca 格式可能更适合。
 - 如果你的目标是微调模型以进行自然对话（如聊天机器人），ShareGPT 格式可能更适合。
 
-### 官网
-
 ## 基于 LoRA 的 SFT 指令微调
 
 准备数据集后，开始训练，让模型学会我们定义的“你是谁”，同时学会商品文案生成。从命令行开始，参数来自 [llama3_lora_sft.yaml](https://link.zhihu.com/?target=https%3A//github.com/hiyouga/LLaMA-Factory/blob/main/examples/train_lora/llama3_lora_sft.yaml)，可以查看其与命令行参数的关系。
@@ -611,7 +613,7 @@ CUDA_VISIBLE_DEVICES=0 llamafactory-cli train \
 
 ## 动态合并 LoRA 的推理
 
-参数改自 [llama3_lora_sft.yaml](https://link.zhihu.com/?target=https%3A//github.com/hiyouga/LLaMA-Factory/blob/main/examples/inference/llama3_lora_sft.yaml)。训练结束后，向左动态验证，可以尝试推理，但是需要通过参数 `--finetuning_type lora` 告诉系统，使用了 LoRA 训练，并将 LoRA 模型路径指出：
+参数改自 [llama3_lora_sft.yaml](https://link.zhihu.com/?target=https%3A//github.com/hiyouga/LLaMA-Factory/blob/main/examples/inference/llama3_lora_sft.yaml)。训练结束后，如果需要动态验证，可以尝试利用 LoRA 的权重来推理。通过参数 `--finetuning_type lora` 告诉系统，使用了 LoRA 训练，并将 LoRA 模型路径指出：
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 llamafactory-cli webchat \
@@ -673,7 +675,7 @@ CUDA_VISIBLE_DEVICES=0 llamafactory-cli train \
 
 最后可在 output_dir 看到内容。
 
-## LoRA 模型合并到处
+## LoRA 模型合并导出
 
 把训练的 LoRA 与原始大模型融合并到处，需要使用如下命令。参数改编自 [llama3_lora_sft.yaml](https://github.com/hiyouga/LLaMA-Factory/blob/main/examples/merge_lora/llama3_lora_sft.yaml)。
 
@@ -713,6 +715,77 @@ CUDA_VISIBLE_DEVICES=0 llamafactory-cli webui
 
 ![lora_model_file](assets/images/llm.LLaMA-Factory/lora_model_file.png)
 
+### 实践
+
+注意保存位置，如果没有写绝对路径，会保存在运行命令的目录下。
+
+![webui](assets/images/llm.LLaMA-Factory/webui.png)
+
+运行之后，可以查看当前目录，多了几个目录：`cache`, `checkpoints`, `config`, `saves`，对应我们的训练成果。
+
+保存的目录：
+
+```bash
+❯ tree  saves
+saves
+└── Qwen2.5-VL-3B-Instruct
+    └── lora
+        └── train_2025-02-26-14-06-11
+            ├── adapter_config.json
+                ...
+            ├── checkpoint-3
+            │   ├── adapter_config.json
+            │   ...
+            │   ├── added_tokens.json
+            │   ├── chat_template.json
+            │   ├── merges.txt
+            │   ├── optimizer.pt
+            │   ├── preprocessor_config.json
+            │   ├── README.md
+            │   ├── rng_state_0.pth
+            │   ├── rng_state_1.pth
+            │   ├── scheduler.pt
+            │   ├── special_tokens_map.json
+            │   ├── tokenizer_config.json
+            │   ├── tokenizer.json
+            │   ├── trainer_state.json
+            │   ├── training_args.bin
+            │   └── vocab.json
+            ├── ...
+            ├── README.md
+            └── vocab.json
+
+4 directories, 36 files
+```
+
+选择选项卡的 Export，开始合并到处模型。
+
+![merge](assets/images/llm.LLaMA-Factory/merge.png)
+
+```bash
+❯ tree ./merged
+./merged
+├── added_tokens.json
+├── chat_template.json
+├── config.json
+├── generation_config.json
+├── merges.txt
+├── model-00001-of-00002.safetensors
+├── model-00002-of-00002.safetensors
+├── Modelfile
+├── model.safetensors.index.json
+├── preprocessor_config.json
+├── special_tokens_map.json
+├── tokenizer_config.json
+├── tokenizer.json
+└── vocab.json
+
+0 directories, 14 files
+  /data1/wj_24/llm                                                                                                                                                                        base wj-24@rbt-server  16:10:26
+❯ du -hd 1 ./merged
+7.1G    ./merged
+```
+
 ## API Server 启动与调用
 
 基于 vllm 推理时，需要提前将 LoRA 模型 merge，随后指出即可：
@@ -747,14 +820,282 @@ if __name__ == '__main__':
     print(result.choices[0].message)
 ```
 
+## 调优算法
+
+### Full Parameter Fine-tuning
+
+如果是全参微调，将 `finetuning_type` 设置 `full`：
+
+```json
+### examples/train_full/llama3_full_sft_ds3..yaml
+# ...
+finetuning_type: full
+# ...
+# 如果需要使用deepspeed:
+deepspeed: examples/deepspeed/ds_z3_config.json
+```
+
+### Freeze
+
+冻结微调，只对小部分权重更新，降低显存要求。将 `finetuning_type` 设置 `freeze`，并且调整相关参数：
+
+```json
+...
+### method
+stage: sft
+do_train: true
+finetuning_type: freeze
+freeze_trainable_layers: 8
+freeze_trainable_modules: all
+...
+```
+
+| 参数名称 | 类型 | 介绍 |
+|-----|---|------|
+| freeze_trainable_layers | int | 可训练层的数量。正数表示最后 n 层被设置为可训练的，负数表示前 n 层被设置为可训练的。默认值为 2 |
+| freeze_trainable_modules | str | 可训练层的名称。使用 all 来指定所有模块。默认值为 all |
+| freeze_extra_modules[非必须] | str | 除了隐藏层外可以被训练的模块名称，被指定的模块将会被设置为可训练的。使用逗号分隔多个模块。默认值为 None |
+
+### LoRA
+
+将 `finetuning_type` 设置为 `lora` 并设置相关参数，例子：
+
+```json
+...
+### method
+stage: sft
+do_train: true
+finetuning_type: lora
+lora_target: all
+lora_rank: 8
+lora_alpha: 16
+lora_dropout: 0.1
+...
+```
+
+| 参数名称 | 类型 | 介绍 |
+|----|---|------|
+| additional_target[非必须] | [str,] | 除 LoRA 层之外设置为可训练并保存在最终检查点中的模块名称。使用逗号分隔多个模块。默认值为 None |
+| lora_alpha[非必须] | int | LoRA 缩放系数。一般情况下为 lora_rank * 2, 默认值为 None |
+| lora_dropout | float | LoRA 微调中的 dropout 率。默认值为 0 |
+| lora_rank | int | LoRA 微调的本征维数 r， r 越大可训练的参数越多。默认值为 8 |
+| lora_target | str | 应用 LoRA 方法的模块名称。使用逗号分隔多个模块，使用 all 指定所有模块。默认值为 all |
+| loraplus_lr_ratio[非必须] | float | LoRA+ 学习率比例 (λ = ηB/ηA)。 ηA, ηB 分别是 adapter matrices A 与 B 的学习率。LoRA+ 的理想取值与所选择的模型和任务有关。默认值为 None |
+| loraplus_lr_embedding[非必须] | float | LoRA+ 嵌入层的学习率, 默认值为 1e-6 |
+| use_rslora | bool | 是否使用秩稳定 LoRA(Rank-Stabilized LoRA)，默认值为 False。 |
+| use_dora | bool | 是否使用权重分解 LoRA（Weight-Decomposed LoRA），默认值为 False |
+| pissa_init | bool | 是否初始化 PiSSA 适配器，默认值为 False |
+| pissa_iter | int | PiSSA 中 FSVD 执行的迭代步数。使用 -1 将其禁用，默认值为 16 |
+| pissa_convert | bool | 是否将 PiSSA 适配器转换为正常的 LoRA 适配器，默认值为 False |
+| create_new_adapter | bool | 是否创建一个具有随机初始化权重的新适配器，默认值为 False |
+
 ## 分布式训练：DDP，DeepSpeed 和 FSDP
 
 [分布式训练](https://llamafactory.readthedocs.io/zh-cn/latest/advanced/distributed.html)
 
 [Github DeepSpeed 配置示例](https://github.com/hiyouga/LLaMA-Factory/tree/main/examples/deepspeed)
 
+从 ZeRO-1 到 ZeRO-3，显存需求越来越小，训练速度依次变慢。
+- ZeRO-1: 仅划分优化器参数，每个GPU各有一份完整的模型参数与梯度。
+- ZeRO-2: 划分优化器参数与梯度，每个GPU各有一份完整的模型参数。
+- ZeRO-3: 划分优化器参数、梯度与模型参数。
+
+### 单机多卡
+
+#### 使用 llamafactory-cli 启动
+
+```bash
+FORCE_TORCHRUN=1 llamafactory-cli train examples/train_full/llama3_full_sft_ds3.yaml
+```
+
+启动脚本指定 DeepSpeed 配置文件路径。
+
+```yaml
+...
+deepspeed: examples/deepspeed/ds_z3_config.json
+...
+```
+
+#### 使用 deepspeed 启动
+
+```bash
+deepspeed --include localhost:1 your_program.py <normal cl args> --deepspeed ds_config.json
+```
+
+例子：
+
+```bash
+deepspeed --num_gpus 8 src/train.py \
+--deepspeed examples/deepspeed/ds_z3_config.json \
+--stage sft \
+--model_name_or_path meta-llama/Meta-Llama-3-8B-Instruct  \
+--do_train \
+--dataset alpaca_en \
+--template llama3 \
+--finetuning_type full \
+--output_dir  saves/llama3-8b/lora/full \
+--overwrite_cache \
+--per_device_train_batch_size 1 \
+--gradient_accumulation_steps 8 \
+--lr_scheduler_type cosine \
+--logging_steps 10 \
+--save_steps 500 \
+--learning_rate 1e-4 \
+--num_train_epochs 2.0 \
+--plot_loss \
+--bf16
+```
+
+使用 deepspeed 指令启动 DeepSpeed 引擎时无法使用 CUDA_VISIBLE_DEVICES 指定GPU。而需要：
+
+```bash
+deepspeed --include localhost:1 your_program.py <normal cl args> --deepspeed ds_config.json
+```
+
+`--include localhost:1` 表示只是用本节点的gpu1。
+
+### 多机多卡
+
+```bash
+FORCE_TORCHRUN=1 NNODES=2 NODE_RANK=0 MASTER_ADDR=192.168.0.1 MASTER_PORT=29500 llamafactory-cli train examples/train_lora/llama3_lora_sft_ds3.yaml
+FORCE_TORCHRUN=1 NNODES=2 NODE_RANK=1 MASTER_ADDR=192.168.0.1 MASTER_PORT=29500 llamafactory-cli train examples/train_lora/llama3_lora_sft_ds3.yaml
+```
+
+TODO：场景实操，两台机器上训练。
+
+使用 DeepSpeed 指令启动多机多卡训练。
+
+```bash
+deepspeed --num_gpus 8 --num_nodes 2 --hostfile hostfile --master_addr hostname1 --master_port=9901 \
+  your_program.py <normal cl args> --deepspeed ds_config.json
+```
+在 LLaMa-Factory 项目上，your_program.py 是 src/train.py 训练启动脚本。hostfile 的每行指定一个节点，每行格式为 `<hostname> slots=<num_slots>`，`<hostname>` 是节点主机名，`<num_slots>` 代表节点上 GPU 数量。例如：
+
+```
+worker-1 slots=4
+worker-2 slots=4
+```
+
+具体参考 https://www.deepspeed.ai/getting-started 。如果没有 `hostfile` 变量，DeepSpeed 搜索 `/job/hostfile` 文件，未找到，那么 DeepSpeed 使用本机上所有可用 GPU。
+
+### DeepSpeed 配置文件
+
+#### ZeRO-0
+
+```json
+### ds_z0_config.json
+{
+    "train_batch_size": "auto",
+    "train_micro_batch_size_per_gpu": "auto",
+    "gradient_accumulation_steps": "auto",
+    "gradient_clipping": "auto",
+    "zero_allow_untested_optimizer": true,
+    "fp16": {
+        "enabled": "auto",
+        "loss_scale": 0,
+        "loss_scale_window": 1000,
+        "initial_scale_power": 16,
+        "hysteresis": 2,
+        "min_loss_scale": 1
+    },
+    "bf16": {
+        "enabled": "auto"
+    },
+    "zero_optimization": {
+        "stage": 0,
+        "allgather_partitions": true,
+        "allgather_bucket_size": 5e8,
+        "overlap_comm": true,
+        "reduce_scatter": true,
+        "reduce_bucket_size": 5e8,
+        "contiguous_gradients": true,
+        "round_robin_gradients": true
+    }
+}
+```
+
+#### ZeRO-2
+
+在 ZeRO-0 基础上修改 `zero_optimization` 的 `stage` 即可。
+
+```json
+### ds_z2_config.json
+{
+    ...
+    "zero_optimization": {
+        "stage": 2,
+    ...
+    }
+}
+```
+
+#### ZeRO-2 + offload
+
+在 ZeRO-0 基础上，添加 `offload_optimizer` 到 `zero_optimization`。
+
+```json
+### ds_z2_offload_config.json
+{
+    ...
+    "zero_optimization": {
+        "stage": 2,
+        "offload_optimizer": {
+        "device": "cpu",
+        "pin_memory": true
+        },
+    ...
+    }
+}
+```
+
+#### ZeRO-3
+
+在 ZeRO-0 基础上，修改 `zero_optimization` 参数。
+
+```json
+### ds_z3_config.json
+{
+    ...
+    "zero_optimization": {
+        "stage": 3,
+        "overlap_comm": true,
+        "contiguous_gradients": true,
+        "sub_group_size": 1e9,
+        "reduce_bucket_size": "auto",
+        "stage3_prefetch_bucket_size": "auto",
+        "stage3_param_persistence_threshold": "auto",
+        "stage3_max_live_parameters": 1e9,
+        "stage3_max_reuse_distance": 1e9,
+        "stage3_gather_16bit_weights_on_model_save": true
+    }
+}
+```
+
+#### ZeRO-3 + offload
+
+在 ZeRO-3 基础上，添加 `zero_optimization` 中 `offload_optimizer` 和 `offload_param` 参数。
+
+```json
+### ds_z3_offload_config.json
+{
+    ...
+    "zero_optimization": {
+        "stage": 3,
+        "offload_optimizer": {
+        "device": "cpu",
+        "pin_memory": true
+        },
+        "offload_param": {
+        "device": "cpu",
+        "pin_memory": true
+        },
+    ...
+    }
+}
+```
+
 ## Ref and Tag
-[Github](https://github.com/hiyouga/LLaMA-Factory)
+[Github](https://github.com/hiyouga/LLaMA-Factory) 
 [知乎教程](https://zhuanlan.zhihu.com/p/695287607)
 [read the doc](https://llamafactory.readthedocs.io/zh-cn/latest/)
 [与 DeepSpeed 训练 Qwen](https://zhuanlan.zhihu.com/p/714707824)

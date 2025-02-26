@@ -2,7 +2,7 @@
 id: cy0z1e3avly9p2sitrkajl4
 title: Vllm
 desc: ''
-updated: 1740388896120
+updated: 1740558985616
 created: 1740385950788
 ---
 
@@ -36,7 +36,7 @@ CUDA_VISIBLE_DEVICES=0,1 HF_HUB_OFFLINE=1 vllm serve Qwen/Qwen2.5-14B-Instruct \
   --served-model-name qwen2.5-14b-instruct \
   --enable-auto-tool-choice \
   --tool-call-parser hermes \
-  --max-model-len=32768 \
+  --max_model_len=32768 \
   --tensor-parallel-size 2 \
   --port 8000
 ```
