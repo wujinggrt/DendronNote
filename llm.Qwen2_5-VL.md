@@ -2,7 +2,7 @@
 id: 2nbimo1w05qd1lpgkghblc7
 title: Qwen2.5-VL
 desc: ''
-updated: 1740553864949
+updated: 1740572008852
 created: 1740130046405
 ---
 
@@ -91,6 +91,8 @@ Qwen2_5_VLForConditionalGeneration(
   (lm_head): Linear(in_features=3584, out_features=152064, bias=False)
 )
 ```
+
+## 官网例子：
 
 ## special tokens
 

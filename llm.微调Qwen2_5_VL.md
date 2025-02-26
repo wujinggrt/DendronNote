@@ -2,7 +2,7 @@
 id: tfd9jjc8w7feftqzbyc0pud
 title: 微调Qwen2_5_VL
 desc: ''
-updated: 1740568324453
+updated: 1740569108567
 created: 1740209908837
 ---
 
@@ -139,8 +139,6 @@ chat_response = client.chat.completions.create(
 )
 print("Chat response:", chat_response)
 ```
-
-
 全量微调的参数：
 ```yaml
 model_name_or_path: Qwen2-VL-7B-Instruct
