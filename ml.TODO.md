@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1740649706766
+updated: 1740678256160
 created: 1738165674608
 ---
 
@@ -95,4 +95,10 @@ https://zhuanlan.zhihu.com/p/26792881958
 一文学会 Pytorch 中的 einsum - 梁德澎的文章 - 知乎
 https://zhuanlan.zhihu.com/p/361209187
 
-## Tricks
+## Hack 和工程能力
+
+长远看算法岗真的比开发岗香吗？ - 要没电了的回答 - 知乎
+https://www.zhihu.com/question/409815271/answer/87375346326
+
+抽象，简化和领域驱动设计 - 阿莱克西斯的文章 - 知乎
+https://zhuanlan.zhihu.com/p/77026267

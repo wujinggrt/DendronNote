@@ -2,15 +2,13 @@
 id: tfd9jjc8w7feftqzbyc0pud
 title: 微调Qwen2_5_VL
 desc: ''
-updated: 1740569108567
+updated: 1740679184709
 created: 1740209908837
 ---
 
 ## Grounding
 
 ### 特殊字符格式
-
-
 
 使用了 Qwen2-VL-7B-Instruct，SFT 框架为 LlaMA-Factory。
 
@@ -139,6 +137,11 @@ chat_response = client.chat.completions.create(
 )
 print("Chat response:", chat_response)
 ```
+
+### TODO
+
+如何使用千问的框来参与微调？
+
 全量微调的参数：
 ```yaml
 model_name_or_path: Qwen2-VL-7B-Instruct

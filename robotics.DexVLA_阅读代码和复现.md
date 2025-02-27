@@ -2,7 +2,7 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA_阅读代码和复现
 desc: ''
-updated: 1740660782718
+updated: 1740680631007
 created: 1740053039805
 ---
 
@@ -503,38 +503,73 @@ if not return_dict:
 
 `all_hidden_states` 包含了最后一层的 `hidden_states`。
 
-总结，扩散专家使用了动作、动作隐藏状态和状态 states 作为输入。其中，动作隐藏状态 (action_hidden_states) 使用了 Qwen2-VL 的 logits，可能进一步与 labels、输入进行 FiLM fusion。
+总结，扩散专家使用了动作、动作隐藏状态和状态 states 作为输入。其中，动作隐藏状态 (action_hidden_states) 使用了 Qwen2-VL 的 logits，可能进一步与 labels、输入进行 FiLM fusion，得到 action_hidden_states。
 
 #### 使用 FiLM 集成 LLM 的 logits
 
 如果指定了配置 `using_film`，则使用 `film_forward()` 把输入、labels 和隐藏状态一起编码，最后输出 action_hidden_states。
 
+计算掩码：
+
 ```py
     def film_forward(self, labels, input_ids, hidden_states):
+        # input_ids 是 forward() 传来的，是 Tokenizer 处理提示词后得到的 token id。shape 为 (batch_size, seq_len)
+        # 关于标签与 -100 比较，为了获取掩码位置，用于 BERT 类型的方式来训练。
+        # 创建布尔掩码，标记标签中需要忽略的位置
+        # 为何需要它？
         inputs_index = labels[:, :] == -100
         inputs_index = inputs_index.int()
+```
 
+Qwen2VLForConditionalGeneration 类的 forward() 中，指出 labels 参数应该是 (batch_size, sequence_length) 的 torch.LongTensor。labels 用于计算 masked language modeling loss。内容应该是 [0, ..., config.vocab_size]，计算 loss；或 -100 (具体参考 input_ids 的 docstring) 代表 masked，不计算 loss。了解是掩码足矣。
+
+检测序列变化边界:
+
+```py
+        # 比较相邻位置掩码，若不同为 1，相同为 0。用于定位序列中有效部分与填充部分边界。
+        # 比如 [0, 0, 1, 1, 0, 1, 0]，异或比较如下：
+        #      [0, 1, 1, 0, 1, 0]
+        # 得到 [0, 1, 0, 1, 1, 1]
         xor_array = torch.bitwise_xor(inputs_index[:, :-1], inputs_index[:, 1:])
+        # 得到的 indexs shape of (batch_size,)，每个位置代表第一个出现 1 的地方
+        # indexs 用于找到样本中第一个发生变化的索引，即有效部分结束位置。
+        # 比如 -100 掩码只加载到句子的中间，后面也会被截断，不考虑。
         indexs = torch.argmax((xor_array != 0).float(), dim=1)
+```
+
+分阶段提取特征:
+
+```py
         input_embeddings = []
         reasoning_embeddings = []
         identity = []
         for i in range(indexs.shape[0]):
-            end = indexs[i] + 1
+            end = indexs[i] + 1 # 有效部分结束位置
             temp = input_ids[i] == 151643  # pad token id for qwen2_vl
-            start = sum(temp.int())
+            start = sum(temp.int()) # 填充数量，对应有效部分起始下标
             input_embeddings.append(
+                # ActionProjector()
                 self.input_action_proj(hidden_states[i, start:end, :])
             )
+            # 有效部分的平均隐藏状态
             identity.append(torch.mean(hidden_states[i, start:end, :], dim=0))
-
+            # 
             reasoning_embeddings.append(
+                # 剩余有效部分的隐藏状态用于投影推理部分
+                # 猜测用 -100 作为掩码，界定输入的任务部分和推理子步骤部分
                 self.reasoning_action_proj(hidden_states[i, end:, :])
             )
+```
+
+拼接与 FiLM 特征融合：
+
+```py
+        # 拼接与调制
         input_embeddings = torch.cat(input_embeddings, dim=0)
         reasoning_embeddings = torch.cat(reasoning_embeddings, dim=0)
         identity = torch.stack(identity)
-
+        # FiLM 接受输入嵌入和推理嵌入，生成条件化特征表示。
+        # 公式： output=γ⊙input+β
         action_hidden_states = self.reasoning_film(
             input_embeddings, reasoning_embeddings
         ).unsqueeze(1)
