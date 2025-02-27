@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1740590277245
+updated: 1740649706766
 created: 1738165674608
 ---
 
@@ -87,6 +87,9 @@ https://github.com/philschmid/deep-learning-pytorch-huggingface/blob/main/traini
 
 导航 RL
 https://github.com/Zhefan-Xu/NavRL
+
+[大模型 30] SWE-RL 强化学习提高模型软件工程能力 - hzwer 黄哲威的文章 - 知乎
+https://zhuanlan.zhihu.com/p/26792881958
 
 ## PyTorch 技巧
 一文学会 Pytorch 中的 einsum - 梁德澎的文章 - 知乎

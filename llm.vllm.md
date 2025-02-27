@@ -2,7 +2,7 @@
 id: cy0z1e3avly9p2sitrkajl4
 title: Vllm
 desc: ''
-updated: 1740579316887
+updated: 1740629495552
 created: 1740385950788
 ---
 
@@ -13,8 +13,7 @@ vllm serve Qwen/Qwen2.5-VL-3B-Instruct --port 8000 --host 0.0.0.0 --dtype bfloat
 ```
 
 ## vllm serve 参数
-| 参数 | 功能 |
- 
+
 ```bash
 --dtype {auto, bfloat16, ...}
     通常使用 auto 和 bfloat16
@@ -22,7 +21,7 @@ vllm serve Qwen/Qwen2.5-VL-3B-Instruct --port 8000 --host 0.0.0.0 --dtype bfloat
     如果提供，则需要放置此 key 到 header 中。比如 token-abc123
 --max_model_len MAX_MODEL_LEN
     比如 8000，节省显存
---gpu_memory_utilization 0.95 # 避免 OOM
+--gpu_memory_utilization 0.98 # 避免 OOM
 --cpu-offload-gb 64
     单位是 GB
 --tensor-parallel-size TENSOR_PARALLEL_SIZE

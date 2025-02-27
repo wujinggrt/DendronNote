@@ -2,7 +2,7 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA_阅读代码和复现
 desc: ''
-updated: 1740601485661
+updated: 1740648859381
 created: 1740053039805
 ---
 
@@ -370,69 +370,63 @@ pickle 是标准库内容其一，用于序列化和反序列化 Python 对象�
 
 ### 扩散专家与 VLM 的连接
 
-输入投影层：在 VLM 模型的输出部分，扩散专家通过一个输入投影层（input_action_proj）将 VLM 的隐藏状态（hidden states）映射到扩散专家的输入空间。这个投影层通常由两个线性层（MLP）组成，带有 LayerNorm 归一化。
-
-FiLM 层：如果启用了 FiLM（Feature-wise Linear Modulation）机制，扩散专家还会通过 FiLM 层将 VLM 的推理信息（reasoning tokens）注入到扩散专家的动作生成过程中。FiLM 层通过缩放和偏移参数来调整扩散专家的输出。
+- 输入投影层：在 VLM 模型的输出部分，扩散专家通过一个输入投影层（input_action_proj）将 VLM 的隐藏状态（hidden states）映射到扩散专家的输入空间。这个投影层通常由两个线性层（MLP）组成，带有 LayerNorm 归一化。
+- FiLM 层：如果启用了 FiLM（Feature-wise Linear Modulation）机制，扩散专家还会通过 FiLM 层将 VLM 的推理信息（reasoning tokens）注入到扩散专家的动作生成过程中。FiLM 层通过缩放和偏移参数来调整扩散专家的输出。
 
 关键代码片段：
 
-```py
-# 输入投影层
-self.input_action_proj = ActionProjector(config.hidden_size, config.hidden_size)
+在文件末尾的 Qwen2VLForConditionalGenerationForVLA 中，作者做出了修改。原版千问模型的只有 `self.visual, self.model, self.vocab_size, self.lm_head, self.rope_deltas` 等 fields。作者添加了 `self.padding_side, self.using_file, ...`。
 
-# FiLM 层
-if self.using_film:
-    self.reasoning_action_proj = ActionProjector(config.hidden_size, config.hidden_size)
-    self.reasoning_film = FiLM(feature_dim=config.hidden_size, condition_dim=config.hidden_size)
-
-# 扩散专家调用
-ret = self.policy_head(actions=actions, hidden_states=action_hidden_states, states=states, is_pad=is_pad)
-```
-
-在文件末尾的 Qwen2VLForConditionalGenerationForVLA 中，作者做出了修改。原版的只有 `self.visual, self.model, self.vocab_size, self.lm_head, self.rope_deltas` 等 fields。作者添加了 `self.padding_side, self.using_file, ...`。
+#### 结合扩散专家的 VLA 模型初始化
 
 ```py
 class Qwen2VLForConditionalGenerationForVLA(Qwen2VLPreTrainedModel, GenerationMixin):
+    """
+    类属性。这是 Huggingface Transformers 库的特殊属性，要求指定模型需要绑定的权重。
+    权重绑定是常见的优化技术，特别是语言模型，输入嵌入层和输出层的权重可以共享，减少模型参数，提高训练效率。
+    库的权重绑定通过 `tie_weights()` 方法实现，模型初始化时，库自动查找 _tied_weight_keys，将权重绑定一起。
+    本例中，"lm_head.weight" 与 "embedJ_tokens.weight" 绑定在一起。尽管 self.lm_head 定义为
+            self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
+    实际并未只想新的 nn.Linear 模块，而是嵌入层的对应的权重。
+    """
     _tied_weights_keys = ["lm_head.weight"]
 
     def __init__(self, config):
-        super().__init__(config)
-        self.visual = Qwen2VisionTransformerPretrainedModel._from_config(
-            config.vision_config, attn_implementation=config._attn_implementation
-        )
-        self.model = Qwen2VLModel(config)
-        self.vocab_size = config.vocab_size
-
-        self.padding_side = "left"  # set it to left by default, user can use setter to change padding_sides
-        self.using_film = config.using_film
-
-        self.llm_loss_weight = config.llm_loss_weight
-
+        ...
+        # 初始化 policy_head，对应扩散专家
+        # policy_head_config 配置参考 train_vla.py:class ActionHeadArguments，会被解析为类 dict 类型
         if isinstance(config.policy_head_config, dict):
             config.policy_head_config = AutoConfig.for_model(**config.policy_head_config)
         self.policy_head = AutoModel.from_config(config=config.policy_head_config)
 
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
-        # Initialize weights and apply final processing
         self.post_init()
         if config.policy_head_config.model_type == "scale_dp_policy":
             self.policy_head.init_weights()
-        # 来自于 Fusion 模块
+        # 输入投影层，来自于 Fusion 模块
         self.input_action_proj = ActionProjector(config.hidden_size, config.hidden_size)
 
+        # 是否使用 film 来 fusion，默认使用
         if self.using_film:
             # Initialize projection layers and condition modulation layers
             # 嵌入 condition，即文本的 embedding。主要是放缩和偏移。
             self.reasoning_action_proj = ActionProjector(config.hidden_size, config.hidden_size)
             self.reasoning_film = FiLM(feature_dim=config.hidden_size, condition_dim=config.hidden_size)
-
 ```
 
-修改了部分 `forward()`：
+#### 在 forward() 中调用扩散专家
+
+`forward()` 在原版本上做出了修改。主要添加了衔接扩散专家部分。包含将 `hidden_states` 等信息传给 
 
 ```py
-    def forward(self, ...) -> Union[Tuple, Qwen2VLCausalLMOutputWithPast]:
+    def forward(
+        self,
+        input_ids: torch.LongTensor = None, 
+        ...
+        labels: Optional[torch.LongTensor] = None, 
+        ...
+    ) -> Union[Tuple, Qwen2VLCausalLMOutputWithPast]:
         ...
         outputs = self.model(
             input_ids=None,
@@ -446,17 +440,19 @@ class Qwen2VLForConditionalGenerationForVLA(Qwen2VLPreTrainedModel, GenerationMi
             return_dict=return_dict,
         )
 
-        # VLA 输出的内容
+        # VLA 输出的内容，outputs[0] 代表最后一层影藏状态，即 hidden_states
+        # 结构是 (batch_size, seq_len, hidden_size)
         hidden_states = outputs[0]
         if tinyvla: # dex-vla supports tinyvla-style VLA
             return hidden_states
 
+        # 把隐藏状态传给嵌入层，得到 logits。到此 Qwen2-VL 已经完成文本生成。只需要 tokenizer decode 即可得到文本。
         logits = self.lm_head(hidden_states)
         logits = logits.float()
 
         llm_loss = None
-
-        # cross-entropy loss for VLM
+        # 如果传入了 labels，那么与 label 求交叉熵，以训练 VLM
+        # 未传入 labels 代表仅推理，loss 为 None
         if labels is not None:
             # Shift so that tokens < n predict n
             shift_logits = logits[..., :-1, :].contiguous()
@@ -468,59 +464,94 @@ class Qwen2VLForConditionalGenerationForVLA(Qwen2VLPreTrainedModel, GenerationMi
             # Enable model parallelism
             shift_labels = shift_labels.to(shift_logits.device)
             llm_loss = loss_fct(shift_logits, shift_labels)
-
-        # for evaluation
-        if is_eval:
-            loss = None
-            if not return_dict:
-                output = (logits,) + outputs[1:]
-                return (loss,) + output if loss is not None else output
-
-            return Qwen2VLCausalLMOutputWithPast(
-                loss=loss,
-                logits=logits,
-                past_key_values=outputs.past_key_values,
-                hidden_states=outputs.hidden_states,
-                attentions=outputs.attentions,
-                rope_deltas=rope_deltas,
-            )
-        
+        ...
+        # 使用 FiLM 融合
         if self.using_film:
-            action_hidden_states = self.film_forward(labels=labels, input_ids=input_ids,
-                                                     hidden_states=hidden_states)
-        else: 
+            action_hidden_states = self.film_forward(
+                labels=labels, input_ids=input_ids, hidden_states=hidden_states
+            )
+        else:
             action_hidden_states = hidden_states
 
-        ret = self.policy_head(actions=actions, hidden_states=action_hidden_states, states=states, is_pad=is_pad)
-
+        ret = self.policy_head(
+            actions=actions,
+            hidden_states=action_hidden_states,
+            states=states,
+            is_pad=is_pad,
+        )
         loss = {'loss': ret['loss'] + self.llm_loss_weight * llm_loss,
                 'llm_loss': llm_loss,
                 'action_loss': ret['loss']}
+        # 以 Tuple 返回
         if not return_dict:
             output = (logits,) + outputs[1:]
             return (loss,) + output if loss is not None else output
-
-        torch.cuda.empty_cache()
-        gc.collect()
-        del input_ids
-        del attention_mask
-        del position_ids
-        del past_key_values
-        del inputs_embeds
-        del labels
-        del pixel_values
-        del image_grid_thw
-        del actions
-        del states
-        return Qwen2VLCausalLMOutputWithPast(
-            loss=loss,
-            logits=logits,
-            past_key_values=outputs.past_key_values,
-            hidden_states=outputs.hidden_states,
-            attentions=outputs.attentions,
-            rope_deltas=rope_deltas,
-        )
+        ...
+        return Qwen2VLCausalLMOutputWithPast(loss=loss, logits=logits, ...)
 ```
+
+模型的输出中，`output[0]` 代表最后一层的 hidden_states。根据源码，在 `Qwen2VLModel:forward()` 中，参数 `return_dict` 默认为 None，所以返回 `Tuple`，具体如下：
+
+```py
+if not return_dict:
+    return tuple(
+        v
+        for v in [hidden_states, next_cache, all_hidden_states, all_self_attns]
+        if v is not None
+    )
+```
+
+`all_hidden_states` 包含了最后一层的 `hidden_states`。
+
+总结，扩散专家使用了动作、动作隐藏状态和状态 states 作为输入。其中，动作隐藏状态 (action_hidden_states) 使用了 Qwen2-VL 的 logits，可能进一步与 labels、输入进行 FiLM fusion。
+
+#### 使用 FiLM 集成 LLM 的 logits
+
+如果指定了配置 `using_film`，则使用 `film_forward()` 把输入、labels 和隐藏状态一起编码，最后输出 action_hidden_states。
+
+```py
+    def film_forward(self, labels, input_ids, hidden_states):
+        inputs_index = labels[:, :] == -100
+        inputs_index = inputs_index.int()
+
+        xor_array = torch.bitwise_xor(inputs_index[:, :-1], inputs_index[:, 1:])
+        indexs = torch.argmax((xor_array != 0).float(), dim=1)
+        input_embeddings = []
+        reasoning_embeddings = []
+        identity = []
+        for i in range(indexs.shape[0]):
+            end = indexs[i] + 1
+            temp = input_ids[i] == 151643  # pad token id for qwen2_vl
+            start = sum(temp.int())
+            input_embeddings.append(
+                self.input_action_proj(hidden_states[i, start:end, :])
+            )
+            identity.append(torch.mean(hidden_states[i, start:end, :], dim=0))
+
+            reasoning_embeddings.append(
+                self.reasoning_action_proj(hidden_states[i, end:, :])
+            )
+        input_embeddings = torch.cat(input_embeddings, dim=0)
+        reasoning_embeddings = torch.cat(reasoning_embeddings, dim=0)
+        identity = torch.stack(identity)
+
+        action_hidden_states = self.reasoning_film(
+            input_embeddings, reasoning_embeddings
+        ).unsqueeze(1)
+
+        action_hidden_states = action_hidden_states + identity.unsqueeze(1)
+        return action_hidden_states
+```
+
+#### 对比原版文件，做出了哪些修改
+
+
+
+### 梯度是如何反向传播的
+
+#### 交叉熵
+
+如果传入 `labels` 给 `forward()`，说明正在训练，进一步计算交叉熵。否则，模型只需要推理，`loss` 为 `None`。
 
 ## 视觉编码器条件化
 两个方案：
@@ -547,16 +578,20 @@ HiRT 发表了论文，解决了 VLM 模型与策略模型生成速度不匹配�
 
 上传论文后，Q 如下：
 
-### 分析 train_vla.py Q
+### Q：分析 train_vla.py Q
 
 - 以下代码是训练阶段 2 和阶段 3 的入口，请总结数据是如何加载和传入训练的。<粘贴了文件内容>
 - 请总结 main 函数做了哪些工作
 
-以下代码是 DexVLA 项目的 VLA 模型相关文件，作者做出了修改，请问扩散专家是如何接到 VLM 模型的。
+#### Q：以下代码是 DexVLA 项目的 VLA 模型相关文件，作者做出了修改，请问扩散专家是如何接到 VLM 模型的。
+- 配置文件qwen2_vla/models/configuration_qwen2_vla.py如下：<文件内容>
+- 配置文件qwen2_vla/models/modeling_qwen2_vla.py如下：<文件内容>
 
-配置文件qwen2_vla/models/configuration_qwen2_vla.py如下：
+#### Q：在 class Qwen2VLForConditionalGenerationForVLA 中，扩散专家是怎么调用的
 
-配置文件qwen2_vla/models/modeling_qwen2_vla.py如下：
+#### Q：forward() 中的 hidden_states 是什么
+
+
 
 
 ## Tag and Ref
