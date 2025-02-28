@@ -2,7 +2,7 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA_阅读代码和复现
 desc: ''
-updated: 1740752460166
+updated: 1740764571807
 created: 1740053039805
 ---
 
@@ -300,6 +300,42 @@ data_preprocess_scripts/rlds_to_h5py.py 从 replay 中创建 HDF5 文件，组�
 ### 输入与输出
 
 格式分别为：
+
+### Attention
+
+自定义实现的 Attention 中，是一个自注意力机制的 Attention。实现时，指定类属性：
+
+```py
+class Attention(nn.Module):
+    fused_attn: Final[bool]
+
+    def __init__(self, ...) -> None:
+        super().__init__()
+        ...
+        self.fused_attn = use_fused_attn()
+        ...
+```
+
+use_fused_attn() 是 timm 库提供的环境兼容性检测函数，允许用户通过全局配置强制启用/禁用（如 timm 的 FUSED_ATTENTION 标志），减少硬编码依赖。self.fused_attn 是布尔值，动态选择是否启用融合优化的注意力计算。在支持优化的环境（最新 PyTorch 和 CUDA GPU），启用融合，可以提升性能。如果 self.fused_attn，可以直接用 F.scaled_dot_product_attention()，有优化实现。否则，只能手动实现传统注意力。
+
+输入格式：forward() 输入 x 为 shape (B, N, C)。attn_mask 中，-inf 代表遮掩。
+
+### TimestepEmbedder
+
+针对扩散时的时间步，嵌入标量的时间步到向量表示。参考了 OpenAI 的 [glide_text2im](https://github.com/openai/glide-text2im/blob/main/glide_text2im/nn.py)。作用是创建 sinusoidal timestep embeddings。将离散的时间步编码为连续向量表示，给模型提供时间感知能力。额外使用了 MLP 增强，兼顾平滑性与表达能力。正弦编码对时间步绝对位置不敏感，更关注相对位置关系。
+
+$$
+\mathrm{embedding}[i] = \left\{
+\begin{array}{ll}
+\sin\left(t \cdot \frac{1}{10000^{i/\dim}}\right) & \text{if } i \text{ 是偶数} \\
+\cos\left(t \cdot \frac{1}{10000^{(i-1)/\dim}}\right) & \text{if } i \text{ 是奇数}
+\end{array}
+\right.
+$$
+
+注意，由于预测动作有 horizon，所以都会对 x 使用绝对编码，对扩散时间步才使用相对位置编码。
+
+输入格式：forward() 输入 t 为 shape (B,)，对应扩散时间步。
 
 ## 训练器 QWen2VLATrainer
 
