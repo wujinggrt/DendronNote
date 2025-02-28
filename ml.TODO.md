@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1740678256160
+updated: 1740728597661
 created: 1738165674608
 ---
 
@@ -72,6 +72,12 @@ https://zhuanlan.zhihu.com/p/22946605267
 独家专访｜清华TEA实验室负责人：具身智能入门/转行到底学什么？ - 深蓝学院的文章 - 知乎
 https://zhuanlan.zhihu.com/p/26333134789
 
+VLA 等各种工作合集。
+博士想读具身智能/智能机器人应该怎么规划自己的科研？ - EyeSight1019的回答 - 知乎
+https://www.zhihu.com/question/655570660/answer/87040917575
+
+LLamaV-o1: (https://mbzuai-oryx.github.io/LlamaV-o1/)
+
 ## RL
 在线强化学习改进VLA模型 - 黄浴的文章 - 知乎
 https://zhuanlan.zhihu.com/p/23993973779
@@ -90,6 +96,14 @@ https://github.com/Zhefan-Xu/NavRL
 
 [大模型 30] SWE-RL 强化学习提高模型软件工程能力 - hzwer 黄哲威的文章 - 知乎
 https://zhuanlan.zhihu.com/p/26792881958
+
+九坤联合微软亚洲研究院等成功复现 DeepSeek-R1，具体水平如何？ - 薛定谔的猫的回答 - 知乎
+https://www.zhihu.com/question/13238901947/answer/111931939432
+
+九坤联合微软亚洲研究院等成功复现 DeepSeek-R1，具体水平如何？ - 到处挖坑蒋玉成的回答 - 知乎
+https://www.zhihu.com/question/13238901947/answer/112109118245
+> 项目中的奖励函数设计对其他类似任务有重要的实践意义，建议 RL 做其他任务的学习下。如果 reward 判定写得不够严密，模型学习过程容易钻空子，骗取高 reward。K & K 是合成逻辑谜题 (K & K puzzle) 数据集。
+> 参考：https://github.com/Unakar/Logic-RL/blob/main/verl/utils/reward_score/kk.py
 
 ## PyTorch 技巧
 一文学会 Pytorch 中的 einsum - 梁德澎的文章 - 知乎

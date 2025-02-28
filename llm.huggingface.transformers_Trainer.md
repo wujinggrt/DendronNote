@@ -2,7 +2,7 @@
 id: 0da424ysmswufl4406wj1dt
 title: transformers_Trainer
 desc: ''
-updated: 1740375931564
+updated: 1740730558418
 created: 1740301523116
 ---
 
@@ -77,7 +77,7 @@ class CustomTrainer(Trainer):
         ...
 ```
 
-Trainer 维护了一个 list。
+Trainer 维护了一个关于回调的列表。
 
 ## Trainer.compute_loss()
 

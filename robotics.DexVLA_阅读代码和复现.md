@@ -2,186 +2,50 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA_阅读代码和复现
 desc: ''
-updated: 1740680631007
+updated: 1740752460166
 created: 1740053039805
 ---
 
-## 数据准备
-
-### 数据格式
-
-#### HDF5 格式
-
-与 act 工作的数据格式一致，转换数据为 HDF5 格式。作者使用 rlds_to_h5py 转换，格式具体如下：
-```angular2html
-# h5 data structure
-root
-  |-action (100,10)
-  |-language_raw (1,)
-  |-substep_reasonings (100,)
-  |-observations
-      |-images # multi-view
-          |-left (100,480,640,3)
-          |-right (100,480,640,3)
-          |-wrist (100,480,640,3)
-      |-joint_positions (100,7)
-      |-qpos (100,7)
-      |-qvel (100,7)
-```
-
-#### 字段解释
-
-内容来自猜测和结合 DeepSeek：
-- language_raw (1,) —— 原始语言指令，如折叠衬衫。所以当前是一个任务，有一个语言指令，如下每个时间步对应一个子步骤。即此任务的 horizon 为 100。
-- substep_reasonings (100,) —— 子步骤推理，每个时间步对应每个子步骤描述。相比 language_raw，
 
 
-| 字段 | 形状 | 描述 |
-| --- | --- | --- |
-| action | (100,10) | 100 表示时间步数，10 表示动作维度。 |
-| substep_reasonings | (100,) | 100 | 每个时间步对应一个子步骤推理。 |
-| observations |  | 表示时间步数，其他维度表示观测数据。 |
-| - images | | 表示时间步数，其他维度表示图像数据。 |
-| \|- left | (100,480,640,3) | 100 | 表示时间步数，480x640 表示图像分辨率。 |
-| \|- right | (100,480,640,3) | 100 | 表示时间步数，480x640 表示图像分辨率。 |
-| \|- wrist | (100,480,640,3) | 100 | 表示时间步数，480x640 表示图像分辨率。 |
-| - joint_positions | (100,7) | 100 | 表示时间步数，7 表示关节位置维度。 |
-| - qpos | (100,7) | 100 | 表示时间步数，7 表示关节位置维度。 |
-| - qvel | (100,7) | 100 | 表示时间步数，7 表示关节速度维度。 |
-
-joint_positions 和 qpos 关系：
-
-| 维度 | joint_positions | qpos |
-| ---- | --- | --- |
-| 定义     | 关节角度或关节位置。 | 广义坐标位置，可能包含更多自由度信息。 |
-| 用途     | 描述机器人的关节状态。  | 描述机器人系统的完整状态。 |
-| 数据范围 | 通常仅包含关节角度。  | 可能包含关节角度、末端执行器位置等信息。 |
-| 示例     | 7 自由度的机械臂的关节角度。 | 7 自由度的机械臂的关节角度 + 末端执行器位置。 |
-
-### act-plus-plus 数据格式
-为了了解数据格式，查看仿真环境下的 mobile aloha 如何数据如何组织：
-```py
-# record_sim_episodes.py
-def main(args):
-    dataset_dir = args['dataset_dir']
-    num_episodes = args['num_episodes']
-
-    for episode_idx in range(num_episodes):
-        ...
-        """
-        For each timestep:
-        observations
-        - images
-            - each_cam_name     (480, 640, 3) 'uint8'
-        - qpos                  (14,)         'float64'
-        - qvel                  (14,)         'float64'
-
-        action                  (14,)         'float64'
-        """
-        # 由于是双臂，所以是 14 对应 7*2
-        data_dict = {
-            '/observations/qpos': [],
-            '/observations/qvel': [],
-            '/action': [],
-        }
-        # HDF5
-        t0 = time.time()
-        dataset_path = os.path.join(dataset_dir, f'episode_{episode_idx}')
-        with h5py.File(dataset_path + '.hdf5', 'w', rdcc_nbytes=1024 ** 2 * 2) as root:
-            root.attrs['sim'] = True
-            obs = root.create_group('observations')
-            image = obs.create_group('images')
-            for cam_name in camera_names:
-                _ = image.create_dataset(cam_name, (max_timesteps, 480, 640, 3), dtype='uint8',
-                                         chunks=(1, 480, 640, 3), )
-            # compression='gzip',compression_opts=2,)
-            # compression=32001, compression_opts=(0, 0, 0, 0, 9, 1, 1), shuffle=False)
-            qpos = obs.create_dataset('qpos', (max_timesteps, 14))
-            qvel = obs.create_dataset('qvel', (max_timesteps, 14))
-            action = root.create_dataset('action', (max_timesteps, 14))
-
-            for name, array in data_dict.items():
-                root[name][...] = array
-        print(f'Saving: {time.time() - t0:.1f} secs\n')
-
-```
-
-在仿真下，收集 50 episodes 例子：
-```console
-python3 record_sim_episodes.py --task_name sim_transfer_cube_scripted --dataset_dir <data save dir> --num_episodes 50
-```
-
-### 生成 h5 格式数据
-```py
-def generate_h5(
-    obs_replay, action_replay, cfg, total_traj_cnt, act_root_dir_path, edit_flag
-):
-    data_dict = {
-        "/observations/qpos": obs_replay["qpos"],
-        "/observations/qvel": obs_replay["qvel"],
-        "/action": action_replay,
-        "is_edited": np.array(edit_flag),
-    }
-    for cam_name in cfg["camera_names"]:
-        data_dict[f"/observations/images/{cam_name}"] = obs_replay["images"][cam_name]
-
-    max_timesteps = len(data_dict["/observations/qpos"])
-    print(f"max_timesteps: {max_timesteps}")
-    data_dir = act_root_dir_path
-
-    dataset_path = os.path.join(data_dir, f"episode_{total_traj_cnt}")
-    # save the data, 2GB cache，chunks 可以利用这些缓存
-    with h5py.File(dataset_path + ".hdf5", "w", rdcc_nbytes=1024**2 * 2) as root:
-        root.attrs["sim"] = True
-        obs = root.create_group("observations")
-        image = obs.create_group("images")
-        for cam_name in cfg["camera_names"]:
-            _ = image.create_dataset(
-                cam_name,
-                (max_timesteps, cfg["cam_height"], cfg["cam_width"], 3),
-                dtype="uint8",
-                chunks=(1, cfg["cam_height"], cfg["cam_width"], 3),
-            )
-        qpos = obs.create_dataset("qpos", (max_timesteps, cfg["state_dim"]))
-        qvel = obs.create_dataset("qvel", (max_timesteps, cfg["state_dim"]))
-        # image = obs.create_dataset("image", (max_timesteps, 240, 320, 3), dtype='uint8', chunks=(1, 240, 320, 3))
-        action = root.create_dataset("action", (max_timesteps, cfg["action_dim"]))
-        is_edited = root.create_dataset("is_edited", (1))
-        # dt = h5py.special_dtype(vlen=str)
-        # dt = h5py.string_dtype()
-        # lang_intrs = root.create_dataset('lang_intrs', data=cfg['lang_intrs'], dtype=dt)
-        # lang_intrs['/lang_intrs'][...] = cfg['lang_intrs']
-        raw_lang = cfg["lang_intrs"]
-        distill_bert_lang = cfg["distill_bert_lang"]
-        # encoded_lang = cfg['lang_intrs_distilbert']
-        root.create_dataset("language_raw", data=[raw_lang])
-        root.create_dataset(
-            "distill_bert_lang", data=distill_bert_lang.cpu().detach().numpy()
-        )
-        # root.create_dataset("language_distilbert", data=encoded_lang.cpu().detach().numpy())
-
-        print(f"==== generate h5 ======")
-        for name, array in data_dict.items():
-            print(f"name: {name}")
-            print(f"array: {array.shape}")
-            # 以切片来保存
-            root[name][...] = array
-```
-
-## 数据流向和训练调用关系
+## 训练 Overview
 
 训练 VLA 的文件参考 train_vla.py，阶段 2 和阶段 3 的训练都用到它。
 
-train_vla.py:main() 是核心入口，负责数据加载到模型训练的整个流程：
+首先加载配置，传给训练核心入口 train_vla.py:main()。train_vla.py 主要完成如下训练过程：
 - **初始化与配置加载** —— 加载任务配置，设置随机种子。
 - **数据加载与预处理** —— 加载数据集，使用 `Qwen2VLAProcess` 进行多模态数据预处理。
 - **模型加载** —— 使用 `ml_utils.load_model` 加载预训练的视觉-语言模型和扩散专家。
 - **训练器初始化与训练** —— 初始化 `QWen2VLATrainer`，调用 `trainer.train` 开始训练。
 - **保存训练结果** —— 保存数据集的统计信息和训练后的模型状态。
 
-### 任务配置加载
+### 配置加载
 
-训练数据通过 `TASK_CONFIGS` 加载配置。此字典在 aloha_scripts/constants.py 文件定义，通过添加条目来指定数据加载：
+main() 执行前，需要准备 all_config 和 model_config。train_vla.py:parse_param() 解析和生成配置。
+
+首先，解析关于参数的数据类 ModelArguments, DataArguments, TrainingArguments, ActionHeadArguments。随后，根据 ActionHeadArguments，使用 AutoConfig 从预训练模型加载参数。最后，如果量化，则设置 bnb_model_from_pretrained_args。
+
+由于使用 transformers.HfArgumentParser 解析，所以可以从命令行传入参数，将脚本中指定的默认字段覆盖。比如，运行时指定 lora 训练：
+
+```bash
+  ...
+  --lora_enable True \
+  ...
+  --freeze_vision_tower True \
+  --freeze_backbone True \
+```
+
+返回参数为 tuple:
+- model_args (ModelArguments): Model architecture and configuration arguments
+- data_args (DataArguments): Dataset and data processing arguments
+- training_args (TrainingArguments): Training hyperparameters and settings
+- action_head_args (ActionHeadArguments): Action head model configuration
+- config (AutoConfig): Complete model configuration object
+- bnb_model_from_pretrained_args (dict): Quantization configuration for model loading
+
+### 数据配置
+
+训练数据通过 `TASK_CONFIGS` 加载配置。此字典在 aloha_scripts/constants.py 文件定义，可以通过添加条目来指定数据加载。
 
 ```py
 TASK_CONFIGS = {
@@ -201,7 +65,7 @@ TASK_CONFIGS = {
 ```py
 def main():
     ...
-    task_config = TASK_CONFIGS[all_config['data_args'].task_name]
+    task_config = TASK_CONFIGS[all_config['data_args'].task_name] # 加载指定的任务数据
     dataset_dir = task_config['dataset_dir']
     episode_len = task_config['episode_len']
     camera_names = task_config['camera_names']
@@ -218,9 +82,7 @@ class DataArguments:
     ...
 ```
 
-### 数据加载与预处理
-
-#### 数据加载
+### 数据加载
 
 使用 `load_data` 函数加载训练和验证数据集。
 
@@ -244,7 +106,7 @@ class DataArguments:
     )
 ```
 
-#### 数据预处理
+### 数据预处理
 
 使用 `Qwen2VLAProcess` 对多模态数据（图像和语言指令）进行预处理。
 
@@ -257,7 +119,7 @@ class DataArguments:
     )
 ```
 
-#### 模型加载
+### 模型加载
 
 使用 `ml_utils.load_model` 加载预训练的视觉-语言模型（VLM）和扩散专家（Diffusion Expert）。
 
@@ -274,7 +136,7 @@ class DataArguments:
     )
 ```
 
-#### 训练器初始化与训练
+### 训练器初始化与训练
 
 接下来，模型调用 `train_bc()`，开始准备训练。
 
@@ -322,7 +184,7 @@ def train_bc(
     trainer.train(resume_from_checkpoint=config["training_args"].resume_from_checkpoint)
 ```
 
-#### 保存训练结果
+### 保存训练结果
 
 保存模型状态和检查点：
 
@@ -351,22 +213,109 @@ pickle 是标准库内容其一，用于序列化和反序列化 Python 对象�
 
 ## 参数配置
 
-参考 train_vla.py:def parse_param()。根据数据类 ModelArguments, DataArguments, TrainingArguments, ActionHeadArguments 解析参数。
+ModelArguments, DataArguments 和 ActionHeadArguments 是普通的标注了 `@dataclass` 的数据类，只有 TrainingArguments 除了标注 `@dataclass` ，还继承了 transformers.TrainingArguments。transformers.TrainingArguments 也是普通的类，标注 `@dataclass`。
 
-## ScaleDP
+## 数据加载
+
+### 数据组织：使用 HDF5
+
+与 act 工作的数据格式一致，使用 HDF5。作者使用 rlds_to_h5py 转换，格式具体如下：
+```angular2html
+# h5 data structure
+root
+  |-action (100,10)
+  |-language_raw (1,)
+  |-substep_reasonings (100,)
+  |-observations
+      |-images # multi-view
+          |-left (100,480,640,3)
+          |-right (100,480,640,3)
+          |-wrist (100,480,640,3)
+      |-joint_positions (100,7)
+      |-qpos (100,7)
+      |-qvel (100,7)
+```
+
+具体解释如下。内容来自猜测和结合 DeepSeek：
+- language_raw (1,) —— 原始语言指令，如折叠衬衫。所以当前是一个任务，有一个语言指令，如下每个时间步对应一个子步骤。即此任务的 horizon 为 100。
+- substep_reasonings (100,) —— 子步骤推理，每个时间步对应每个子步骤描述。相比 language_raw，
+
+
+| 字段               | 形状            | 描述                                 |
+| ------------------ | --------------- | ------------------------------------ |
+| action             | (100,10)        | 100 表示时间步数，10 表示动作维度。  |
+| substep_reasonings | (100,)          | 100                                  | 每个时间步对应一个子步骤推理。         |
+| observations       |                 | 表示时间步数，其他维度表示观测数据。 |
+| - images           |                 | 表示时间步数，其他维度表示图像数据。 |
+| \|- left           | (100,480,640,3) | 100                                  | 表示时间步数，480x640 表示图像分辨率。 |
+| \|- right          | (100,480,640,3) | 100                                  | 表示时间步数，480x640 表示图像分辨率。 |
+| \|- wrist          | (100,480,640,3) | 100                                  | 表示时间步数，480x640 表示图像分辨率。 |
+| - joint_positions  | (100,7)         | 100                                  | 表示时间步数，7 表示关节位置维度。     |
+| - qpos             | (100,7)         | 100                                  | 表示时间步数，7 表示关节位置维度。     |
+| - qvel             | (100,7)         | 100                                  | 表示时间步数，7 表示关节速度维度。     |
+
+joint_positions 和 qpos 关系：
+
+| 维度     | joint_positions              | qpos                                          |
+| -------- | ---------------------------- | --------------------------------------------- |
+| 定义     | 关节角度或关节位置。         | 广义坐标位置，可能包含更多自由度信息。        |
+| 用途     | 描述机器人的关节状态。       | 描述机器人系统的完整状态。                    |
+| 数据范围 | 通常仅包含关节角度。         | 可能包含关节角度、末端执行器位置等信息。      |
+| 示例     | 7 自由度的机械臂的关节角度。 | 7 自由度的机械臂的关节角度 + 末端执行器位置。 |
+
+#### act-plus-plus 数据格式
+
+为了了解数据格式，查看仿真环境下的 mobile aloha 如何数据如何组织。具体参考 record_sim_episodes.py。
+
+```
+For each timestep:
+observations
+- images
+    - each_cam_name     (480, 640, 3) 'uint8'
+- qpos                  (14,)         'float64'
+- qvel                  (14,)         'float64'
+
+action                  (14,)         'float64'
+```
+由于是双臂，所以是 14 对应 7*2。
+
+#### 数据格式配置
+
+在 train_vla.py 中，查看到 ActionHeadArguments 中，state_dim 和 action_dim 分别设置为 7 和 10。在 DataArguments 中，可以看到 image_size_stable 分别设置了相机的尺寸，480 和 56。
+
+### Dataset 和 DataLoader
+
+#### 生成 h5 格式数据
+
+data_preprocess_scripts/rlds_to_h5py.py 从 replay 中创建 HDF5 文件，组织为需要的格式。
+
+### 输入与输出格式
+
+输入给模型的格式分别为：
+
+## 扩散专家：ScaleDP
+
+注意，基于 Transformer 的扩散策略对训练参数敏感。
+
+### 输入与输出
+
+格式分别为：
 
 ## 训练器 QWen2VLATrainer
 
 参考 qwen2_vla/train/qwen2_vla_trainer.py。
 
-## VLM
+## VLM: Qwen2-VL
+
 使用 [Qwen2-2B-VL](https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct) 作为主干网络。也许可以尝试 [Qwen/Qwen2.5-VL-3B-Instruct](https://huggingface.co/Qwen/Qwen2.5-VL-3B-Instruct)。
 
 模型结构，在 VLM 末尾增加一个 policy head；而 Helix 直接输出 token，当作 policy 模型的 latent vector。
 
-## 把扩散专家接到 Qwen2-VL 上
-项目文件 qwen2_vla/models/modeling_qwen2_vla.py 和 qwen2_vla/models/configuration_qwen2_vla.py 改造了 Qwen2-VL 的源码和配置。两个文件都是从 huggingface 的 transformers 库中 transformers/models/qwen2_vl/modeling_qwen2_vl.py 和对应 configuration_qwen2_vla.py 复制而来，并根据需求做出修改。
+作者把 transformers/models/qwen2_vl 目录下的文件都复制到乐项目中，改造以适应 DexVLA，包括 configs.json。
 
+## 把扩散专家接到 Qwen2-VL 上
+
+项目文件 qwen2_vla/models/modeling_qwen2_vla.py 和 qwen2_vla/models/configuration_qwen2_vla.py 改造了 Qwen2-VL 的源码和配置。两个文件都是从 huggingface 的 transformers 库中 transformers/models/qwen2_vl/modeling_qwen2_vl.py 和对应 configuration_qwen2_vla.py 复制而来，并根据需求做出修改。
 
 ### 扩散专家与 VLM 的连接
 
@@ -375,7 +324,7 @@ pickle 是标准库内容其一，用于序列化和反序列化 Python 对象�
 
 关键代码片段：
 
-在文件末尾的 Qwen2VLForConditionalGenerationForVLA 中，作者做出了修改。原版千问模型的只有 `self.visual, self.model, self.vocab_size, self.lm_head, self.rope_deltas` 等 fields。作者添加了 `self.padding_side, self.using_file, ...`。
+在文件末尾的 Qwen2VLForConditionalGenerationForVLA 中，作者做出了修改。原版千问模型的只有 self.visual, self.model, self.vocab_size, self.lm_head, self.rope_deltas 等 fields。作者添加了 self.padding_side, self.using_file, ...。
 
 #### 结合扩散专家的 VLA 模型初始化
 
@@ -543,20 +492,26 @@ Qwen2VLForConditionalGeneration 类的 forward() 中，指出 labels 参数应�
         input_embeddings = []
         reasoning_embeddings = []
         identity = []
+        # indexs.shape[0] 代表 batch_size。最后，input_embeddings，identiy 和 reasoning_embeddings 包含了 B 个张量
         for i in range(indexs.shape[0]):
             end = indexs[i] + 1 # 有效部分结束位置
             temp = input_ids[i] == 151643  # pad token id for qwen2_vl
             start = sum(temp.int()) # 填充数量，对应有效部分起始下标
             input_embeddings.append(
                 # ActionProjector()
+                # 返回 (1, hidden_dim)
                 self.input_action_proj(hidden_states[i, start:end, :])
             )
             # 有效部分的平均隐藏状态
-            identity.append(torch.mean(hidden_states[i, start:end, :], dim=0))
+            identity.append(
+                # 内容是 (hidden_dim,)
+                torch.mean(hidden_states[i, start:end, :], dim=0)
+            )
             # 
             reasoning_embeddings.append(
-                # 剩余有效部分的隐藏状态用于投影推理部分
+                # 剩余有效部分的隐藏状态用于投影推理部分，并且包含上下文信息，十分重要。
                 # 猜测用 -100 作为掩码，界定输入的任务部分和推理子步骤部分
+                # 返回 (1, hidden_dim)
                 self.reasoning_action_proj(hidden_states[i, end:, :])
             )
 ```
@@ -564,19 +519,51 @@ Qwen2VLForConditionalGeneration 类的 forward() 中，指出 labels 参数应�
 拼接与 FiLM 特征融合：
 
 ```py
-        # 拼接与调制
+        # 拼接与调制，最后得到 (B, hidden_dim) 的内容
+        # input_embeddings, reasoning_embeddings (B, D)
         input_embeddings = torch.cat(input_embeddings, dim=0)
         reasoning_embeddings = torch.cat(reasoning_embeddings, dim=0)
+        # 由于 identity 列表中全是 (hidden_dim,) 的 shape，所以用 stack
         identity = torch.stack(identity)
         # FiLM 接受输入嵌入和推理嵌入，生成条件化特征表示。
-        # 公式： output=γ⊙input+β
+        # 公式： output= x * (1 + scale) + shift
         action_hidden_states = self.reasoning_film(
-            input_embeddings, reasoning_embeddings
+            input_embeddings, reasoning_embeddings # both shape of (B, hidden_dim)
         ).unsqueeze(1)
 
         action_hidden_states = action_hidden_states + identity.unsqueeze(1)
         return action_hidden_states
 ```
+
+#### Fusion 模块
+
+```py
+class ActionProjector(nn.Module):
+    def __init__(self, in_dim, out_dim=1024):
+        super(ActionProjector, self).__init__()
+        self.global_1d_pool = nn.AdaptiveAvgPool1d(1)
+        self.mlps = nn.ModuleList([
+            # nn.LayerNorm(in_dim),
+            nn.Linear(in_dim, in_dim),
+            nn.GELU(),
+            nn.Linear(in_dim, out_dim),
+            nn.Dropout(0.0),
+        ])
+
+    def forward(self, x):
+        x = self.global_1d_pool(x.permute(1, 0)).permute(1, 0)
+        for mlp in self.mlps:
+            x = mlp(x)
+        return x
+```
+
+使用全局池化，self.global_1d_pool = nn.AdaptiveAvgPool1d(1) 将输入最后一维压缩为 1，提取输入特征的全局信息，减少序列长度对特征表示的影响。在 VLA 模型中，in_dim 和 out_dim 都是 hidden_size。输入的 x shape of (n, hidden_dim)，经过转置为 (hidden_dim, n)，输出 (hidden_dim, 1)，再转置，x 最终为 (1, hidden_dim)。再经过 self.mlps，得到 (1, hidden_dim)。
+
+为什么需要设计 ActionProjector？ActionProjector 模块能够将输入维度的特征映射到目标维度。通过全局池化，再通过线性层和非线性激活函数 GELU，增强表达能力，保留非线性关系，从而提取全局信息，方便后续嵌入扩散专家。
+
+TODO：研究 Fusion，为何有效。还有思路。
+
+经过 ActionProjector 提取信息后，传入给 reasoning_film 的有 input_embeddings 和 reasoning_embeddings，前者用于输入，后者是条件推理。输入和推理的 token 界定，在 labels 处以掩码确定。再从 hidden_states 中找到对应的部分，输入和输出的部分。
 
 #### 对比原版文件，做出了哪些修改
 

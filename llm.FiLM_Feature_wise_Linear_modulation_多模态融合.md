@@ -2,7 +2,7 @@
 id: u8f5rxjjf1lq8qp7dqg52y9
 title: FiLM_Feature_wise_Linear_modulation_多模态ronghe
 desc: ''
-updated: 1740630514296
+updated: 1740712340991
 created: 1740629832519
 ---
 
@@ -21,6 +21,12 @@ FiLM learns functions $f$ and $h$ which output $γ_{i,c}$ and $β_{i,c}$ as a fu
 架构如下：
 
 ![architecture](assets/images/llm.FiLM_Feature_wise_Linear_modulation_多模态融合/architecture.png)
+
+## QA
+
+Q:  我们要讨论的论文是FiLM: Visual Reasoning with a General Conditioning Layer，链接是  https://arxiv.org/pdf/1709.07871  ，已有的FAQ链接是  https://papers.cool/arxiv/kimi?paper=1709.07871  。请以此为基础，继续回答我后面的问题。
+
+这篇论文是 2017 年的，现在融合都有哪些更常用的工作？
 
 ## Ref and Tag
 
