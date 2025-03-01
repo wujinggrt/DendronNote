@@ -2,7 +2,7 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA_阅读代码和复现
 desc: ''
-updated: 1740764571807
+updated: 1740797577581
 created: 1740053039805
 ---
 
@@ -336,6 +336,70 @@ $$
 注意，由于预测动作有 horizon，所以都会对 x 使用绝对编码，对扩散时间步才使用相对位置编码。
 
 输入格式：forward() 输入 t 为 shape (B,)，对应扩散时间步。
+
+### ScaleDPBlock
+
+![scaledp](assets/images/robotics.DexVLA_阅读代码和复现/scaledp.png)
+
+使用了多层的 ScaleDPBlock。借鉴了 ScaleDP 的工作，使用 Adaptive Layer Norm (DiT 也用到)。参考： <[[Scaling_Diffusion_Policy_in_Transformer_to_1B|robotics.Scaling_Diffusion_Policy_in_Transformer_to_1B#^arh7om3id148]]>
+
+```py
+def modulate(x, shift, scale):
+    return x * (1 + scale.unsqueeze(1)) + shift.unsqueeze(1)
+
+class ScaleDPBlock(nn.Module):
+    """
+    A ScaleDP block with adaptive layer norm zero (adaLN-Zero) conScaleDPioning.
+    """
+    def __init__(self, hidden_size, num_heads, mlp_ratio=4.0, **block_kwargs):
+        super().__init__()
+        self.norm1 = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
+        self.attn = Attention(
+            hidden_size, num_heads=num_heads, qkv_bias=True, **block_kwargs
+        )
+        self.norm2 = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
+        mlp_hidden_dim = int(hidden_size * mlp_ratio)
+        approx_gelu = lambda: nn.GELU(approximate="tanh")
+        # Mlp [fc1, act, drop1, norm, fc2, drop2]
+        self.mlp = Mlp(
+            in_features=hidden_size,
+            hidden_features=mlp_hidden_dim,
+            act_layer=approx_gelu,
+            drop=0,
+        )
+        self.adaLN_modulation = nn.Sequential(
+            nn.SiLU(), nn.Linear(hidden_size, 6 * hidden_size, bias=True)
+        )
+
+    def forward(self, x, c, attn_mask=None):
+        # c shape 为 (batch_size, horizon, cond_dim)，dim=1 代表逐维度的
+        # modulate self attention 等 shift_*, scale_*, gatej_* 的 shape (B, N, 6 * C).chunk(6, dim=1)
+        # chunk(6, dim=1) 代表前两个维度不变，在最后一个维度上，即列上拆分为 6 份。即：
+        # (B, N, (C0 C1 C2 C3 C4 C5)) -> (B, N, C0) (B, N, C1), ..., (B, N, C5)
+        shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = (
+            self.adaLN_modulation(c).chunk(6, dim=1)
+        )
+        x = x + gate_msa.unsqueeze(1) * self.attn(
+            # norm first
+            modulate(self.norm1(x), shift_msa, scale_msa), attn_mask=attn_mask
+        )  # norm, scale&shift, attn, scale,
+        x = x + gate_mlp.unsqueeze(1) * self.mlp(
+            modulate(self.norm2(x), shift_mlp, scale_mlp)
+        )
+        return x
+```
+
+最后一层 FinalLayer 则是经过一个 LayerNorm，接着用上 Adaptive 的 scale 和 shift 处理，最后由一个线性层输出。不同的是，没有了 gate 部分。
+
+### 整合：ScaleDP
+
+ScaleDP 配置默认 n_obs_steps 为 2，时间步为 T_cond = 1，obs_as_cond 默认 True。在网络部分，
+
+VLM 传递给 policy_head 时，调用如下：
+
+```py
+ret = self.policy_head(actions=actions, hidden_states=action_hidden_states, states=states, is_pad=is_pad)
+```
 
 ## 训练器 QWen2VLATrainer
 
