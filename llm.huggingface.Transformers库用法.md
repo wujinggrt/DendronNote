@@ -2,7 +2,7 @@
 id: 17qvnqry352fhhwxcp3imco
 title: Transformers库用法
 desc: ''
-updated: 1740752220962
+updated: 1740924201084
 created: 1740205377695
 ---
 
@@ -110,6 +110,7 @@ print(encoded_input)
 ```
 
 ## GenerationMixin
+
 transformers 的库中，自回归文本生成模型大多数继承了 `GenerationMixin`，包含一系列工具，比如 `generate()` 方法。
 
 ```py
@@ -118,13 +119,21 @@ class Qwen2VLForConditionalGeneration(Qwen2VLPreTrainedModel, GenerationMixin):
     ...
 ```
 
-`GenerationMixin` 要求子类自行实现各类方法，以便它的 `generate()` 调用。
+由于 LLM 一次只预测一个 token，因此除了调用模型，还需要执行更复杂的操作生成新的句子，即自回归生成。自回归生成是给定一些初始输入，通过迭代调用模型及其自身的生成输出来生成文本的推理过程。由 transformers 中的 generate() 完成。
+
+在自回归生成时，迭代重复地生成 token，直到遇见模型决定的停止条件。模型应该学会在何时输出结束序列（EOS）标记。如果没有遇到，则在最大长度时停止生成。相关配置参考 generation.GenerationConfig 文件。
+
+输出时，如果指定 return_dict_in_generate=True 或 config.return_dict_in_generate=True，返回 ModelOutput，否则返回 torch.LongTensor，一般形状是 (batch_size, num_generated_tokens)，这是默认的选项。注意，调用 generate() 方法时，可以传递参数来覆盖默认行为。
+
+`GenerationMixin` 要求子类自行实现各类方法，以便它的 `generate()` 调用。当调用 generate 时，有哪些方法会参与？
 
 ```py
 # transformers/generation/utils.py
 ```
 
-参考 [how-to-generate](https://huggingface.co/blog/zh/how-to-generate)。
+参考 [how-to-generate](https://huggingface.co/blog/zh/how-to-generate)，了解 generate() 输出的方式。
+
+参考 [GenerationMixin](https://huggingface.co/docs/transformers/main/en/main_classes/text_generation#transformers.GenerationMixin.generate)
 
 ## 补充材料
 [Quicktour](https://huggingface.co/docs/transformers/main/zh/quicktour)

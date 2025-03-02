@@ -2,7 +2,7 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA_阅读代码和复现
 desc: ''
-updated: 1740797577581
+updated: 1740925155967
 created: 1740053039805
 ---
 
@@ -393,13 +393,38 @@ class ScaleDPBlock(nn.Module):
 
 ### 整合：ScaleDP
 
-ScaleDP 配置默认 n_obs_steps 为 2，时间步为 T_cond = 1，obs_as_cond 默认 True。在网络部分，
+ScaleDP 配置默认 n_obs_steps 为 2，时间步为 T_cond = 1，obs_as_cond 默认 True。在网络部分，包含了：
+- self.combine (三层的 MLP)
+- self.x_embedders (nn.Linear)
+- self.t_embedder (TimestepEmbedder)
+- self.cond_obs_emb (nn.Linear)
+- self.pos_embed (nn.Parameter)
+- self.blocks (多层的 ScaleDPBlock)
+- self.final_layer (FinalLayer)
+- self.noise_scheduler (DDIMScheduler)
 
-VLM 传递给 policy_head 时，调用如下：
+#### forward()
 
-```py
-ret = self.policy_head(actions=actions, hidden_states=action_hidden_states, states=states, is_pad=is_pad)
-```
+接收参数：
+- actions (of shape (batch_size, Ta, action_dim))：学习时的目标动作。action_dim 配置于 config.output_dim，3+6+1=10。只使用前 num_queries 条参与训练，对应配置中 prediction_horizon。
+- hidden_states (of shape (batch_size, num_tokens, hidden_dim)) 在 VLA 中，配置 config.using_film 经过 Fusion 模块后，shape (batch_size, hidden_dim)
+- states (batch_size, states_dim)：通常是 14 维，包含机器人当前物理状态，比如关节状态（角度、速度和扭矩）、末端执行器状态等。
+- is_pad (of shape (batch_size, Ta))：actions 小于 16 或开头部分长度不够 16，需要填充。is_pad 用于标识哪些部分是填充。
+- 返回：训练时返回 loss，推理时返回动作。
+
+#### model_forward()
+
+预测 epsilon，接收参数：
+- x (Tensor of shape (batch_size, T, input_dim)) noisy actions
+- t (Union[Tensor of shape (batch_size,), int]) timesteps
+- global_cond (Tensor of shape (batch_size, n_obs_steps, hidden_dim)): 图像嵌入等 action_hidden_states
+- states
+
+如果传入的 states 不是 None，那么在最后一维拼接 global_cond 与 states。经过 self.combine 网络处理，得到最后的 global_cond 条件。紧接着，处理动作的嵌入和时间步嵌入，位置编码，还有编码条件。最后把时间步编码与条件编码相加，感觉似乎过于简陋了。
+
+### 配置文件 ScaleDPPolicyConfig
+
+- prediction_horizon (int)：预测范围，默认 16。传入的 actions 小于时，需要 padding。大于则截断。
 
 ## 训练器 QWen2VLATrainer
 
@@ -516,10 +541,12 @@ class Qwen2VLForConditionalGenerationForVLA(Qwen2VLPreTrainedModel, GenerationMi
         ...
         # 使用 FiLM 融合
         if self.using_film:
+            # (batch_size, hidden_dim)
             action_hidden_states = self.film_forward(
                 labels=labels, input_ids=input_ids, hidden_states=hidden_states
             )
         else:
+            # (batch_size, sequence_length, hidden_dim)
             action_hidden_states = hidden_states
 
         ret = self.policy_head(
@@ -556,16 +583,16 @@ if not return_dict:
 
 #### 使用 FiLM 集成 LLM 的 logits
 
-如果指定了配置 `using_film`，则使用 `film_forward()` 把输入、labels 和隐藏状态一起编码，最后输出 action_hidden_states。
+如果指定了配置 `using_film`，则使用 `film_forward()` 把输入、labels 和隐藏状态一起编码，最后输出 action_hidden_states, shape (batch_size, 1, hidden_dim)，把 num_tokens 压缩为了 1，提取和融合了语言的信息。
 
 计算掩码：
 
 ```py
     def film_forward(self, labels, input_ids, hidden_states):
+        # input_ids, labels (B, N, D), hidden_states (B, N, D)
         # input_ids 是 forward() 传来的，是 Tokenizer 处理提示词后得到的 token id。shape 为 (batch_size, seq_len)
         # 关于标签与 -100 比较，为了获取掩码位置，用于 BERT 类型的方式来训练。
-        # 创建布尔掩码，标记标签中需要忽略的位置
-        # 为何需要它？
+        # 创建布尔掩码，标记标签中需要忽略的位置。(B, N)
         inputs_index = labels[:, :] == -100
         inputs_index = inputs_index.int()
 ```
@@ -580,7 +607,7 @@ Qwen2VLForConditionalGeneration 类的 forward() 中，指出 labels 参数应�
         #      [0, 1, 1, 0, 1, 0]
         # 得到 [0, 1, 0, 1, 1, 1]
         xor_array = torch.bitwise_xor(inputs_index[:, :-1], inputs_index[:, 1:])
-        # 得到的 indexs shape of (batch_size,)，每个位置代表第一个出现 1 的地方
+        # 得到的 indexs of shape (batch_size,)，每个位置代表第一个出现 1 的地方
         # indexs 用于找到样本中第一个发生变化的索引，即有效部分结束位置。
         # 比如 -100 掩码只加载到句子的中间，后面也会被截断，不考虑。
         indexs = torch.argmax((xor_array != 0).float(), dim=1)
@@ -604,7 +631,8 @@ Qwen2VLForConditionalGeneration 类的 forward() 中，指出 labels 参数应�
             )
             # 有效部分的平均隐藏状态
             identity.append(
-                # 内容是 (hidden_dim,)
+                # 提取身份、辨识信息，返回得到一维的张量 (hidden_dim,)
+                # 注意看 dim=0，代表从 start:end 切片部分，按列计算均值
                 torch.mean(hidden_states[i, start:end, :], dim=0)
             )
             # 
@@ -616,24 +644,31 @@ Qwen2VLForConditionalGeneration 类的 forward() 中，指出 labels 参数应�
             )
 ```
 
+self.input_action_proj 和 self.reasoning_action_proj 用于提取信息，输出 (1, hidden_dim)。
+
 拼接与 FiLM 特征融合：
 
 ```py
-        # 拼接与调制，最后得到 (B, hidden_dim) 的内容
-        # input_embeddings, reasoning_embeddings (B, D)
+        # 拼接与调制
+        # (B, hidden_dim)
         input_embeddings = torch.cat(input_embeddings, dim=0)
+        # (B, hidden_dim)
         reasoning_embeddings = torch.cat(reasoning_embeddings, dim=0)
         # 由于 identity 列表中全是 (hidden_dim,) 的 shape，所以用 stack
+        # (B, hidden_dim)
         identity = torch.stack(identity)
         # FiLM 接受输入嵌入和推理嵌入，生成条件化特征表示。
         # 公式： output= x * (1 + scale) + shift
+        # (B, 1, hidden_dim)
         action_hidden_states = self.reasoning_film(
-            input_embeddings, reasoning_embeddings # both shape of (B, hidden_dim)
+            input_embeddings, reasoning_embeddings # both of shape (B, hidden_dim)
         ).unsqueeze(1)
-
+        # (B, hidden_dim)
         action_hidden_states = action_hidden_states + identity.unsqueeze(1)
         return action_hidden_states
 ```
+
+这样输出最后是 (batch_size, 1, hidden_dim) 的形状。把 num_tokens 压缩为 1 了。
 
 #### Fusion 模块
 
@@ -657,7 +692,7 @@ class ActionProjector(nn.Module):
         return x
 ```
 
-使用全局池化，self.global_1d_pool = nn.AdaptiveAvgPool1d(1) 将输入最后一维压缩为 1，提取输入特征的全局信息，减少序列长度对特征表示的影响。在 VLA 模型中，in_dim 和 out_dim 都是 hidden_size。输入的 x shape of (n, hidden_dim)，经过转置为 (hidden_dim, n)，输出 (hidden_dim, 1)，再转置，x 最终为 (1, hidden_dim)。再经过 self.mlps，得到 (1, hidden_dim)。
+使用全局池化，self.global_1d_pool = nn.AdaptiveAvgPool1d(1) 将输入最后一维压缩为 1，提取输入特征的全局信息，减少序列长度对特征表示的影响。在 VLA 模型中，in_dim 和 out_dim 都是 hidden_size。输入的 x of shape (n, hidden_dim)，经过转置为 (hidden_dim, n)，输出 (hidden_dim, 1)，再转置，x 最终为 (1, hidden_dim)。再经过 self.mlps，得到 (1, hidden_dim)。
 
 为什么需要设计 ActionProjector？ActionProjector 模块能够将输入维度的特征映射到目标维度。通过全局池化，再通过线性层和非线性激活函数 GELU，增强表达能力，保留非线性关系，从而提取全局信息，方便后续嵌入扩散专家。
 
@@ -665,9 +700,76 @@ TODO：研究 Fusion，为何有效。还有思路。
 
 经过 ActionProjector 提取信息后，传入给 reasoning_film 的有 input_embeddings 和 reasoning_embeddings，前者用于输入，后者是条件推理。输入和推理的 token 界定，在 labels 处以掩码确定。再从 hidden_states 中找到对应的部分，输入和输出的部分。
 
+#### evaluate() 方法
+
+forward() 并没有返回生成的动作，而是 loss。这是由于训练扩散模型的要求。evalute() 方法则返回了动作和文本输出。
+
+generate() 指定了 num_beams=1, return_dict_in_generate=True 和 output_hidden_states=True，返回更多输出。输出数据类 GenerateBeamDecoderOnlyOutput，包含一些字段。用到的包括字典中如下字段：
+- sequences (torch.LongTensor of shape (batch_size*num_return_sequences, sequence_length)))：自回归生成的文本
+- hidden_states (tuple(tuple(torch.FloatTensor)))：每层的隐藏状态。是一个元组，每个元素对应每个输出（比如批次大小乘以返回序列数）的 tokens，内部的元组对应每层 decoder 的输出（如果只需要最后的 logits，取 -1 下标即可），decoder 输出内容是 torch.FloatTensor of shape (batch_size * num_beams * num_return_sequences, generated_length, hidden_size)。
+
 #### 对比原版文件，做出了哪些修改
 
+##### forward() 参数
 
+```py
+class Qwen2VLForConditionalGenerationForVLA(Qwen2VLPreTrainedModel, GenerationMixin):
+    ...
+    def forward(
+        self,
+        input_ids: torch.LongTensor = None,
+        attention_mask: Optional[torch.Tensor] = None,
+        position_ids: Optional[torch.LongTensor] = None,
+        past_key_values: Optional[List[torch.FloatTensor]] = None,
+        inputs_embeds: Optional[torch.FloatTensor] = None,
+        labels: Optional[torch.LongTensor] = None,
+        use_cache: Optional[bool] = None,
+        output_attentions: Optional[bool] = None,
+        output_hidden_states: Optional[bool] = None,
+        return_dict: Optional[bool] = None,
+        pixel_values: Optional[torch.Tensor] = None,
+        pixel_values_videos: Optional[torch.FloatTensor] = None,
+        image_grid_thw: Optional[torch.LongTensor] = None,
+        video_grid_thw: Optional[torch.LongTensor] = None,
+        rope_deltas: Optional[torch.LongTensor] = None,
+        actions: Optional[torch.LongTensor] = None,
+        states: Optional[torch.FloatTensor] = None,
+        is_pad: bool = False,
+        is_eval: bool = False,
+        tinyvla: bool = False,
+    ) -> Union[Tuple, Qwen2VLCausalLMOutputWithPast]:        ...
+        ret = self.policy_head(actions=actions, hidden_states=action_hidden_states, states=states, is_pad=is_pad)
+        ...
+```
+
+对比 Qwen2VL 的 API，洞察修改部分。
+
+```py
+class Qwen2VLForConditionalGeneration(Qwen2VLPreTrainedModel, GenerationMixin):
+    ...
+    def forward(
+        self,
+        input_ids: torch.LongTensor = None,
+        attention_mask: Optional[torch.Tensor] = None,
+        position_ids: Optional[torch.LongTensor] = None,
+        past_key_values: Optional[List[torch.FloatTensor]] = None,
+        inputs_embeds: Optional[torch.FloatTensor] = None,
+        labels: Optional[torch.LongTensor] = None,
+        use_cache: Optional[bool] = None,
+        output_attentions: Optional[bool] = None,
+        output_hidden_states: Optional[bool] = None,
+        return_dict: Optional[bool] = None,
+        pixel_values: Optional[torch.Tensor] = None,
+        pixel_values_videos: Optional[torch.FloatTensor] = None,
+        image_grid_thw: Optional[torch.LongTensor] = None,
+        video_grid_thw: Optional[torch.LongTensor] = None,
+        rope_deltas: Optional[torch.LongTensor] = None,
+        cache_position: Optional[torch.LongTensor] = None,
+    ) -> Union[Tuple, Qwen2VLCausalLMOutputWithPast]:
+        ...
+```
+
+VLA 的输入中，修改了 forward() 的 API，删去了最后一个参数，cache_position，添加了 actions, states, is_pad, is_eval, tinyvla 参数。
 
 ### 梯度是如何反向传播的
 
