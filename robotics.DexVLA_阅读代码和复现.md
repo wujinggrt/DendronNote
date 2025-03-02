@@ -2,7 +2,7 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA_阅读代码和复现
 desc: ''
-updated: 1740925155967
+updated: 1740935688925
 created: 1740053039805
 ---
 
@@ -279,6 +279,8 @@ action                  (14,)         'float64'
 ```
 由于是双臂，所以是 14 对应 7*2。
 
+TODO: 查看 act-plus-plus 仓库收集数据后如何准备。
+
 #### 数据格式配置
 
 在 train_vla.py 中，查看到 ActionHeadArguments 中，state_dim 和 action_dim 分别设置为 7 和 10。在 DataArguments 中，可以看到 image_size_stable 分别设置了相机的尺寸，480 和 56。
@@ -406,7 +408,7 @@ ScaleDP 配置默认 n_obs_steps 为 2，时间步为 T_cond = 1，obs_as_cond �
 #### forward()
 
 接收参数：
-- actions (of shape (batch_size, Ta, action_dim))：学习时的目标动作。action_dim 配置于 config.output_dim，3+6+1=10。只使用前 num_queries 条参与训练，对应配置中 prediction_horizon。
+- actions (of shape (batch_size, action_horizon, action_dim))：学习时的目标动作。action_dim 配置于 config.output_dim，3+6+1=10。只使用前 num_queries 条参与训练，对应配置中 prediction_horizon。
 - hidden_states (of shape (batch_size, num_tokens, hidden_dim)) 在 VLA 中，配置 config.using_film 经过 Fusion 模块后，shape (batch_size, hidden_dim)
 - states (batch_size, states_dim)：通常是 14 维，包含机器人当前物理状态，比如关节状态（角度、速度和扭矩）、末端执行器状态等。
 - is_pad (of shape (batch_size, Ta))：actions 小于 16 或开头部分长度不够 16，需要填充。is_pad 用于标识哪些部分是填充。
@@ -777,10 +779,7 @@ VLA 的输入中，修改了 forward() 的 API，删去了最后一个参数，c
 
 如果传入 `labels` 给 `forward()`，说明正在训练，进一步计算交叉熵。否则，模型只需要推理，`loss` 为 `None`。
 
-## 视觉编码器条件化
-两个方案：
-- FiLM 层 (CNN 架构)：在 EfficientNet 的隐藏层
-- 交叉注意力 (Trasnformer 架构)：在自注意力后插入跨注意力。
+## 训练
 
 ## TODO
 制作 PPT，复现此项目。
@@ -815,13 +814,12 @@ HiRT 发表了论文，解决了 VLM 模型与策略模型生成速度不匹配�
 
 #### Q：forward() 中的 hidden_states 是什么
 
-
-
-
 ## Tag and Ref
+
 [[robotics.DexVLA]]
 [[robotics.Helix：用于通才人形机器人控制的_VLM]]
 [[robotics.HiRT_使用分层机器人Transformer提示机器人控制]]
+[[robotics.ACT]]
 [[insights.Robotics]]
 
 #复现
