@@ -2,7 +2,7 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA_阅读代码和复现
 desc: ''
-updated: 1740935688925
+updated: 1740999794366
 created: 1740053039805
 ---
 
@@ -219,7 +219,8 @@ ModelArguments, DataArguments 和 ActionHeadArguments 是普通的标注了 `@da
 
 ### 数据组织：使用 HDF5
 
-与 act 工作的数据格式一致，使用 HDF5。作者使用 rlds_to_h5py 转换，格式具体如下：
+与 act 工作的数据格式一致，使用 HDF5。需要准备的 HDF5 数据格式具体如下：
+
 ```angular2html
 # h5 data structure
 root
@@ -244,15 +245,15 @@ root
 | 字段               | 形状            | 描述                                 |
 | ------------------ | --------------- | ------------------------------------ |
 | action             | (100,10)        | 100 表示时间步数，10 表示动作维度。  |
-| substep_reasonings | (100,)          | 100                                  | 每个时间步对应一个子步骤推理。         |
+| substep_reasonings | (100,)          | 每个时间步对应一个子步骤推理。         |
 | observations       |                 | 表示时间步数，其他维度表示观测数据。 |
 | - images           |                 | 表示时间步数，其他维度表示图像数据。 |
-| \|- left           | (100,480,640,3) | 100                                  | 表示时间步数，480x640 表示图像分辨率。 |
-| \|- right          | (100,480,640,3) | 100                                  | 表示时间步数，480x640 表示图像分辨率。 |
-| \|- wrist          | (100,480,640,3) | 100                                  | 表示时间步数，480x640 表示图像分辨率。 |
-| - joint_positions  | (100,7)         | 100                                  | 表示时间步数，7 表示关节位置维度。     |
-| - qpos             | (100,7)         | 100                                  | 表示时间步数，7 表示关节位置维度。     |
-| - qvel             | (100,7)         | 100                                  | 表示时间步数，7 表示关节速度维度。     |
+| -- left           | (100,480,640,3) | 表示时间步数，480x640 表示图像分辨率。 |
+| -- right          | (100,480,640,3) | 表示时间步数，480x640 表示图像分辨率。 |
+| -- wrist          | (100,480,640,3) | 表示时间步数，480x640 表示图像分辨率。 |
+| - joint_positions  | (100,7)         | 表示时间步数，7 表示关节位置维度。     |
+| - qpos             | (100,7)         | 表示时间步数，7 表示关节位置维度。     |
+| - qvel             | (100,7)         | 表示时间步数，7 表示关节速度维度。     |
 
 joint_positions 和 qpos 关系：
 
@@ -262,6 +263,8 @@ joint_positions 和 qpos 关系：
 | 用途     | 描述机器人的关节状态。       | 描述机器人系统的完整状态。                    |
 | 数据范围 | 通常仅包含关节角度。         | 可能包含关节角度、末端执行器位置等信息。      |
 | 示例     | 7 自由度的机械臂的关节角度。 | 7 自由度的机械臂的关节角度 + 末端执行器位置。 |
+
+作者使用 rlds_to_h5py 转换，可以参考如何组织为训练需要的 HDF5 文件。RLDS（Reinforcement Learning Dataset）格式是一种专为强化学习设计的数据存储和表示标准，统一了强化学习中的标准。
 
 #### act-plus-plus 数据格式
 
@@ -277,9 +280,7 @@ observations
 
 action                  (14,)         'float64'
 ```
-由于是双臂，所以是 14 对应 7*2。
-
-TODO: 查看 act-plus-plus 仓库收集数据后如何准备。
+所以 14 对应双臂的 7*2。
 
 #### 数据格式配置
 
@@ -287,21 +288,15 @@ TODO: 查看 act-plus-plus 仓库收集数据后如何准备。
 
 ### Dataset 和 DataLoader
 
-#### 生成 h5 格式数据
+### load_data()
 
-data_preprocess_scripts/rlds_to_h5py.py 从 replay 中创建 HDF5 文件，组织为需要的格式。
-
-### 输入与输出格式
-
-输入给模型的格式分别为：
+加载数据：data_utils/utils.py:load_data()。首先调用 find_all_hdf5，递归遍历指定目录，收集所有符合要求的 HDF5 数据集文件路径。dataset_path_list_list 包含了 HDF5 文件路径的字符串。
 
 ## 扩散专家：ScaleDP
 
 注意，基于 Transformer 的扩散策略对训练参数敏感。
 
 ### 输入与输出
-
-格式分别为：
 
 ### Attention
 
@@ -779,7 +774,25 @@ VLA 的输入中，修改了 forward() 的 API，删去了最后一个参数，c
 
 如果传入 `labels` 给 `forward()`，说明正在训练，进一步计算交叉熵。否则，模型只需要推理，`loss` 为 `None`。
 
-## 训练
+## 训练器：Qwen2VLATrainer
+
+调用它是，传入参数有 model=model, tokenizer=tokenizer, args=config["training_args"], sampler_params=sampler_params, **data_module。
+
+### 优化器
+
+self.create_optimizer() 中，使用 self.args 创建优化器。self.args=args，args 是数据类的 TrainingArguments，训练参数。在 train_vla.py 指定了 DataArguments 的 optim 为默认值 "adamw_torch"。learning_rate， weight_decay 等使用 TrainingArguments 默认的，没有修改。而其他则指出设置：
+
+```py
+    optim: str = field(default="adamw_torch")
+    adam_beta1: float = field(default=0.9)
+    adam_beta2: float = field(default=0.98)
+    adam_epsilon: float = field(default=1e-7)
+    remove_unused_columns: bool = field(default=False)
+```
+
+### 计算 loss
+
+使用默认实现的 compute_loss()，也就是从 VLA 返回的 outputs = model(**inputs) 的 outputs[0]，把它当做 loss。
 
 ## TODO
 制作 PPT，复现此项目。

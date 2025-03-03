@@ -2,18 +2,16 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1740906981771
+updated: 1740993084033
 created: 1738165674608
 ---
 
-## LLM
-
-Triton写算子入门 - Arthur的文章 - 知乎
-https://zhuanlan.zhihu.com/p/887257776
+## LLM Reasoning
 
 rStar 小模型推理
 https://arxiv.org/abs/2501.04519
 https://github.com/microsoft/rStar
+
 OpenAI 的 O1 模型的原理是什么？ - 猛猿的回答 - 知乎
 https://www.zhihu.com/question/666999747/answer/4472268952
 
@@ -21,9 +19,6 @@ https://www.zhihu.com/question/666999747/answer/4472268952
 https://zhuanlan.zhihu.com/p/20365147329
 
 RL 框架：verl，https://arxiv.org/pdf/2409.19256v2
-
-通过 Affordance 链改进视觉-语言-动作模型 - 黄浴的文章 - 知乎
-https://zhuanlan.zhihu.com/p/21713958996
 
 R1-V 突破 2K Star，持续进化中！ - Lei Li的文章 - 知乎
 https://zhuanlan.zhihu.com/p/22989750949
@@ -47,7 +42,6 @@ https://zhuanlan.zhihu.com/p/24922558098
 笔记：MoBA 与 Native Sparse Attention - 刀刀宁的文章 - 知乎
 https://zhuanlan.zhihu.com/p/24774848974
 
-
 DeepSpeed 的 ZeRO 解读。
 
 摸着Logic-RL，复现7B - R1  zero - aaaaammmmm的文章 - 知乎
@@ -64,6 +58,8 @@ UCB cs294/194-196 Large Language Model Agents 课程笔记 - Perf的文章 - 知
 - [CS294/194-196 Large Language Model Agents](https://rdi.berkeley.edu/llm-agents/f24)
 - [UCB_CS294_LLmAgents](https://github.com/WangYuHang-cmd/UCB_CS294_LLmAgents)
 
+LLamaV-o1: (https://mbzuai-oryx.github.io/LlamaV-o1/)
+
 ## Robotics
 
 MapNav 使用了 GPT 标注图像数据。可以借鉴处理。
@@ -77,11 +73,16 @@ https://zhuanlan.zhihu.com/p/22946605267
 独家专访｜清华TEA实验室负责人：具身智能入门/转行到底学什么？ - 深蓝学院的文章 - 知乎
 https://zhuanlan.zhihu.com/p/26333134789
 
-VLA 等各种工作合集。
-博士想读具身智能/智能机器人应该怎么规划自己的科研？ - EyeSight1019的回答 - 知乎
+## VLA
+
+通过 Affordance 链改进视觉-语言-动作模型 - 黄浴的文章 - 知乎
+https://zhuanlan.zhihu.com/p/21713958996
+
+VLA 等各种工作合集。博士想读具身智能/智能机器人应该怎么规划自己的科研？ - EyeSight1019的回答 - 知乎
 https://www.zhihu.com/question/655570660/answer/87040917575
 
-LLamaV-o1: (https://mbzuai-oryx.github.io/LlamaV-o1/)
+Physical Intelligence 最新的 Hi Robot：基于分层的 VLA 模型的开放式指令遵循。
+http://www.pi.website/research/hirobot
 
 ## RL
 在线强化学习改进VLA模型 - 黄浴的文章 - 知乎

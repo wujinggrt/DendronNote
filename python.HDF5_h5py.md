@@ -2,7 +2,7 @@
 id: spdyvdpzn03gdr0e9qabkp7
 title: HDF5_h5py
 desc: ''
-updated: 1740166572753
+updated: 1740980276395
 created: 1740160885848
 ---
 
@@ -44,7 +44,8 @@ with h5py.File("mytestfile.h5py", "r") as f:
 <HDF5 dataset "mydataset": shape (100,), type "<i4">
 ```
 
-### 创建 Group 和 Dataset
+### 创建和访问 Group/Dataset
+
 使用 `create_group()` 方法创建 `Group`。创建后的 `Group` 在文件根目录下，此 `Group` 也可使用 `create_<group|dataset>()` 在其下创建 `Group` 和 `Dataset`。HDF5 会像 POSIX 风格一样以 `/` 分隔 `Group`。
 
 ```py
@@ -69,6 +70,7 @@ with h5py.File("mytestfile.h5py", "a") as f:
 ```
 
 ### 判断元素存在与否
+
 `File` 和 `Group` 可以用 `in` 判断 key 是否存在。key 可以用 `/` 分割。
 ```py
 with h5py.File("mytestfile.h5py", "r") as f:

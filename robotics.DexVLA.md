@@ -2,7 +2,7 @@
 id: svc1e8p1tntyfmp9t9sygdn
 title: DexVLA
 desc: ''
-updated: 1740757068651
+updated: 1740983975547
 created: 1740021087668
 ---
 
@@ -119,6 +119,24 @@ Stage 1 的平均得分较差 0，Stage 2 的平均得分 。Q：为什么？Ave
 - 阶段 1 和 2 都使用直接提示数据。
 
 展示，移除子步骤导致任务完全失败。
+
+### 更多实现细节
+
+AgileX 平台，挂载腕部是两个 Intel RealSense 435i 相机，顶部相机是 Intel RealSense 457 相机。AgileX 有一个前置相机，但是不参与训练和推理过程。
+
+#### 子步骤数据制造
+
+获取子步骤推理数据有两个挑战：获取语言指令和切割视频到对应标注。
+
+对于对象级别的任务（比如 bin picking, sorting, table bussing），识别物体是关键。作者使用 Grounding-Dino 和 DINIOv2 标注物体，包含边框和名字，也会标记 gripper 的 bounding box。随后计算 gripper 的边框与物体边框是否相交，以此判断抓取成功与否。
+
+对于长范围单物体任务（如折叠一件衣衫），挑战在于任务分割。作者创建了全面的潜在子步骤推理列表，关注每个持续了至少 5 秒的主要步骤，避免将任务分解得过于零碎。随后使用 Google Gemini 2.0，提供给子步骤推理列表，进一步分割视频和从列表选择对应的推理。
+
+Stage 3 需要手动检查训练数据，需要高质量标注，于是也会更灵活。
+
+#### 架构细节
+
+Qwen2-VL 和扩散专家是 DexVLA 组成部分。1 B 扩散专家模型中，使用了 32 层 Blocks，hidden_dim 则是 1280，并且用了 16 个 num_heads。阶段 1 仅仅预训练扩散专家。使用 ResNet-50 预处理图像，使用 off-the-shelf Distilbert [39] 编码语言指令。由于原有的扩散策略不支持跨具身，于是采用多头架构，如 Octo[30]。三个相机的分辨率使用 320 x 240，并且独立地由 ResNet-50 处理。使用 RT-1 的思路初始化 FiLM 层。
 
 ## QA
 

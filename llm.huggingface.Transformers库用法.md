@@ -2,7 +2,7 @@
 id: 17qvnqry352fhhwxcp3imco
 title: Transformers库用法
 desc: ''
-updated: 1740924201084
+updated: 1740995781604
 created: 1740205377695
 ---
 
@@ -67,7 +67,14 @@ AutoConfig.register("custom", CustomConfig)
 # 之后可通过 AutoConfig.from_pretrained("custom") 加载
 ```
 
-## Tokenizer
+
+## 预处理数据 AutoProcessor
+
+对于文本，使用分词器（Tokenizer）转换为一系列 tokens；图像输入使用图像处理器（ImageProcessor）转换为张量；多模态输入，使用处理器（Processor）结合 Tokenizer 和 ImageProcessor 或 Processor。
+
+AutoProcessor 始终有效的自动选择适用于模型的正确 class，无论是哪一类。
+
+### Tokenizer：编码文本
 
 一般从预训练模型中获取分词器，比如：
 
@@ -79,6 +86,9 @@ model_inputs = tokenizer(["A list of colors: red, blue"], return_tensors="pt").t
 ```
 
 多个句子需要预处理，那么传递列表给 `tokenizer`。可以看到，对其到了相同的大小。
+
+#### 编码
+
 ```python
 batch_sentences = [
     "But what about second breakfast?",
@@ -108,6 +118,93 @@ print(encoded_input)
                     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
                     [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]]}
 ```
+
+- input_ids 是与句子中每个 token 对应的索引。
+- attention_mask 指示是否应该关注一个 token。
+- token_type_ids 在存在多个序列时标识一个 token 属于哪个序列。
+
+如果需要返回的形式是张量，而非 list，那么在 tokenizer 调用时传入参数 return_tensors="pt"。
+
+#### 解码
+
+```py
+>>> tokenizer.decode(encoded_input["input_ids"])
+'[CLS] Do not meddle in the affairs of wizards, for they are subtle and quick to anger. [SEP]'
+```
+
+### ImageProcessor：计算机视觉任务
+
+### AutoProcessor：处理多模态场景
+
+示例如下：
+
+```py
+from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
+from qwen_vl_utils import process_vision_info
+model = Qwen2VLForConditionalGeneration.from_pretrained(
+    "Qwen/Qwen2-VL-2B-Instruct", torch_dtype="auto", device_map="auto"
+)
+processor = AutoProcessor.from_pretrained("Qwen/Qwen2-VL-2B-Instruct")
+messages = [
+    {
+        "role": "user",
+        "content": [
+            {
+                "type": "image",
+                "image": "https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-VL/assets/demo.jpeg",
+            },
+            {"type": "text", "text": "Describe this image."},
+        ],
+    }
+]
+# Preparation for inference
+text = processor.apply_chat_template(
+    messages, tokenize=False, add_generation_prompt=True
+)
+image_inputs, video_inputs = process_vision_info(messages)
+inputs = processor(
+    text=[text],
+    images=image_inputs,
+    videos=video_inputs,
+    padding=True,
+    return_tensors="pt",
+)
+inputs = inputs.to("cuda")
+
+# Inference: Generation of the output
+generated_ids = model.generate(**inputs, max_new_tokens=128)
+generated_ids_trimmed = [
+    out_ids[len(in_ids) :] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
+]
+output_text = processor.batch_decode(
+    generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
+)
+print(output_text)
+```
+
+#### 聊天模板
+
+聊天场景由一条或多条消息组成的对话组成，每条消息都有一个“用户”或“助手”等 角色，还包括消息文本。聊天模板是Tokenizer的一部分。用来把问答的对话内容转换为模型的输入prompt。
+
+比如，上面代码中：
+
+```py
+>>> text = processor.apply_chat_template(
+    messages, tokenize=False, add_generation_prompt=True
+)
+>>> print(text)
+<|im_start|>system
+You are a helpful assistant.<|im_end|>
+<|im_start|>user
+<|vision_start|><|image_pad|><|vision_end|>Describe this image.<|im_end|>
+<|im_start|>assistant
+```
+
+参考 [聊天模型的模板](https://huggingface.co/docs/transformers/main/zh/chat_templating#%E8%81%8A%E5%A4%A9%E6%A8%A1%E5%9E%8B%E7%9A%84%E6%A8%A1%E6%9D%BF)。
+
+## AutoConfig
+
+加载模型的配置参数。通常和模型保存在一起，在同目录下的 config.json。
 
 ## GenerationMixin
 

@@ -2,13 +2,18 @@
 id: 0da424ysmswufl4406wj1dt
 title: transformers_Trainer
 desc: ''
-updated: 1740730558418
+updated: 1740988276529
 created: 1740301523116
 ---
 
 `Trainer` 提供类似 PyTorch 的 API，用于处理大多数标准用例的全功能训练。例化你的 Trainer 之前，创建一个 `TrainingArguments` 来定制训练。Trainer 支持在多个 GPU/TPU 分布式训练，支持混合精度。
 
+## API
+
+### 构造函数
+
 构造函数的参数，参考文档或代码提出的文件。常用的如下：
+
 ```py
 class Trainer:
     """
@@ -24,9 +29,35 @@ class Trainer:
             The dataset to use for training. If it is a [`~datasets.Dataset`]
         eval_dataset (Union[`torch.utils.data.Dataset`, Dict[str, `torch.utils.data.Dataset`, `datasets.Dataset`]), *optional*):
             The dataset to use for evaluation. If it is a [`~datasets.Dataset`]
+        processing_class (`PreTrainedTokenizerBase` or `BaseImageProcessor` or `FeatureExtractionMixin` or `ProcessorMixin`, *optional*):
+            Processing class used to process the data. If provided, will be used to automatically process the inputs
+            for the model, and it will be saved along the model to make it easier to rerun an interrupted training or
+            reuse the fine-tuned model.
+            This supercedes the `tokenizer` argument, which is now deprecated.
+        compute_loss_func (`Callable`, *optional*):
+            A function that accepts the raw model outputs, labels, and the number of items in the entire accumulated
+            batch (batch_size * gradient_accumulation_steps) and returns the loss. For example, see the default [loss function](https://github.com/huggingface/transformers/blob/052e652d6d53c2b26ffde87e039b723949a53493/src/transformers/trainer.py#L3618) used by [`Trainer`].
     ...
+    Important attributes:
+        - **model** -- Always points to the core model. If using a transformers model, it will be a [`PreTrainedModel`]
+          subclass.
+        - **model_wrapped** -- Always points to the most external model in case one or more other modules wrap the
+          original model. This is the model that should be used for the forward pass. For example, under `DeepSpeed`,
+          the inner model is wrapped in `DeepSpeed` and then again in `torch.nn.DistributedDataParallel`. If the inner
+          model hasn't been wrapped, then `self.model_wrapped` is the same as `self.model`.
+        - **is_model_parallel** -- Whether or not a model has been switched to a model parallel mode (different from
+          data parallelism, this means some of the model layers are split on different GPUs).
+        - **place_model_on_device** -- Whether or not to automatically place the model on the device - it will be set
+          to `False` if model parallel or deepspeed is used, or if the default
+          `TrainingArguments.place_model_on_device` is overridden to return `False` .
+        - **is_in_train** -- Whether or not a model is currently running `train` (e.g. when `evaluate` is called while
+          in `train`)
     """
 ```
+
+到有些项目传入 tokenizer，在源码已经有装饰器标注为 deprecate，推荐使用 processing_class。
+
+### 方法
 
 `Trainer` 包含基本训练循环。如果想要自定义训练，可以继承 `Trainer`，并覆盖如下方法：
 - `get_train_dataloader` — 创建训练 DataLoader。
@@ -36,7 +67,7 @@ class Trainer:
 - `create_optimizer_and_scheduler` — 如果它们没有在初始化时传递，请设置优化器和学习率调度器。请注意，你还可以单独继承或覆盖 create_optimizer 和 create_scheduler 方法。
 - `create_optimizer` — 如果在初始化时没有传递，则设置优化器。
 - `create_scheduler` — 如果在初始化时没有传递，则设置学习率调度器。
-- `compute_loss` - 计算单批训练输入的损失。
+- `compute_loss` - 计算单批训练输入的损失。默认实现中，返回的元组中，第一个元素应当是 loss。如果在构造函数传入了 compute_loss_func 则使用它。但是，默认使用 outputs = model(**inputs) 的 outputs[0] 作为 loss。
 - `training_step` — 执行一步训练。
 - `prediction_step` — 执行一步评估/测试。
 - `evaluate` — 运行评估循环并返回指标。

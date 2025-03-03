@@ -2,7 +2,7 @@
 id: 3hpok7a24vlwyzkuzglvtb8
 title: ACT
 desc: ''
-updated: 1740935678671
+updated: 1740980684009
 created: 1740934420521
 ---
 
@@ -73,6 +73,36 @@ sim_env.py:make_sim_env() 配置了最终的运行环境，重新播放轨迹，
 ```
 
 随后，保存观察内容和 action。
+
+## 示例
+
+act-plus-plus 仓库提供了从仿真环境收集的 scripted/human demo，每条 episode 对应一个 HDF5 文件。下载两条 episode 查看 scripted 和 human 的如何：
+
+sim_insertion_scriped/episode_0.hdf5:
+
+```py
+def printname(name):
+    print(f"f[{name}]:\n\t{f[name]}")
+with h5py.File("episode_0_scriped.hdf5", "r") as f:
+    f.visit(printname)
+```
+
+输出如下，可以看到保存的 keys，而相机只用了 top 的。
+
+    f[action]:
+        <HDF5 dataset "action": shape (400, 14), type "<f4">
+    f[observations]:
+        <HDF5 group "/observations" (3 members)>
+    f[observations/images]:
+        <HDF5 group "/observations/images" (1 members)>
+    f[observations/images/top]:
+        <HDF5 dataset "top": shape (400, 480, 640, 3), type "|u1">
+    f[observations/qpos]:
+        <HDF5 dataset "qpos": shape (400, 14), type "<f4">
+    f[observations/qvel]:
+        <HDF5 dataset "qvel": shape (400, 14), type "<f4">
+
+再考察 sim_insertion_human/episode_0.hdf5，运行相同代码，查看 keys 也一样。不过是 horizon 长度为 400。
 
 ## Ref and Tag
 
