@@ -1,0 +1,78 @@
+---
+id: oyt05lfqh26c699x2kvokbw
+title: 操作目录和文件_pathlib
+desc: ''
+updated: 1741031076544
+created: 1741030522182
+---
+
+## Path 类
+
+操作通常由 Path 类完成。常用内容如下：
+
+    descriptor:
+        parts: 每一层路径
+        parent: 父目录
+        parents: 所有父目录
+        stem: 不带后缀的文件名
+        name: 文件名或目录名
+        suffix: 文件名后缀
+        suffixes: 文件名后缀列表
+
+    function:
+        is_absolute: 是否为绝对路径
+        joinpath: 组合路径
+        cwd: 当前工作目录
+        home: 根目录
+        rename: 重命名
+        replace: 覆盖
+        touch: 新建文件
+        exists: 是否存在路径
+        expanduser: 返回带~和~user的路径
+        glob: 列出匹配的文件或目录
+        rglob: 递归列出匹配的文件或目录
+        is_dir: 是否为目录
+        is_file: 是否为文件
+        iterdir: 列出路径下的文件和目录
+        mkdir: 新建目录
+        open: 打开文件
+        resolve: 转成绝对路径
+        rmdir: 删除目录
+        ...
+
+创建
+
+```py
+manage_path = Path("manage.py").resolve()  # 绝对路径
+base_dir = manage_path.parent  # 父目录
+another_manage_path = base_dir / "another_manage.py"  # 构成新路径
+```
+
+创建和重命名
+
+```py
+Path("./src/stuff").mkdir(parents=True, exist_ok=True)  # 构建目录./src/stuff
+Path("./src/stuff").rename("./src/config")  # 将./src/stuff重命名为./src/config
+```
+
+递归列出某类型文件
+
+```py
+top_level_py_files = Path(".").glob("*.py") # 不进行递归
+all_py_files = Path(".").rglob("*.py")  # 递归
+
+print(list(top_level_py_files))
+print(list(all_py_files))
+```
+
+路径中，通常由 / 分开目录或文件，获取分开部分方式如下：
+
+```py
+file_path = Path("F:/spug-3.0/spug-3.0/spug_api/pathlib_test.py")
+print(file_path.parts)
+# ('F:\\', 'spug-3.0', 'spug-3.0', 'spug_api', 'pathlib_test.py')
+```
+
+## Ref and Tag
+
+[doc pathlib](https://docs.python.org/zh-cn/3.11/library/pathlib.html)
