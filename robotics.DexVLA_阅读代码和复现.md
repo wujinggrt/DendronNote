@@ -2,7 +2,7 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA_阅读代码和复现
 desc: ''
-updated: 1741061167956
+updated: 1741081749495
 created: 1740053039805
 ---
 
@@ -239,7 +239,7 @@ root
 
 具体解释如下。内容来自猜测和结合 DeepSeek：
 - language_raw (1,) —— 原始语言指令，如折叠衬衫。所以当前是一个任务，有一个语言指令，如下每个时间步对应一个子步骤。即此任务的 horizon 为 100。
-- substep_reasonings (100,) —— 子步骤推理，每个时间步对应每个子步骤描述。相比 language_raw，
+- substep_reasonings (100,) —— 子步骤推理，每个时间步对应每个子步骤描述。
 
 
 | 字段               | 形状            | 描述                                 |
@@ -294,9 +294,28 @@ action                  (14,)         'float64'
 
 首先调用 find_all_hdf5，递归遍历指定目录，收集所有符合要求的 HDF5 数据集文件路径。dataset_path_list_list 包含了所有 HDF5 文件路径的字符串的列表。即 list[list[str]]。
 
-第一个数据目录为主数据，其 episodes 数量记为 num_episodes_0.调用 np.random.permutation(num_episodes_0)，打乱主数据集 dataset_dir_l[0]。按 train_ration (default 0.99) 划分训练集和验证集。其他数据集的数据（如多任务数据），即 dataset_dir_l[1:]，直接全量加入训练。此外，生成全局统一的训练集和验证集 Episode ID，确保数据索引的连贯性。id 即下标，具体参考 num_episodes_cumsum。
+第一个数据目录为主数据，其 episodes 数量记为 num_episodes_0.调用 np.random.permutation(num_episodes_0)，打乱主数据集 dataset_dir_l[0]。按 train_ration (default 0.99) 划分训练集和验证集。其他数据集的数据（如多任务数据），即 dataset_dir_l[1:]，直接全量加入训练。
 
-二维的 dataset_path_list_list 展平为一维的列表 dataset_path_list，调用 get_norm_states()，但是用到了计算每条 episodes 的长度。
+使用一维的列表 num_episodes_l 记录每个任务的 episodes 数量。再使用 num_episodes_cumsum = np.cumsum(num_episodes_l)，计算每条 episodes 的 end 位置。紧接着，生成全局统一的训练集和验证集 Episode ID，确保数据索引的连贯性。id 即在展平后 episodes 列表下标。训练集的下标中，train_episode_id_l 是一维的 episodes 列表的下标。最后处理的 train_episode_ids 是一维的 np.Array，对应下标。
+
+二维的 dataset_path_list_list 展平为一维的列表 dataset_path_list，调用 get_norm_states()，但是用到了计算每条 episodes 的长度。长度 all_episode_len 是一维的，标识了每条 episode 长度。随后再分别为训练和验证的 episode 计算各自的 len，参考记录的 id。最后得到 train_episode_len 等。最后，再调用 get_norm_stats() 统计 states_dir 内容的数据，states_dir 在 constants.py 的任务字典下，与 dataset_dir 平行。
+
+数据集实例化，创建 EpisodicDataset，将 HDF5 文件路径、摄像头名称、标准化统计量等参数传入构造函数。在类中，完成从 HDF5 文件加载图像、状态、动作数据，进一步做图像增强、归一化等预处理。传入参数方面，传入的数据都是一维的 HDF5 对应的每条 episode 路径，长度等。
+
+最后返回
+- train_dataset, val_dataset EpisodicDataset 对象，用于加载数据。
+- norm_states 提供将动作、关节状态的全局统计信息，用于归一化到如 [-1, 1]，确保稳定性和可比性。一般包括各参数的 mean, std, min, ma,。
+- sampler_params 定义训练和验证数据加载的配置参数，指导数据采样器，为生成批次准备。
+
+## EpisodicDataset
+
+如果使用基于 Transformer 的 diffusion policy，需要增强图像。
+
+_locate_transition() 返回索引的 episode 中的一条时间步对应的数据。首先找到 index 对应的内容。
+
+self.llava_pythia_process 使用了 Qweb2VLAProcess() 对象。
+
+### 从 h5 加载数据
 
 ## 扩散专家：ScaleDP
 

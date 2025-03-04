@@ -2,7 +2,7 @@
 id: 0da424ysmswufl4406wj1dt
 title: transformers_Trainer
 desc: ''
-updated: 1740988276529
+updated: 1741071001582
 created: 1740301523116
 ---
 
@@ -246,6 +246,7 @@ if __name__ == "__main__":
 
 ```
 
+## 使用 Huggingface 的工具微调和训练
 
 ## Ref and Tag
 [[llm.huggingface.Transformers库用法]]

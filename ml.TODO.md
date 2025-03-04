@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1740993084033
+updated: 1741071470489
 created: 1738165674608
 ---
 
@@ -84,6 +84,12 @@ https://www.zhihu.com/question/655570660/answer/87040917575
 Physical Intelligence 最新的 Hi Robot：基于分层的 VLA 模型的开放式指令遵循。
 http://www.pi.website/research/hirobot
 
+基于RoboTwin生成海量数据Finetune RDT-1B等具身大模型保姆级教程 - 穆尧的文章 - 知乎
+https://zhuanlan.zhihu.com/p/22754193110
+
+具身智能VLA方向模型fine-tune（单臂）（24.12.26已完结）
+https://blog.csdn.net/iamjackjin/article/details/144534904?fromshare=blogdetail&sharetype=blogdetail&sharerId=144534904&sharerefer=PC&sharesource=qq_39422041&sharefrom=from_link
+> 作者采集了 150 条数据，每个任务 10-30 条，
 ## RL
 在线强化学习改进VLA模型 - 黄浴的文章 - 知乎
 https://zhuanlan.zhihu.com/p/23993973779
@@ -110,6 +116,9 @@ https://www.zhihu.com/question/13238901947/answer/111931939432
 https://www.zhihu.com/question/13238901947/answer/112109118245
 > 项目中的奖励函数设计对其他类似任务有重要的实践意义，建议 RL 做其他任务的学习下。如果 reward 判定写得不够严密，模型学习过程容易钻空子，骗取高 reward。K & K 是合成逻辑谜题 (K & K puzzle) 数据集。
 > 参考：https://github.com/Unakar/Logic-RL/blob/main/verl/utils/reward_score/kk.py
+
+LLM RL入门 - Reku的文章 - 知乎
+https://zhuanlan.zhihu.com/p/27172237359
 
 ## PyTorch 技巧
 一文学会 Pytorch 中的 einsum - 梁德澎的文章 - 知乎

@@ -14,9 +14,15 @@
     * <leader>k, <leader>K highlight
     * sf, sF, show reference, find refernce
     * gd 显示光标所在函数/方法/类型/宏的信息,go to definition
+    * gD 显示光标所在函数/方法/类型/宏的信息，在上方水平分屏显示
+    *    一般垂直划分窗口。当右侧窗口有打开文件时，在垂直的右侧窗口
+    *    查看定义可能会污染打开的标签卡，或者打开了相同文件，光标会跳转，
+    *    所以上方水平通常能保证临时打开没有标签卡的窗口，不会污染。
+    *    再结合 <leader>m，可以最大化，方便查看。
     * gi 在右侧的新视图打开函数/方法/宏的实现（竖直分屏）
     * gt 在右侧的新视图打开类型定义（竖直分屏）
     * sd 浮窗查看定义，show definition,peekDefinition
+    * st 浮窗查看类型定义，editor.action.peekTypeDefinition
     * sh show call hierarchy
     * ysw<Space>, ysW<Space 在当前单词两侧添加空格。用于笔记场景，给英文两侧添加空格，与中文分开，阅读美观。比如:
     * 基础的 DP 方法并不能降低每个设备 (GPU) 上的内存占用。
@@ -266,50 +272,6 @@
             ]
         },
         {
-            // ysw<Space>, ysW<Space 在当前单词两侧添加空格。用于笔记场景，给英文两侧添加空格，与中文分开，阅读美观。比如:
-            // 基础的 DP 方法并不能降低每个设备 (GPU) 上的内存占用。
-            "before": [
-                "y",
-                "s",
-                "w",
-                "<Space>"
-            ],
-            "after": [
-                "v",
-                "i",
-                "w",
-                "<Esc>",
-                "a",
-                "<Space>",
-                "<Esc>",
-                "b",
-                "i",
-                "<Space>",
-                "<Esc>"
-            ]
-        },
-        {
-            "before": [
-                "y",
-                "s",
-                "W",
-                "<Space>"
-            ],
-            "after": [
-                "v",
-                "i",
-                "W",
-                "<Esc>",
-                "a",
-                "<Space>",
-                "<Esc>",
-                "B",
-                "i",
-                "<Space>",
-                "<Esc>"
-            ]
-        },
-        {
             // g + d open definition in side view
             "before": [
                 "g",
@@ -317,6 +279,17 @@
             ],
             "commands": [
                 "editor.action.revealDefinitionAside"
+            ]
+        },
+        {
+            // g + D open definition in side view
+            "before": [
+                "g",
+                "D"
+            ],
+            "commands": [
+                "workbench.action.splitEditorUp",
+                "editor.action.revealDefinition"
             ]
         },
         {
@@ -349,6 +322,16 @@
             ],
             "commands": [
                 "editor.action.peekDefinition"
+            ]
+        },
+        {
+            // 小窗口查看类型定义
+            "before": [
+                "s",
+                "t"
+            ],
+            "commands": [
+                "editor.action.peekTypeDefinition"
             ]
         },
         { // 查看哪些函数调用了此函数
@@ -426,6 +409,50 @@
             ],
             "commands": [
                 "editor.action.quickFix"
+            ]
+        },
+        {
+            // ysw<Space>, ysW<Space 在当前单词两侧添加空格。用于笔记场景，给英文两侧添加空格，与中文分开，阅读美观。比如:
+            // 基础的 DP 方法并不能降低每个设备 (GPU) 上的内存占用。
+            "before": [
+                "y",
+                "s",
+                "w",
+                "<Space>"
+            ],
+            "after": [
+                "v",
+                "i",
+                "w",
+                "<Esc>",
+                "a",
+                "<Space>",
+                "<Esc>",
+                "b",
+                "i",
+                "<Space>",
+                "<Esc>"
+            ]
+        },
+        {
+            "before": [
+                "y",
+                "s",
+                "W",
+                "<Space>"
+            ],
+            "after": [
+                "v",
+                "i",
+                "W",
+                "<Esc>",
+                "a",
+                "<Space>",
+                "<Esc>",
+                "B",
+                "i",
+                "<Space>",
+                "<Esc>"
             ]
         },
         {
