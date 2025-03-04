@@ -2,11 +2,11 @@
 id: rjexswayh0yvitkaf9qez5n
 title: 工程硕士英语
 desc: ''
-updated: 1740453562023
+updated: 1741054261763
 created: 1740448957635
 ---
 
-## 2025年2月25日
+## 2025年2月25日 Ch1
 
 Critical thinking。
 
@@ -38,5 +38,9 @@ Checking the qualitiy and nature of information.
 ### 2.6 Fairness
 
 形成刻板影响，会很难修改，就像飞机更可能有事故，类似思想钢印。不会用感性的思维判断，而是理性的思维。需要从多个角度思考问题。
+
+## 2025年3月4日 Ch2
+
+Argument 论证。
 
 ## Ref and Tag

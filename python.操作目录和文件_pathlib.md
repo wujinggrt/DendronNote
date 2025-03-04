@@ -2,7 +2,7 @@
 id: oyt05lfqh26c699x2kvokbw
 title: 操作目录和文件_pathlib
 desc: ''
-updated: 1741031076544
+updated: 1741059008020
 created: 1741030522182
 ---
 
@@ -55,6 +55,8 @@ Path("./src/stuff").mkdir(parents=True, exist_ok=True)  # 构建目录./src/stuf
 Path("./src/stuff").rename("./src/config")  # 将./src/stuff重命名为./src/config
 ```
 
+## 查看和操作目录
+
 递归列出某类型文件
 
 ```py
@@ -63,6 +65,26 @@ all_py_files = Path(".").rglob("*.py")  # 递归
 
 print(list(top_level_py_files))
 print(list(all_py_files))
+# ** 表示递归此目录及所有子目录。
+# 当前目录下所有 Python 源码，递归地。
+print(list(p.glob('**/*.py')))
+```
+
+列出当前目录下的子目录（非递归）
+
+```py
+p = Path('.')
+[x for x in p.iterdir() if x.is_dir()]
+[PosixPath('.hg'), PosixPath('docs'), PosixPath('dist'),
+ PosixPath('__pycache__'), PosixPath('build')]
+ ```
+
+使用 iterdir() 统计当前目录下文件个数，不包含 "." 和 ".."。
+
+```py
+now_path = pathlib.Path.cwd()
+gen = (i.suffix for i in now_path.iterdir())
+print(Counter(gen))  # Counter({'.py': 16, '': 11, '.txt': 1, '.png': 1, '.csv': 1})
 ```
 
 路径中，通常由 / 分开目录或文件，获取分开部分方式如下：
@@ -76,3 +98,4 @@ print(file_path.parts)
 ## Ref and Tag
 
 [doc pathlib](https://docs.python.org/zh-cn/3.11/library/pathlib.html)
+[pathlib, 一个优雅的python库 - 海哥python的文章 - 知乎](https://zhuanlan.zhihu.com/p/670865534)

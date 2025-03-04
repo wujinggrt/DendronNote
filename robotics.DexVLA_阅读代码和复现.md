@@ -2,7 +2,7 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA_阅读代码和复现
 desc: ''
-updated: 1740999794366
+updated: 1741061167956
 created: 1740053039805
 ---
 
@@ -290,7 +290,13 @@ action                  (14,)         'float64'
 
 ### load_data()
 
-加载数据：data_utils/utils.py:load_data()。首先调用 find_all_hdf5，递归遍历指定目录，收集所有符合要求的 HDF5 数据集文件路径。dataset_path_list_list 包含了 HDF5 文件路径的字符串。
+加载数据：data_utils/utils.py:load_data()。其中，dataset_dir 来自 constants.py。每个任务对应一个 dataset_dir，一个 dataset_dir 是列表，包含一个或多个目录，每个目录下可能有多个 episodes 的 HDF5。训练时，选取其中一个任务训练，即一个 task，而 dataset_dir 便是一个 list。
+
+首先调用 find_all_hdf5，递归遍历指定目录，收集所有符合要求的 HDF5 数据集文件路径。dataset_path_list_list 包含了所有 HDF5 文件路径的字符串的列表。即 list[list[str]]。
+
+第一个数据目录为主数据，其 episodes 数量记为 num_episodes_0.调用 np.random.permutation(num_episodes_0)，打乱主数据集 dataset_dir_l[0]。按 train_ration (default 0.99) 划分训练集和验证集。其他数据集的数据（如多任务数据），即 dataset_dir_l[1:]，直接全量加入训练。此外，生成全局统一的训练集和验证集 Episode ID，确保数据索引的连贯性。id 即下标，具体参考 num_episodes_cumsum。
+
+二维的 dataset_path_list_list 展平为一维的列表 dataset_path_list，调用 get_norm_states()，但是用到了计算每条 episodes 的长度。
 
 ## 扩散专家：ScaleDP
 
