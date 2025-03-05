@@ -2,7 +2,7 @@
 id: 7cd9he4w15xq7jbt88b3xp4
 title: Zarr
 desc: ''
-updated: 1741166359120
+updated: 1741185454348
 created: 1739872667023
 ---
 
@@ -289,6 +289,15 @@ print(array1_loaded[0:10, 0:10])
 array2_loaded = root_target['array2']
 print("\nLoaded array2 content:")
 print(array2_loaded[0:5, 0:5])
+```
+
+### 加载图片时，可能出错
+
+需要安装库 pip install imagecodecs，也需要安装 sudo apt-get install libjxl-dev。最后，在 Python 检查是否支持。
+
+```py
+import imagecodecs
+print(imagecodecs.JPEGXL)  # 应显示编解码器信息，而非AttributeError
 ```
 
 ## 异步
