@@ -2,7 +2,7 @@
 id: szrfzxm3muecjxl00crlgc2
 title: DexGraspVLA
 desc: ''
-updated: 1741092899053
+updated: 1741141827309
 created: 1741077608202
 ---
 
@@ -10,7 +10,7 @@ DexGraspVLA 是一个分层框架，使用预训练的 VLM 作为高层次任务
 
 ## Method
 
-
+domain-variance 指在不同环境、条件下，输入数据（如图像、语言指令）的变化或差异。domain-invariance 指模型能够提取与环境和条件无关的特征表示，在不同环境下，这些特征保持一致。
 
 ## Ref and Tag
 

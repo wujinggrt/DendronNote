@@ -2,7 +2,7 @@
 id: 7cd9he4w15xq7jbt88b3xp4
 title: Zarr
 desc: ''
-updated: 1739899539804
+updated: 1741166359120
 created: 1739872667023
 ---
 
@@ -10,7 +10,8 @@ Zarr是一种存储分组、压缩的N维数组的格式。
 
 官方教程：https://zarr.readthedocs.io/en/stable/tutorial.html
 
-## arrays
+## Arrays
+
 类似 numpy 的 np.array，例子：
 ```py
 import zarr
@@ -25,6 +26,20 @@ import numpy as np
 z[0, :] = np.arange(10000)
 z[:, 0] = np.arange(10000)
 ```
+
+### 打开
+
+如果数据目录不是 Zip 文件，可以直接简化打开，使用：
+
+```py
+src = zarr.open(path="path/to/file", mode="r")
+```
+
+此时，src 使用了 DirectoryStore。
+
+### 转换为 numpy.ndarry
+
+直接对 zarr 的 Array 使用切片 [:] 访问，便可获得 numpy.ndarray。
 
 ### chunks 参数
 [ref](https://zarr.readthedocs.io/en/v3.0.0/user-guide/performance.html#chunk-size-and-shape)
@@ -86,7 +101,17 @@ print(root, r2)
 # <Group memory://140453554680576> <Group memory://140453554680576>
 ```
 
+### 方法 values()
+
+keys() 和 values() 方法可以获得 KeysView 和 ValuesView 对象。可以使用迭代器迭代并访问内容。KeysView 则对应各个 keys，字符串。ValuesView 则对应 Array 对象。
+
+```py
+# src 是一个 Group 实例，下面返回第一个保存的 Array
+print(next(iter(src["meta"].values())))
+```
+
 ### 层次化结构
+
 root 代表当前 Group 最顶层，接下来的 Group 便可继续构造下一层。就像树的结构一样，Group 类比节点。
 ```py
 foo = root.create_group("foo")
@@ -199,7 +224,8 @@ zarr.copy_store(
 其中，source_path 和 dest_path，接受字符串对象，从指定的 source 中复制 source_path，放置到 dest 的 dest_path 中。默认值 "" 则为 store 的根目录。用于控制拷贝。
 
 ## Storage
-zarr.ZipStore 是存储后端，将数据保存于 zip 文件，适用数据归档、传输和临时存储场景。常见的还有 DirectoryStore，本地存储，用于大规模数据集和高性能计算。FSStore 适用于云存储和分布式存储。
+
+zarr.ZipStore 是存储后端，将数据保存于 zip 文件，适用数据归档、传输和临时存储场景。常见的还有 DirectoryStore，本地存储，用于大规模数据集和高性能计算，直接打开非压缩的本地文件。FSStore 适用于云存储和分布式存储。
 
 ```py
 store = zarr.storage.ZipStore("data.zip", mode="w")
@@ -216,9 +242,8 @@ zarr.create_array(store=store, shape=(2,), dtype="float64")
 # <Array memory://140455700104128 shape=(2,) dtype=float64>
 ```
 
-
-
 ### ZipStore 例子
+
 关于 ZipStore，可以使用 zarr.group 打开：
 ```py
 # 打开 ZIP 文件并加载 Zarr 数据结构

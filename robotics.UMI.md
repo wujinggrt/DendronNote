@@ -2,7 +2,7 @@
 id: u0ydqn2ohvl9vw86t1e8mt8
 title: UMI
 desc: ''
-updated: 1740038557866
+updated: 1741158501270
 created: 1739810960614
 ---
 
@@ -229,7 +229,9 @@ data/pusht_cchi_v7_replay.zarr
 ```
 
 #### 保存到 Store
+
 把当前 ReplayBuffer 对象的内容拷贝到 store 中。
+
 ```py
     def save_to_store(
         self,

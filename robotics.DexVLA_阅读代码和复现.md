@@ -2,7 +2,7 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA_阅读代码和复现
 desc: ''
-updated: 1741081749495
+updated: 1741141583392
 created: 1740053039805
 ---
 
@@ -316,6 +316,8 @@ _locate_transition() 返回索引的 episode 中的一条时间步对应的数�
 self.llava_pythia_process 使用了 Qweb2VLAProcess() 对象。
 
 ### 从 h5 加载数据
+
+load_from_h5() 方法中，可以看到加载了 qpos 和 qvel。在 getitem 方法中，可以发现，只用到了 qpos，没用到 qvel。它们的变化是微分和积分关系。两者其实等价。
 
 ## 扩散专家：ScaleDP
 

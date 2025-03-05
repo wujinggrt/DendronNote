@@ -2,7 +2,7 @@
 id: 745l1jwrarwygpelwedsioj
 title: 模块和包
 desc: ''
-updated: 1740724215039
+updated: 1741140057437
 created: 1740714013506
 ---
 
@@ -17,5 +17,23 @@ created: 1740714013506
 通过定义 `__all__` 列表，你可以控制 from package import * 语句导入哪些子模块或属性。
 
 ## 本地安装包
+
+## 缓存 wheels 文件的目录
+
+在 ~/.cache/<pip 或 uv> 目录下，保留了包的缓存。有时候特别大，可以手动删除此目录，也可以手动清理，比如 pip cache purge 或 uv cache prune。
+
+修改缓存目录：
+
+```bash
+pip config set global.cache-dir "/path/to/your/custom/cache"
+```
+
+这会在 ~/.config/pip/pip.conf 或者 ~/.pip/pip.conf 文件添加或更新对应项。
+
+对于 uv，修改环境变量配置：
+
+```bash
+export XDG_CACHE_HOME="/path/to/your/custom/cache"
+```
 
 ## Ref and Tag
