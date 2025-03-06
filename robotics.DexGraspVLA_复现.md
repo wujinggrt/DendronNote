@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1741185385283
+updated: 1741240416494
 created: 1741144146461
 ---
 
@@ -27,6 +27,10 @@ data 部分，则包含了 action, rgbm, right_cam_img, right_state，类型也�
 buffer_<start|end>_idx 指出了 episode 在 buffer 中的区间。sample_<start|end>_idx 指出了具体每次训练时，每个时间步 t 对应的 horizon 区间。有可能 start_idx < 0，这在 n_obs_step > 1 时会出现，使用复制和填充第一个观察来处理。末尾部分同理。
 
 sample_sequence() 方法最终返回字典，每个 key 对应的 value 为 shape (horizon_len, *data_shape)。比如图像是 (640, 480, 3)，对应 (horizon_len, 640, 480, 3)。
+
+## ObsEncoder
+
+
 
 
 ## Ref and Tag

@@ -2,7 +2,7 @@
 id: szrfzxm3muecjxl00crlgc2
 title: DexGraspVLA
 desc: ''
-updated: 1741141827309
+updated: 1741244537256
 created: 1741077608202
 ---
 
@@ -11,6 +11,12 @@ DexGraspVLA 是一个分层框架，使用预训练的 VLM 作为高层次任务
 ## Method
 
 domain-variance 指在不同环境、条件下，输入数据（如图像、语言指令）的变化或差异。domain-invariance 指模型能够提取与环境和条件无关的特征表示，在不同环境下，这些特征保持一致。
+
+## 附录细节
+
+对于头部相机获取的图片，使用 Qwen-VL-Chat 获取边框，提供给低级控制器。直接使用现有的 VLM 作为 planner，本框架可以十分轻松地替换 VLM。
+
+使用 prompts 提示 planner。主要包含理解用户 prompt，建议抓取的物体，评估当前指令是否完成，评估所有用户提示是否已经完成。特别地，当用户提供 prompt 时，planner 分辨是否指定目标物体。
 
 ## Ref and Tag
 
