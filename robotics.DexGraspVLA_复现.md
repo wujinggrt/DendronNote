@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1741240416494
+updated: 1741276065869
 created: 1741144146461
 ---
 
@@ -31,8 +31,24 @@ sample_sequence() 方法最终返回字典，每个 key 对应的 value 为 shap
 ## ObsEncoder
 
 
+## Planner
+
+### DexGraspVLAPlanner
+
+构造函数还接受 model_name，字符串，指出模型名字。
+
+Planner 只有一个方法，request_trask()。根据 task_name 参数，决定 prompt 是什么。可以选择如下：
+- "classify_user_prompt"：
+- "decompose_user_prompt"：
+- "generate_instruction"：
+- ""mark_bounding_box"：
+- "check_grasp_success"：
+- "check_instruction_complete"：
+- "check_user_prompt_complete"：
+
 
 
 ## Ref and Tag
 
 [[robotics.DexGraspVLA]]
+
