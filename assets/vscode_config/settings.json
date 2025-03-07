@@ -56,7 +56,7 @@
     "vim.sneak": true,
     "vim.easymotion": true,
     "vim.camelCaseMotion.enable": true,
-    "vim.statusBarColorControl": true,
+    "vim.statusBarColorControl": false,
     "vim.statusBarColors.normal": [
         "#8FBCBB",
         "#000"
@@ -733,7 +733,7 @@
     // "vim.autoSwitchInputMethod.obtainIMCmd": "C:\\Users\\wujing\\im-select.exe",
     // "vim.autoSwitchInputMethod.switchIMCmd": "C:\\Users\\wujing\\im-select.exe {im}",
     "whichkey.bindings": [
-        // 辅助栏
+        // a 辅助栏
         {
             "key": "a",
             "name": "AuxiliaryBar...",
@@ -759,7 +759,7 @@
                 }
             ]
         },
-        // 书签插件，bookmarks
+        // b 书签插件，bookmarks
         {
             "key": "b",
             "name": "Bookmarks...",
@@ -809,6 +809,7 @@
                 }
             ]
         },
+        // e Explorer，浏览器目录树等
         {
             "key": "e",
             "name": "Show tree/explorer view",
@@ -829,6 +830,7 @@
                 }
             ]
         },
+        // d Debug
         {
             "key": "d",
             "name": "Debug...",
@@ -938,6 +940,7 @@
                 }
             ]
         },
+        // f 查找文件、单词等
         {
             "key": "f",
             "name": "Find...",
@@ -952,8 +955,8 @@
                 },
                 {
                     "command": "workbench.view.search",
-                    "key": "s",
-                    "name": "Search Word",
+                    "key": "w",
+                    "name": "Search word in side bar",
                     "type": "command"
                 },
                 // 在本文件中选中文字后使用它，可以快速粘贴到搜索栏
@@ -963,15 +966,28 @@
                     "name": "New Search Editor",
                     "type": "command"
                 },
+                {
+                    "command": "workbench.action.gotoSymbol",
+                    "key": "s",
+                    "name": "Search symbol within current document",
+                    "type": "command"
+                },
+                {
+                    "command": "workbench.action.showAllSymbols",
+                    "key": "S",
+                    "name": "Search symbol within current project",
+                    "type": "command"
+                },
                 // 在本文件中选中文字，然后开始相当于workbench.view.search
                 {
                     "command": "extension.findInFilesWithSelection",
-                    "key": "S",
+                    "key": "F",
                     "name": "Find in file with selection",
                     "type": "command"
                 }
             ]
         },
+        // g git
         {
             "key": "g",
             "name": "Git...",
@@ -1092,26 +1108,22 @@
                 }
             ]
         },
+        // u 小工具，utils
         {
-            "command": "workbench.action.gotoSymbol",
-            "key": "s",
-            "name": "Search document symbol",
-            "type": "command"
+            "key": "n",
+            "name": "dendron...",
+            "type": "bindings",
+            "bindings": [
+                // m 右侧显示整个code的小map条
+                {
+                    "command": "editor.action.toggleMinimap",
+                    "key": "m",
+                    "name": "minimap",
+                    "type": "command"
+                },
+            ]
         },
-        {
-            "command": "workbench.action.showAllSymbols",
-            "key": "S",
-            "name": "Search project symbol",
-            "type": "command"
-        },
-        // 右侧显示整个code的小map条
-        {
-            "key": "m",
-            "name": "minimap",
-            "type": "command",
-            "command": "editor.action.toggleMinimap"
-        },
-        // dendron
+        // n DendronNote
         {
             "key": "n",
             "name": "dendron...",
@@ -1147,7 +1159,7 @@
                 }
             ]
         },
-        // 折叠
+        // z 折叠
         {
             "key": "z",
             "name": "Fold...",
@@ -1336,13 +1348,14 @@
     // 也可通过 ctrl + shift + p 输入如下来切换滚动状态
     // Markdown Preview Enhanced: Toggle Sync Scroll
     // "markdown-preview-enhanced.syncPreviewWithEditor": false,
-    // 当前激活的Workspace，显示不同，用于区分打开的多个VS Code
+    // 当前激活的 Workspace，顶部菜单栏颜色显示不同，用于区分打开的多个 VS Code
+    // 比如当前激活的 VsCode 窗口顶部便是 activaBackground 指定的颜色，即如下
     "workbench.colorCustomizations": {
         "titleBar.activeBackground": "#54a3ff",
         "titleBar.activeForeground": "#ffffff",
-        "statusBar.background": "#B48EAD",
-        "statusBar.noFolderBackground": "#B48EAD",
-        "statusBar.debuggingBackground": "#B48EAD",
+        "statusBar.background": "#8FBCBB",
+        "statusBar.noFolderBackground": "#8FBCBB",
+        "statusBar.debuggingBackground": "#8FBCBB",
         "statusBar.foreground": "#000",
         "statusBar.debuggingForeground": "#000"
     },
@@ -1385,7 +1398,6 @@
     粘贴到此笔记文件名的目录下。但是笔记的文件名通常是以.来分隔，请问如何把.分隔的处理为目录的层级
     */
     // 将文件名中的 . 替换为 /，生成层级目录。
-    // "pasteImage.path": "${currentFileDir}/assets/images/${currentFileNameWithoutExt}",
     // "pasteImage.path": "${currentFileDir}/assets/images/${currentFileNameWithoutExt}",
     "pasteImage.defaultName": "pic",
     "pasteImage.namePrefix": "${currentFileNameWithoutExt}/",
@@ -1444,7 +1456,7 @@
     // 控制编辑器在空白字符上显示符号的方式
     "editor.renderWhitespace": "all", // none, all, boundary, selection
     "editor.tabSize": 4,
-    // 显示文件目录水平拖动条
+    // 左侧 sidebar 显示文件目录时，可以使用水平拖动条
     "workbench.list.horizontalScrolling": true,
     "git.openRepositoryInParentFolders": "never",
     "files.exclude": {

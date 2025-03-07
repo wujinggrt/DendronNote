@@ -2,7 +2,7 @@
 id: 17qvnqry352fhhwxcp3imco
 title: Transformers库用法
 desc: ''
-updated: 1740995781604
+updated: 1741334316742
 created: 1740205377695
 ---
 
@@ -66,7 +66,6 @@ class CustomConfig(PretrainedConfig):
 AutoConfig.register("custom", CustomConfig)
 # 之后可通过 AutoConfig.from_pretrained("custom") 加载
 ```
-
 
 ## 预处理数据 AutoProcessor
 

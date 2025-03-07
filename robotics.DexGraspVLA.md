@@ -2,7 +2,7 @@
 id: szrfzxm3muecjxl00crlgc2
 title: DexGraspVLA
 desc: ''
-updated: 1741330456866
+updated: 1741357312157
 created: 1741077608202
 ---
 
@@ -28,13 +28,17 @@ domain-variance 指在不同环境、条件下，输入数据（如图像、语�
 
 ### Controller
 
-头部和腕部相机收集的图像，都会转换为 640x480x3 的分辨率，掩码则为 640x480x1.使用 DINOv2 ViT-B/14 提取头部图像特征 $\phi^h$，使用 DINOv2 ViT-L/14 提取腕部特征 $\phi^w$。在使用 DINOv2 提取特征前，将图像 resize 到 518x518x3。训练时，使用 color jittering 随机化图像。最后，归一化图像，再送往 DINOv2 模型。最后得到头部和腕部的特征 $\bold{z}_t^h\in \mathbb{R}^{1369\times768}$ and $\bold{z}_t^w\in \mathbb{R}^{1369\times1024}$。求遮掩特征时，使用随机初始化的 ViT，提取特征为 $\bold{z}^m_t\in\mathbb{R}^{1369\times768}$。通过逐 patch 拼接 $\bold{z}_t^m, \bold{z}_t^h$，得到特征 $\bar{\bold{z}}_t^h\in\mathbb{R}^{1369\times1536}$。随后，使用 MLP 投影 $\bold{\bar{z}}_t^h, \bold{z}_t^w, \bold{s}_t$ 到共同的特征空间，维度为 1024，各自得到 $\bold{\tilde{z}}_t^h\in\mathbb{R}^{1369\times1024}$, $\bold{\tilde{z}}_t^w\in\mathbb{R}^{1369\times1024}$ and $\bold{\tilde{z}}_t^s\in\mathbb{R}^{1\times1024}$。拼接得到全部的观察特征序列 $\bold{\tilde{z}}_t^{obs}=\left(\bold{\tilde{z}}_t^h,\bold{\tilde{z}}_t^w,\bold{\tilde{z}}_t^s\right)\in\mathbb{R}^{2739\times1024}$
+头部和腕部相机收集的图像，都会转换为 640x480x3 的分辨率，掩码则为 640x480x1。使用 DINOv2 ViT-B/14 提取头部图像特征 $\phi^h$，使用 DINOv2 ViT-L/14 提取腕部特征 $\phi^w$。在使用 DINOv2 提取特征前，将图像 resize 到 518x518x3。训练时，使用 color jittering 随机化图像。最后，归一化图像，再送往 DINOv2 模型。最后得到头部和腕部的特征 $\bold{z}_t^h\in \mathbb{R}^{1369\times768}$ and $\bold{z}_t^w\in \mathbb{R}^{1369\times1024}$。
+
+求遮掩特征时，使用随机初始化的 ViT，提取特征为 $\bold{z}^m_t\in\mathbb{R}^{1369\times768}$。通过逐 patch 拼接 $\bold{z}_t^m, \bold{z}_t^h$，得到特征 $\bar{\bold{z}}_t^h\in\mathbb{R}^{1369\times1536}$。
+
+随后，使用 MLP 投影 $\bold{\bar{z}}_t^h, \bold{z}_t^w, \bold{s}_t$ 到共同的特征空间，维度为 1024，各自得到 $\bold{\tilde{z}}_t^h\in\mathbb{R}^{1369\times1024}$, $\bold{\tilde{z}}_t^w\in\mathbb{R}^{1369\times1024}$ and $\bold{\tilde{z}}_t^s\in\mathbb{R}^{1\times1024}$。拼接得到全部的观察特征序列 $\bold{\tilde{z}}_t^{obs}=\left(\bold{\tilde{z}}_t^h,\bold{\tilde{z}}_t^w,\bold{\tilde{z}}_t^s\right)\in\mathbb{R}^{2739\times1024}$。
 
 ### DiT 实现
 
 将时间步嵌入到和 $\bold{\tilde{z}_t^{obs}}$ 相同的 hidden space，得到 $\bold{\tilde{z}_t^d}\in\mathbb{R}^{1\times1024}$，随后和观察的特征拼接起来，得到 $\bold{\tilde{z}_t}=\left(\bold{\tilde{z}_t^{obs}}, \bold{\tilde{z}_t^d}\right)\in\mathbb{R}^{2740\times1024}$。
 
-将 noise chunk 投影到相同的空间，其中，action chunk horizon H=64，于是 noised action chunk $\bold{\hat{A}}\in\mathbb{R}^{64\times13}$，最后得到特征 $\bold{\tilde{z}_t^A}\in\mathbb{R}^{64\times1024}$。随后，送到 DiT。每个 DiT 层对 action tokens 执行双向注意力，对 condition sequence 执行交叉注意力，再包含一个 MLP 投影。最后，输出投影回动作空间，即模型对噪声的预测。使用 DDIM 扩散和去噪。
+将 noised chunk 投影到相同的空间，其中，action chunk horizon H=64，于是 noised action chunk $\bold{\hat{A}}\in\mathbb{R}^{64\times13}$，最后得到特征 $\bold{\tilde{z}_t^A}\in\mathbb{R}^{64\times1024}$。随后，送到 DiT。每个 DiT 层对 action tokens 执行双向注意力，对 condition sequence 执行交叉注意力，再包含一个 MLP 投影。最后，输出投影回动作空间，即模型对噪声的预测。使用 DDIM 扩散和去噪。
 
 Controller 使用了 163M 的可训练参数。为了加速训练，使用 bfloat16 混合精度训练，减少存储和提升训练。对我们的数据集，训练了 84 个 epochs，使用 8-A800 GPU 服务器训练，在一天之内训练完成。
 

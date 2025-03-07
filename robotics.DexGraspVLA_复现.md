@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1741320145189
+updated: 1741348674676
 created: 1741144146461
 ---
 
@@ -30,6 +30,27 @@ sample_sequence() 方法最终返回字典，每个 key 对应的 value 为 shap
 
 ## ObsEncoder
 
+配置参考 controller/config/train_dexgraspvla_controller_workspace.yaml:obs_encoder，shape_meta 来自 controller/config/task/grasp.yaml 中的 shape_meta。在 model_config 中，如果 head 和 wrist 没有指定 local_weights_path，即 null，则使用 torch.hub.load() 加载，使用如下：
+
+```py
+self.dino_head = torch.hub.load(
+    "facebookresearch/dinov2",
+    model_config['head']['model_type'], # 比如 dinov2_vits14
+    pretrained=True
+)
+# 冻结参数。wrist 同理
+self.dino_head.eval()
+```
+
+下载位置放置到 ~/.cache/torch/hub/checkpoints/dinov2_vits14_pretrain.pth 下。
+
+[DINOv2 Github](https://github.com/facebookresearch/dinov2?tab=readme-ov-file#pretrained-backbones-via-pytorch-hub) 指出了加载的方式。其中DINOv2 的 embedding 如下：
+- 384 for ViT-S.
+- 768 for ViT-B.
+- 1024 for ViT-L.
+- 1536 for ViT-g.
+
+处理 mask 时，使用一个模块，
 
 ## Planner
 
@@ -86,6 +107,11 @@ if task_name == "classify_user_prompt":
 elif ...
 ```
 
+VLM 的回答包含：
+- "Type I"
+- "Type II"
+- 两者不包含则报错
+
 #### decompose_user_prompt：为 Type I 分解任务
 
 辨别用户提示词后，如果是 Type I，则进一步生成有序的抓取指令列表。使用如下的系统 prompt 和 head-camera 图像送给模型。
@@ -114,6 +140,10 @@ elif task_name == "decompose_user_prompt":
     """
 elif ...
 ```
+
+VLM 的回答包含：
+- "[\"<带位置的物体1>\", \"<带位置的物体2>\", ...]"
+- 不包含则报错
 
 #### generate_instruction：为 Type II 生成
 
@@ -152,6 +182,10 @@ elif task_name == "generate_instruction":
 elif ...
 ```
 
+注意，两个花括号中，第一个代表 f-format 的输入，第二个代表字典。内部的字典也一样。"analysis" 对应的 {{ 也需要双花括号，否则不能够在字符串中展现出来。
+
+希望 VLM 返回的内容包含 JSON 格式的序列，根据 \`\`\`json 来识别 JSON 内容起始，根据 \`\`\` 识别 JSON 内容终止。
+
 #### mark_bounding_box
 
 对于每条抓取指令 l，planner 标注边框，使用如下系统的 prompt 和头部相机。
@@ -186,6 +220,8 @@ elif task_name == "mark_bounding_box":
 elif ...
 ```
 
+VLM 返回 JSON 格式，解析类似 generate_instruction。
+
 #### check_grasp_success
 
 执行期间，planner 验证物体会否成功抓取，使用如下系统提示词和头部图像。
@@ -200,6 +236,8 @@ elif task_name == "check_grasp_success":
 elif ...
 ```
 
+VLM 返回要包含 true 或 false，否则报错。
+
 #### check_instruction_complete
 
 当抓取尝试结束时，机器人会重置初始状态，planner 检查当前指令是否完成，使用如下系统提示词和头部图像。
@@ -211,6 +249,8 @@ elif task_name == "check_instruction_complete":
     """
 elif ...
 ```
+
+VLM 返回要包含 true 或 false，否则报错。
 
 #### check_user_prompt_complete
 
@@ -240,6 +280,8 @@ elif task_name == "check_user_prompt_complete":
 else:
     raise ValueError(f"The task_name {task_name} is not a valid task name.")
 ```
+
+VLM 返回要包含 true 或 false，否则报错。
 
 ## Ref and Tag
 
