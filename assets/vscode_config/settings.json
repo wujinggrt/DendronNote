@@ -1478,6 +1478,14 @@
     "remote.autoForwardPortsSource": "hybrid",
     "terminal.integrated.fontFamily": "\"CodeNewRoman Nerd Font Mono\"",
     "workbench.colorTheme": "GitHub Light",
+    "files.associations": {
+        "*.py": "python"
+    },
+    "notebook.lineNumbers": "on",
+    "markdown-preview-enhanced.codeBlockTheme": "github.css",
+    "projectManager.sortList": "Saved",
+    "security.workspace.trust.untrustedFiles": "open",
+    "diffEditor.hideUnchangedRegions.enabled": true,
     "remote.SSH.remotePlatform": {
         "192.168.123.78": "linux",
         "desktop": "linux",
@@ -1498,13 +1506,5 @@
         "lxt-24-196": "linux",
         "wj-24-196": "linux"
     },
-    "files.associations": {
-        "*.py": "python"
-    },
-    "notebook.lineNumbers": "on",
-    "markdown-preview-enhanced.codeBlockTheme": "github.css",
-    "projectManager.sortList": "Saved",
-    "security.workspace.trust.untrustedFiles": "open",
-    "diffEditor.hideUnchangedRegions.enabled": true,
     "editor.minimap.enabled": false
 }
