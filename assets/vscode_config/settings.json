@@ -1110,7 +1110,7 @@
         },
         // u 小工具，utils
         {
-            "key": "n",
+            "key": "u",
             "name": "dendron...",
             "type": "bindings",
             "bindings": [
