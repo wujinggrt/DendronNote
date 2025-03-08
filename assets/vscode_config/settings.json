@@ -21,13 +21,13 @@
     *    再结合 <leader>m，可以最大化，方便查看。
     * gi 在右侧的新视图打开函数/方法/宏的实现（竖直分屏）
     * gt 在右侧的新视图打开类型定义（竖直分屏）
+    * gh hover
     * sd 浮窗查看定义，show definition,peekDefinition
     * st 浮窗查看类型定义，editor.action.peekTypeDefinition
     * sh show call hierarchy
     * ysw<Space>, ysW<Space 在当前单词两侧添加空格。用于笔记场景，给英文两侧添加空格，与中文分开，阅读美观。比如:
     * 基础的 DP 方法并不能降低每个设备 (GPU) 上的内存占用。
     * rn rename
-    * <leader>h hover
     * [d, ]d 查看error的地方
     * <leader>ca quickFix，修改意见。
     * <C-0> 查看左侧边栏
@@ -315,6 +315,15 @@
             ]
         },
         {
+            "before": [
+                "g",
+                "h"
+            ],
+            "commands": [
+                "editor.action.showDefinitionPreviewHover"
+            ]
+        },
+        {
             // 小窗口查看定义
             "before": [
                 "s",
@@ -361,15 +370,6 @@
                 "<leader>",
                 "<leader>",
                 "s",
-            ]
-        },
-        {
-            "before": [
-                "<leader>",
-                "h"
-            ],
-            "commands": [
-                "editor.action.showHover"
             ]
         },
         {
@@ -1448,6 +1448,9 @@
     "editor.acceptSuggestionOnEnter": "on",
     // 始终预先选择第一个建议
     "editor.suggestSelection": "first",
+    // 在 peek 时，默认聚焦上下的查看条目
+    "editor.peekWidgetDefaultFocus": "tree",
+    "editor.hover.enabled": true,
     // 自动格式化
     "editor.formatOnType": true,
     // 粘贴自动格式化
