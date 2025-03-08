@@ -1363,7 +1363,7 @@
     "editor.unicodeHighlight.allowedCharacters": {
         "，": true,
         "（": true,
-        "）": true,
+        "）": true
     },
     "[python]": {
         "editor.rulers": [
@@ -1374,7 +1374,7 @@
         "diffEditor.ignoreTrimWhitespace": false, // 默认使用 Ruff 格式化
         // "editor.formatOnSave": true, // 保存时自动格式化
         // ruff默认单行长度88，修改之
-        "ruff.lineLength": 88,
+        "ruff.lineLength": 88
     },
     // "notebook.formatOnSave.enabled": true, // notebook 保存时自动格式化
     // ruff-lsp 服务端已经标记为 deprecated，使用新的 rust 实现的后端 ruff server
@@ -1413,8 +1413,6 @@
     // 集成终端右击时选择光标下方的字词，并打开上下文菜单
     "terminal.integrated.rightClickBehavior": "copyPaste",
     "todohighlight.isCaseSensitive": false,
-    // 缩放
-    "window.zoomLevel": 0,
     "diffEditor.wordWrap": "on",
     // 每行最多显示字符数量，多余的自动换行
     "editor.wordWrapColumn": 80,
@@ -1480,6 +1478,8 @@
     "git.confirmSync": false,
     "remote.autoForwardPortsSource": "hybrid",
     "terminal.integrated.fontFamily": "\"CodeNewRoman Nerd Font Mono\"",
+    // 缩放
+    "window.zoomLevel": 0,
     "workbench.colorTheme": "GitHub Light",
     "files.associations": {
         "*.py": "python"

@@ -1,6 +1,78 @@
 // Place your key bindings in this file to override the defaults
 [
     /*
+    用法：
+
+    侧边栏的搜索框，比如 workbench.view.search 命令打开的部分，比如 ctrl+shift+f 打开部分。
+        tab
+            侧边栏的搜索框中，聚焦搜索列表，方便查看和遍历
+        shift+tab
+            侧边栏的搜索框中，当聚焦到搜索的列表时，返回搜索输入框，方便继续输入内容并搜索。
+        o
+            搜索列表下，选择打开并定位到具体为止
+        enter
+            同 o，但是同时打开辅助栏
+    
+    文件浏览操作，在侧边栏的 Explorer 时，对文件或目录操作。
+        r
+            重命名，并且禁用以前的 enter 键重命名
+        j, k
+            向下和向上
+        o
+            打开文件
+        l, h, shift+h
+            展开目录，折叠目录，折叠所有
+        a, n
+            添加新文件。n 则提供更多选择，自动选择类型。
+        shift+a
+            新建目录
+        d
+            删除文件或目录
+
+    窗口和面板导航
+        ctrl+shift+c
+            光标不在主编辑区，且难以返回时起作用。也可以用 ctrl+<0-9>，ctrl+0 对应侧边栏，其余则是分组。
+        ctrl+<kh>
+            聚焦底部面板（终端、输出窗口、问题等）时，用来回到主编辑区。
+        ctrl+<jkhl>
+            在 vim 的 Normal 模式下，没有 Quick Open 且没有补全提示时，在 group 或窗口之间导航。
+        ctrl+<jk>
+            - 在 QuickOpen 中上下选择条目
+            - 在有提示时，listFocus 且出现建议 widget 时，上下选择条目。比如，底部面板的 Problems 中，激活后，
+              每条也是 list，可以上下移动。再比如，辅助栏的条目也满足 listFocus，也可如此实现。
+            - 输入文本时，且有多条建议，上下选择条目
+            - 在 peek 引用时，上下选择查看引用的上下文
+            - 有多个参数选项时，上下选择参数提示
+            - 提示 code action 时，比如移除没有使用的 import 包，上下选择建议
+
+    底部面板操作
+        ctrl+shift+k
+            在 Problems 面板选择下一个条目。
+        ctrl+\
+            打开终端
+        ctrl+m
+            在终端选中时，toggle 最大化终端
+
+    debug 操作，参考 gdb 配置
+        s
+            step into。光标要在主编辑区。
+        n
+            step over
+        f
+            step out，如 gdb finish
+        q
+            stop
+        c
+            continue
+        b
+            toggle breakpoint
+        r
+            restart
+        
+    鼠标悬停浏览定义悬浮窗操作
+        hjkl
+            使用 editor.action.showDefinitionPreviewHover 命令，比如 vim 配置为 gh 后，聚焦到悬浮窗，用来滑动悬浮窗口。
+
      when 语句详解：
         inQuickOpen
             处于快速打开面板（Ctrl+p 的面板）时为 true。
@@ -61,12 +133,145 @@
         
      */
     // 用于 debug
+    // {
+    //     "key": "ctrl+down",
+    //     "command": "workbench.action.showLogs",
+    //     "when": "searchViewletFocus"
+    // },
+    // 搜索 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    // -----searching pane start------
+    // 在搜索字符的搜索框中：（输入要搜索的字符后，按tab可切换到搜索结果，shift+tab回到搜索框)
+    // tab 聚焦搜索结果。聚焦之后，可以用 j/k 上下浏览。注意，要用 ctrl+shift+c 才能返回编辑区。
     {
-        "key": "ctrl+down",
-        "command": "workbench.action.showLogs",
+        "key": "tab",
+        "command": "extension.multiCommand.execute",
+        "args": {
+            "sequence": [
+                "search.action.focusSearchList"
+            ]
+        },
         "when": "searchViewletFocus"
     },
-    // 窗口跳转 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    // shift+tab 聚焦侧边栏的输入框，方便重新在侧边栏搜索框输入搜索内容。
+    {
+        "key": "shift+tab",
+        "command": "extension.multiCommand.execute",
+        "args": {
+            "sequence": [
+                "search.focus.previousInputBox",
+                "search.focus.previousInputBox",
+                "search.focus.previousInputBox",
+                "search.focus.previousInputBox"
+            ]
+        },
+        "when": "hasSearchResult && searchViewletFocus"
+    },
+    // 在搜索面板，打开和进入。
+    {
+        "key": "o",
+        "command": "list.select",
+        "when": "listFocus && !inputFocus && hasSearchResult && searchViewletFocus"
+    },
+    {
+        "key": "enter",
+        "command": "extension.multiCommand.execute",
+        "args": {
+            "sequence": [
+                "list.select",
+                "workbench.action.toggleAuxiliaryBar"
+            ]
+        },
+        "when": "listFocus && !inputFocus && hasSearchResult && searchViewletFocus"
+    },
+    // 搜索 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    // 文件浏览操作 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    // -----file explorer start------
+    // r rename
+    {
+        "key": "r",
+        "command": "renameFile",
+        "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot && !explorerResourceReadonly && !inputFocus"
+    },
+    { // disable old style rename shortcut
+        "key": "enter",
+        "command": "-renameFile",
+        "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot && !explorerResourceReadonly && !inputFocus"
+    },
+    { // move down
+        "key": "j",
+        "command": "list.focusDown",
+        "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot && !explorerResourceReadonly && !inputFocus"
+    },
+    { // move up
+        "key": "k",
+        "command": "list.focusUp",
+        "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot && !explorerResourceReadonly && !inputFocus"
+    },
+    // 文件浏览 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    // 文件操作 ---
+    // l 打开文件
+    // o 展开目录
+    // h, shift+h 折叠目录
+    // a, n 添加新文件
+    // shift+a 新建目录
+    // d 删除文件或目录
+    { // select file to open
+        "key": "o",
+        "command": "list.select",
+        "when": "explorerViewletVisible && filesExplorerFocus && !inputFocus"
+    },
+    {
+        "key": "l",
+        "command": "list.toggleExpand",
+        "when": "explorerViewletVisible && filesExplorerFocus && !inputFocus"
+    },
+    {
+        "key": "h",
+        "command": "list.collapse",
+        // "command": "list.collapseAllToFocus",
+        "when": "explorerViewletVisible && filesExplorerFocus && !inputFocus"
+    },
+    {
+        "key": "shift+h",
+        "command": "list.collapseAll",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused"
+    },
+    {
+        "key": "a",
+        "command": "explorer.newFile",
+        "when": "filesExplorerFocus && !inputFocus"
+    },
+    {
+        "key": "n",
+        "command": "welcome.showNewFileEntries",
+        "when": "filesExplorerFocus && !inputFocus"
+    },
+    {
+        "key": "shift+a",
+        "command": "explorer.newFolder",
+        "when": "filesExplorerFocus && !inputFocus"
+    },
+    {
+        "key": "d",
+        "command": "deleteFile",
+        "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceReadonly && !inputFocus"
+    },
+    // -----file explorer end------
+    // -----suggest item start------
+    // 比如 whichkey 的选项中， space+f 或者 ctrl+shift+p 之后，使用 ctrl+<n|p> 上下移动选择
+    // 其中 ctrl+j 与打开终端有冲突，所以 disable 原来的功能。
+    // {
+    //     "key": "ctrl+j",
+    //     "command": "selectNextSuggestion",
+    //     "when": "editorTextFocus && suggestWidgetMultipleSuggestions && suggestWidgetVisible"
+    // },
+    // 禁用功能
+    // {
+    //     "key": "ctrl+j",
+    //     "command": "-editor.action.insertLineAfter",
+    //     "when": "editorTextFocus && neovim.ctrlKeysInsert && !neovim.recording && neovim.mode == 'insert'"
+    // },
+    // 窗口和面板导航 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     // 光标回到主编辑区
     {
         "key": "ctrl+shift+c",
@@ -130,161 +335,13 @@
             ]
         }
     },
-    // 窗口跳转 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    // 搜索 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    // -----searching pane start------
-    // 在搜索字符的搜索框中：（输入要搜索的字符后，按tab可切换到搜索结果，shift+tab回到搜索框)
-    // tab 聚焦搜索结果。聚焦之后，可以用 j/k 上下浏览。注意，要用 ctrl+shift+c 才能返回编辑区。
-    {
-        "key": "tab",
-        "command": "extension.multiCommand.execute",
-        "args": {
-            "sequence": [
-                "search.action.focusSearchList"
-            ]
-        },
-        "when": "searchViewletFocus"
-    },
-    // shift+tab 聚焦侧边栏的输入框，方便重新在侧边栏搜索框输入搜索内容。
-    {
-        "key": "shift+tab",
-        "command": "extension.multiCommand.execute",
-        "args": {
-            "sequence": [
-                "search.focus.previousInputBox",
-                "search.focus.previousInputBox",
-                "search.focus.previousInputBox",
-                "search.focus.previousInputBox"
-            ]
-        },
-        "when": "hasSearchResult && searchViewletFocus"
-    },
-    // 在搜索面板，打开和进入。
-    {
-        "key": "o",
-        "command": "list.select",
-        "when": "listFocus && !inputFocus && hasSearchResult && searchViewletFocus"
-    },
-    {
-        "key": "enter",
-        "command": "extension.multiCommand.execute",
-        "args": {
-            "sequence": [
-                "list.select",
-                "workbench.action.toggleAuxiliaryBar"
-            ]
-        },
-        "when": "listFocus && !inputFocus && hasSearchResult && searchViewletFocus"
-    },
-    // 搜索 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    // 文件浏览操作 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    // -----file explorer start------
-    { // open file explorer use which key
-        "key": "e",
-        "command": "whichkey.triggerKey",
-        "when": "whichkeyVisible && sideBarVisible && explorerViewletVisible",
-        "args": {
-            "key": "e",
-            "when": "sideBarVisible && explorerViewletVisible"
-        }
-    },
-    { // rename file
-        "key": "r",
-        "command": "renameFile",
-        "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot && !explorerResourceReadonly && !inputFocus"
-    },
-    { // disable old style rename shortcut
-        "key": "enter",
-        "command": "-renameFile",
-        "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot && !explorerResourceReadonly && !inputFocus"
-    },
-    { // move down
-        "key": "j",
-        "command": "list.focusDown",
-        "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot && !explorerResourceReadonly && !inputFocus"
-    },
-    { // move up
-        "key": "k",
-        "command": "list.focusUp",
-        "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot && !explorerResourceReadonly && !inputFocus"
-    },
-    // 文件浏览 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    // 文件操作 ---
-    // l 打开文件
-    // o 展开目录
-    // h, shift+h 折叠目录
-    // a, n 添加新文件
-    // shift+a 新建目录
-    // d 删除文件或目录
-    { // select file to open
-        "key": "l",
-        "command": "list.select",
-        "when": "explorerViewletVisible && filesExplorerFocus && !inputFocus"
-    },
-    {
-        "key": "o",
-        "command": "list.toggleExpand",
-        "when": "explorerViewletVisible && filesExplorerFocus && !inputFocus"
-    },
-    {
-        "key": "h",
-        "command": "list.collapse",
-        // "command": "list.collapseAllToFocus",
-        "when": "explorerViewletVisible && filesExplorerFocus && !inputFocus"
-    },
-    {
-        "key": "shift+h",
-        "command": "list.collapseAll",
-        "when": "listFocus && !inputFocus && !treestickyScrollFocused"
-    },
-    {
-        "key": "a",
-        "command": "explorer.newFile",
-        "when": "filesExplorerFocus && !inputFocus"
-    },
-    {
-        "key": "n",
-        "command": "welcome.showNewFileEntries",
-        "when": "filesExplorerFocus && !inputFocus"
-    },
-    {
-        "key": "shift+a",
-        "command": "explorer.newFolder",
-        "when": "filesExplorerFocus && !inputFocus"
-    },
-    {
-        "key": "d",
-        "command": "deleteFile",
-        "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceReadonly && !inputFocus"
-    },
-    // -----file explorer end------
-    // -----suggest item start------
-    // 比如 whichkey 的选项中， space+f 或者 ctrl+shift+p 之后，使用 ctrl+<n|p> 上下移动选择
-    // 其中 ctrl+j 与打开终端有冲突，所以 disable 原来的功能。
-    // {
-    //     "key": "ctrl+j",
-    //     "command": "selectNextSuggestion",
-    //     "when": "editorTextFocus && suggestWidgetMultipleSuggestions && suggestWidgetVisible"
-    // },
-    // 禁用功能
-    // {
-    //     "key": "ctrl+j",
-    //     "command": "-editor.action.insertLineAfter",
-    //     "when": "editorTextFocus && neovim.ctrlKeysInsert && !neovim.recording && neovim.mode == 'insert'"
-    // },
-    // ==========================================================================
-    {
-        "key": "shift+tab",
-        "command": "workbench.action.quickOpenNavigatePrevious",
-        "when": "inQuickOpen"
-    },
     // ctrl+<jk> 上下选择条目 >>>>>>>>>>
     // quickopen 中上下选择条目。例子：在 Java 项目中，ctrl+shift+p 后，选择生成 ctor 时，
     // 插件在 quickopen 窗口提示选择生成哪些参数的构造器。
     {
         "key": "ctrl+j",
         "command": "workbench.action.quickOpenSelectNext",
-        "when": "inQuickOpen",
+        "when": "inQuickOpen"
     },
     {
         "key": "ctrl+k",
@@ -357,16 +414,11 @@
         "when": "codeActionMenuVisible"
     },
     // ctrl+<jk> ends -----
-    // 底部的 Problem 面板操作，上下选择。
+    // 底部面板操作，上下选择。
     {
         "key": "ctrl+shift+k",
         "command": "list.focusUp",
         "when": "panelFocus && activePanel == 'workbench.panel.markers' "
-    },
-    {
-        "key": "shift+tab",
-        "command": "workbench.action.quickOpenNavigatePrevious",
-        "when": "inQuickOpen"
     },
     // toggle terminals
     {
@@ -392,31 +444,9 @@
         "when": "explorerViewletVisible && filesExplorerFocus"
     },
     { // open reference localtion without quit reference view
-        "key": "o",
+        "key": "R",
         "command": "revealReference",
         "when": "listFocus && referenceSearchVisible && !inputFocus && !treeElementCanCollapse && !treeElementCanExpand"
-    },
-    { // preview reference
-        "key": "j",
-        "command": "extension.multiCommand.execute",
-        "args": {
-            "sequence": [
-                "list.focusDown"
-                // "list.toggleExpand", // TODO: this will coallse the tree node
-            ]
-        },
-        "when": "listFocus && !inputFocus && panelFocus && !inDebugRepl && references-view.canNavigate"
-    },
-    { // preview reference
-        "key": "k",
-        "command": "extension.multiCommand.execute",
-        "args": {
-            "sequence": [
-                "list.focusUp"
-                // "list.toggleExpand", // TODO: this will coallse the tree node
-            ]
-        },
-        "when": "listFocus && !inputFocus && panelFocus && !inDebugRepl && references-view.canNavigate"
     },
     { // open reference location with quit reference view
         "key": "enter",
