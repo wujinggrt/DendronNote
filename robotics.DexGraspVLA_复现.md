@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1741348674676
+updated: 1741398250287
 created: 1741144146461
 ---
 
@@ -50,7 +50,7 @@ self.dino_head.eval()
 - 1024 for ViT-L.
 - 1536 for ViT-g.
 
-处理 mask 时，使用一个模块，
+处理 mask 时，首先对每个 patch 使用 1-channel 的卷积，获取 head_feature_dim 的维度后，即 (b, n, c) 的形状，再送入 4 层的 TransformerEncoder。
 
 ## Planner
 

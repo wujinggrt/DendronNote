@@ -2,7 +2,7 @@
 id: pycd8tjfjszc6x3g7ghbhs8
 title: Einops_方便地操作张量
 desc: ''
-updated: 1741240366461
+updated: 1741396722284
 created: 1741161107888
 ---
 
@@ -217,6 +217,16 @@ print(reduce(x, "c (h1 h2) (w1 w2) -> c h1 w1", "max", h2=3, w2=4))
             [110, 113, 116, 119],
             [134, 137, 140, 143]]])
 
+## 嵌入到网络结构中
+
+可以像一层网络，嵌入到 nn.Sequential 中。比如：
+
+```py
+from einops.layers.torch import Rearrange
+...
+
+net = nn.Sequential(nn.Conv2d(...), nn.Flatten(2), Rearrange("b c n -> b n c"), nn.LayerNorm(dim))
+```
 
 ## Ref and Tag
 
