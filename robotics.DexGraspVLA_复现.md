@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1741521477801
+updated: 1741541605349
 created: 1741144146461
 ---
 
@@ -31,6 +31,8 @@ sample_sequence() 方法最终返回字典，每个 key 对应的 value 为 shap
 ## MaskImageDataset
 
 相机分辨原来是 (640, 480)，处理 rgbm 时，在 _process_mask_image_batch() 方法中，将图像的 channel 轴转置到第二维，得到形状 (T, 3, H, W)。使用 torchvision.transform.interpolate() 插值，把图像 resize 到 (518,518)。
+
+是否有归一化？
 
 ## ObsEncoder
 

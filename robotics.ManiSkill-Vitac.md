@@ -2,7 +2,7 @@
 id: gqnz9f63oiug596jem6d3m9
 title: ManiSkill-Vitac
 desc: ''
-updated: 1741529038941
+updated: 1741543037440
 created: 1739260392326
 ---
 
@@ -17,6 +17,10 @@ arguments.py 中，从`solve_argument_confict()`中，优先使用传入命令�
 
 ## Track 2: Tactile-Vision-Fusion Manipulation
 In this track, the experimental setup remains unchanged. However, compared to the only tactile task, a Realsense D415 is used to provide visual information, and the distance between the peg and the hole is increased. The gripper needs to determine which hole to insert the peg into based on the shape of the gripped peg. Since the tactile information remains the same during the approach to the hole, **the task primarily relies on visual data for decision-making.**
+
+相比 Track_1，peg 和 hole 之间距离增加了，也就是 peg 与 hole 距离更远。提供了 RGBD 信息。gripper 需要确定哪一个 hole 来插入，根据 peg 的形状。由于找 h过程中，以及接近 hole 途中，没有插入阻力，所以触觉不会有太多变化，因此任务主要依靠视觉数据来决策。
+
+分析，视觉要占大比重。
 
 ## Evaluation
 ```py
@@ -177,6 +181,7 @@ INFO got tac right feature
 
 obs:
 - depth_picture (batch, 480, 640)
+  - 深度信息
 - gt_direction (batch, 1)
 - gt_offset (batch, 4)
 - marker_flow (batch, 2 (left and right), 2 (u0 v0 and u1 v1), 128 (marker_num), 2)
@@ -955,6 +960,8 @@ Importantly, `Env.action_space` and `Env.observation_space` are instances of `Sp
 ### 环境与策略输入不匹配，无法提取有效特征
 
 可能问题：数据未归一化到 [-1, 1]，网络难以学习。
+
+Track_1 是否有归一化？
 
 ### 超参数配置不当
 
