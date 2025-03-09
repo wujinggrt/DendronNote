@@ -2,7 +2,7 @@
 id: eszoks0gixjd0fjyul4wh10
 title: Robotics
 desc: ''
-updated: 1741365048744
+updated: 1741482801392
 created: 1740293600917
 ---
 
@@ -64,6 +64,10 @@ DexVLA 指出，使用子步骤推理至关重要。每个任务拆分和标记�
 遗忘，可以遗忘坏的习惯，拟合到特定场景的局限性。是泛化能力的关键。
 
 通才应该是善于遗忘，但是能够马上 warmup。
+
+### 仅仅 latent 可能不够
+
+需要掩码的方案，比如 DexGraspVLA 才能行得通。VLM 生成 hidden tokens，再加上遮掩。
 
 ### 短时记忆，cache 与空间感知
 

@@ -12,6 +12,8 @@
             搜索列表下，选择打开并定位到具体为止
         enter
             同 o，但是同时打开辅助栏
+        <whichkey trigger> + e
+            隐藏侧边栏，前提是打开了文件浏览器
     
     文件浏览操作，在侧边栏的 Explorer 时，对文件或目录操作。
         r
@@ -206,6 +208,16 @@
         "key": "k",
         "command": "list.focusUp",
         "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot && !explorerResourceReadonly && !inputFocus"
+    },
+    // 配合 which key 的 e，将打开的侧边栏隐藏
+    {
+        "key": "e",
+        "command": "whichkey.triggerKey",
+        "when": "whichkeyVisible && sideBarVisible && explorerViewletVisible",
+        "args": {
+            "key": "e",
+            "when": "sideBarVisible && explorerViewletVisible"
+        }
     },
     // 文件浏览 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     // 文件操作 ---
