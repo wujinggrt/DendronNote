@@ -2,7 +2,7 @@
 id: gqnz9f63oiug596jem6d3m9
 title: ManiSkill-Vitac
 desc: ''
-updated: 1739766667060
+updated: 1741529038941
 created: 1739260392326
 ---
 
@@ -59,6 +59,7 @@ class PegInsertionSimEnvV2(gym.Env):
 ```
 
 ## 使用回调函数修改 env，加上测试集数据
+
 关于 TD3 的回调函数的调用时机：回调函数在训练流程的特定阶段被触发，但不会干预环境状态。例如：
 * on_step()：每次调用 env.step() 后触发（环境可能处于运行中或已重置）。
 * on_rollout_start()：开始收集新的一批数据前触发（此时环境可能已被部分重置）。
@@ -158,6 +159,7 @@ INFO forward marker_pos shape is torch.Size([6, 128, 4])
 INFO forward marker_pos shape is torch.Size([6, 128, 4])
 INFO got tac right feature
 ```
+
 可以看到，传入的包含深度图像，还有触觉等信息。触觉是是 4 个维度的，点云最后维度是 3 的。通过 Debug 模式，考察上述各个 feature 维度：
 * vision_feature_1: (6, 128)
 * vision_feature_2: (6, 128)
@@ -170,6 +172,25 @@ INFO got tac right feature
 6 猜测是指代六个线程。vision 和 tac 的最后一个维度分别是 128 和 64，分别对应配置文件中 vision_kwargs:out_dim 和 tac_kwargs:out_dim。可以看到，每个 torch.cat 拼接了最后维度，把左右的视觉触觉拼接起来。
 
 问题：在 `PointNetActor` 中，forward 调用了 `FeaturesExtractorPointCloud` 的 `forward`，得到了 `features`，维度为 (6, 384)，即 `marker_pos`，这与要求的 ndim 至少为三维相悖，所以在调用 `elf.point_net_feature_extractor(marker_pos_input)` 时候会出现错误。
+
+### Actor:forward() 参数 obs 字典内容
+
+obs:
+- depth_picture (batch, 480, 640)
+- gt_direction (batch, 1)
+- gt_offset (batch, 4)
+- marker_flow (batch, 2 (left and right), 2 (u0 v0 and u1 v1), 128 (marker_num), 2)
+  - 触觉信息，需要重新整合。marker_num 代表传感器标记点数量。初始标记点是 u0 v0，当前则是 u1 v1。2 代表传感器内容。
+- object_point_cloud (batch, 2 (peg and hole), 128 (marker_num), 3)
+  - peg 和 hole 点云信息
+- point_cloud (batch, 480, 640, 3)
+  - Realsense D415 的 RGB，与 depth_picture 对应。
+- relative_motion (batch, 4)
+  - 传感器相对初始位置偏移，(x, y, z) 和旋转角度 theta
+
+marker_num 代表触觉传感器标记点数量。具体参考文件 Track_2/envs/peg_insertion_v2.py:PegInsertionSimEnvV2:get_obs()，定义了一系列的内容。
+
+比如，搜索 depth_picture，查看 obs["depth_picture"] 如何赋值和设置的。随后可以看到，这是 sapien/sensor/stereodepth.py:StereoDepthSensor:get_depth() 的内容，获取与 RGB 图像相同分辨率的深度图（depth map）。
 
 ## PointNetActor 如何使用 FeaturesExtractorPointCloud
 ```py
@@ -919,3 +940,65 @@ for _ in range(100):
 https://gymnasium.farama.org/introduction/basic_usage/
 
 Importantly, `Env.action_space` and `Env.observation_space` are instances of `Space`, a high-level python class that provides the key functions: `Space.contains()` and `Space.sample()`.
+
+
+## 训练要点
+
+刚开始，模型随机初始化，发现训练集总是失败，验证集偶尔成功。成功率在 2-16%。但是随着训练进行，验证集后续成功率直接为 0 了，在训练集和验证集都不会出现成功情况。
+
+### 探索噪声设置不当
+
+- 现象：初期模型随机探索偶现成功，但训练后确定性策略 (deterministic=True)，成功率为 0。
+- 可能问题：训练探索噪声（如 TD3 的 action_noise）引入过小，导致策略过早收敛到局部最优。此外，可能验证时，使用确定性策略，无噪声，但是模型没有学到鲁邦策略。
+- 调整训练噪声，适当增大。
+
+### 环境与策略输入不匹配，无法提取有效特征
+
+可能问题：数据未归一化到 [-1, 1]，网络难以学习。
+
+### 超参数配置不当
+
+可能问题：
+- 学习率过高：初期快速收敛到次优策略，后期无法跳出局部最优。
+- 批次大小过小：梯度更新不稳定，策略震荡。
+- 策略更新频率不合理：Critic 网络未充分训练，Actor 更新过早。
+
+合理调整 learning_rate, batch_size, policy_delay 等。policy_delay 控制 Actor 更新频率。
+
+优点：
+- 增大 policy_delay，Critic 有更多时间优化 Q 函数，减少 Actor 更新方差。
+- 避免策略震荡，放置 Actor 在 Critic 未收敛时频繁改变策略，导致训练不稳定。
+
+缺点：
+- 训练效率降低：Actor 更新频率降低，延长收敛时间。
+- 探索不足：探索噪声不足，策略可能过早收敛到局部最优。
+
+### 训练输出日志
+
+训练时看到如下提示：
+
+```bash
+...
+Tet inversion! negative J: -0.373621
+Tet inversion! negative J: -0.344398
+Tet inversion! negative J: -0.639286
+Tet inversion! negative J: -0.572351
+Tet inversion! negative J: -0.267730
+Eval num_timesteps=20, episode_reward=-48.62 +/- 38.69
+Episode length: 18.16 +/- 8.92
+Success rate: 12.00%
+------------------------------------
+| eval/                 |          |
+|    mean_ep_length     | 18.2     |
+|    mean_reward        | -48.6    |
+|    success_rate       | 0.12     |
+| time/                 |          |
+|    total_timesteps    | 20       |
+|    update_policy_time | 0.961    |
+------------------------------------
+New best mean reward!
+Tet inversion! negative J: -0.193403
+Tet inversion! negative J: -0.049104
+...
+```
+搜索项目，查看 Tet inversion! negative J: ... 代表什么。

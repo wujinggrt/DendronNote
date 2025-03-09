@@ -2,7 +2,7 @@
 id: wcgjhins6g2h2yd1yqpaowm
 title: CNN
 desc: ''
-updated: 1741414030417
+updated: 1741502699806
 created: 1741397322508
 ---
 
@@ -82,7 +82,36 @@ $$
 W_{\text{out}} = \left\lfloor \frac{W_{\text{in}} + 2 \times \text{padding}[1] - \text{dilation}[1] \times (\text{kernel\_size}[1] - 1) - 1}{\text{stride}[1]} + 1 \right\rfloor
 $$
 
-通常使用默认的 padding 和 dialation，从而 H_out 为 H_in - kernel_size + 1。W_out 同理。
+- 通常使用默认的 padding=0 和 dialation=0，从而 H_out 为 (H_in - kernel_size / stride) + 1。W_out 同理。
+- 通常选择 kernel_size == stride，比如 ViT 常选的 14，从而有 H_out == H_in // kernel_size。常用于提取 patch 信息。典型例子是 ViT 的工作。首先使用 nn.Conv2d，提取每个 patch 的特征，且 kernel_size 即 patch_size。但是 CLIPVisionEmbeddings 使用的 nn.Conv2d 指定了 bias=False。另一个例子，如：
+
+```py
+# 使用随机初始化的 ViT 处理输入为 (N, 1, H, W) 的掩码，但是输入没有用 cls_token。
+        self.mask_process_net = nn.ModuleDict({
+            # Convert 1-channel mask to patch embeddings
+            'patch_embed': nn.Sequential(
+                # Input shape: (B, 1, H, W)
+                # nn.Conv2d output shape (B, head_feature_dim, H//patch_size, W//patch_size)
+                nn.Conv2d(1, head_feature_dim, kernel_size=14, stride=14),
+                nn.Flatten(2),  # Flatten H,W into patches
+                Rearrange('b c n -> b n c'),
+                nn.LayerNorm(head_feature_dim),
+            ),
+            # Process patch sequence with transformer blocks
+            'transformer': nn.TransformerEncoder(
+                encoder_layer=nn.TransformerEncoderLayer(
+                    d_model=head_feature_dim,
+                    nhead=8,
+                    dim_feedforward=head_feature_dim*4,
+                    dropout=0.0,
+                    activation=nn.GELU(),
+                    batch_first=True,
+                    norm_first=True
+                ),
+                num_layers=4
+            )
+        })
+```
 
 $$
 \text{out}(N_i, C_{\text{out}_j}) = \text{bias}(C_{\text{out}_j}) + \sum_{k=0}^{C_{\text{in}}-1} \text{weight}(C_{\text{out}_j}, k) \star \text{input}(N_i, k)

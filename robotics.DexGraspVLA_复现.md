@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1741398250287
+updated: 1741521477801
 created: 1741144146461
 ---
 
@@ -24,11 +24,17 @@ data 部分，则包含了 action, rgbm, right_cam_img, right_state，类型也�
 
 ## Sampler
 
-buffer_<start|end>_idx 指出了 episode 在 buffer 中的区间。sample_<start|end>_idx 指出了具体每次训练时，每个时间步 t 对应的 horizon 区间。有可能 start_idx < 0，这在 n_obs_step > 1 时会出现，使用复制和填充第一个观察来处理。末尾部分同理。
+buffer_start_idx, buffer_end_idx 指出了 episode 在 buffer 中的区间。sample_start_idx, sample_end_idx 指出了具体每次训练时，每个时间步 t 对应的 horizon 区间。有可能 start_idx < 0，这在 n_obs_step > 1 时会出现，使用复制和填充第一个观察来处理。末尾部分同理。
 
 sample_sequence() 方法最终返回字典，每个 key 对应的 value 为 shape (horizon_len, *data_shape)。比如图像是 (640, 480, 3)，对应 (horizon_len, 640, 480, 3)。
 
+## MaskImageDataset
+
+相机分辨原来是 (640, 480)，处理 rgbm 时，在 _process_mask_image_batch() 方法中，将图像的 channel 轴转置到第二维，得到形状 (T, 3, H, W)。使用 torchvision.transform.interpolate() 插值，把图像 resize 到 (518,518)。
+
 ## ObsEncoder
+
+数据送给 ObsEncoder 模块之前，头部和腕部图像 resize 为 518x518x3。在 grasp.yaml:shape_meta 可看见。
 
 配置参考 controller/config/train_dexgraspvla_controller_workspace.yaml:obs_encoder，shape_meta 来自 controller/config/task/grasp.yaml 中的 shape_meta。在 model_config 中，如果 head 和 wrist 没有指定 local_weights_path，即 null，则使用 torch.hub.load() 加载，使用如下：
 
@@ -50,7 +56,78 @@ self.dino_head.eval()
 - 1024 for ViT-L.
 - 1536 for ViT-g.
 
-处理 mask 时，首先对每个 patch 使用 1-channel 的卷积，获取 head_feature_dim 的维度后，即 (b, n, c) 的形状，再送入 4 层的 TransformerEncoder。
+处理 mask 时，首先对每个 14x14 的 patch 使用 1-channel 的 2D 卷积，实现时，使用 nn.Conv2d(1, head_feature_dim, kernel_size=14, stride=14)，即每 14x14 代表一个 patch，提取出来 head_feature_dim 频道的特征图。获取 head_feature_dim 的维度后，即 (b, n, c) 的形状，再送入 4 层的 TransformerEncoder。
+
+### forward_head()
+
+参数 rgbm_data 是 (B,T,4,H,W)，其中，对应 (B,T,4,518,518)。取出 mask_data 为 (B,T,1,518,518)。传给 self.mask_process_net 网络时，由于网络的 patch_embed 使用了 Conv2d，所以对 mask_data reshape 为 ("B T ... -> (B T) ...")。mask 提取特征为 (B*T, num_patches, head_feature_dim)。其中，使用了 14 作为 patch_size，于是 num_patches = patch_size^2 = (518 // 14)^2 = 37*37 = 1369，得到 (B*T, 1369, head_feature_dim)。
+
+### forward()
+
+输入：
+
+    Input:
+    obs_dict = {
+        'rgbm': (B,T,4,H,W),      # Head camera RGBM image
+        'right_cam_img': (B,T,3,H,W), # Wrist camera RGB image
+        'right_state': (B,T,13)    # Robot arm state
+    }
+    Output:
+    embeddings: (B,T*(num_patches*2+1),feature_dim) # Concatenate all features along sequence length dimension
+                                                    # head and wrist each output T*num_patches features
+                                                    # state outputs T features
+
+分别对头部、腕部和状态提取特征，形状分别为 (batch_size, T * 1369, dim), (batch_size, T * 1369, dim), (batch_size, T, dim)。最后，在第 1 维拼接，即 rearrange([...], "N B C D -> B (N C) D")。得到 (B, T*(num_patches * 2 + 1), feature_dim)。作为 obs_tokens。可以直接送给 TransformerForActionDiffusion。
+
+output_shape() 方法不止返回特征维度，还返回头部、腕部和状态的特征长度，即每部分分别对应的 [1369, 1369, 1]。用于分辨特征中的位置。在 use_attn_mask 时起作用。
+
+## DexGraspVLAController
+
+### 配置和初始化
+
+关于输入动作和输出动作维度，关注参数 shape_meta（定义在 grasp.yaml），决定 Transformer 的 action_shape 和 action_horizon，分别为 13 和 n_action_steps (64)。
+
+TransformerForActionDiffusion 使用的 n_emb 与 ObsEncoder 使用的 feature_dim 一致。ObsEncoder 编码后，输出的 shape 为 (batch_size, 2739, feature_dim)，feature_dim 根据头部和腕部相机中，使用的 DINOv2 输出特征来决定，取最大者。2739 分别是图像每个 patch 的特征，还有状态的特征。
+
+### model: TransformerForActionDiffusion
+
+传入的 max_cond_tokens 为 T*(num_patches * 2 + 1) + 1，额外的 1 是为了 timestep，初始化 cond_pos_emb，作为可学习的位置编码。
+
+归一化器从训练的数据集加载并获取。并进一步设置给模型。
+
+#### forward()
+
+输入：
+
+- sample: (B,T,input_dim)
+- timestep: (B,) or int, diffusion step
+- cond: (B,N,n_emb)，其中，N=T*(num_patches * 2 + 1)。
+- output: (B,T,input_dim)
+- return: 
+    - if gen_attn_map:
+        output tensor (B,T,input_dim), attention_maps List[(B,num_heads,T,L)]
+    - else:
+        output tensor (B,T,input_dim), None
+
+第一个参数为 sample，对应不断加噪/去噪的动作，预测加噪的参数。随后，与可学习位置编码相加，得到输入 x。
+
+把时间步与 cond 拼接，得到 (B,N+1,n_emb)，加上可学习位置编码，得到最终的条件编码 cond_emb，传给每个 blocks。在 RDTBlock 中，使用 CrossAttention，x 作为 q，条件作为 kv。
+
+传入 x 与 cond_emb 给 block，计算后预测最终的噪声。
+
+### compute_loss()：训练
+
+传入的 batch 中，obs 部分参考 Dataset，包含 rgbm, right_cam_img 和 right_state。action 则是 13 维。由 ObsEncoder 实例编码，得到 obs_token，形状是 (B, N, n_emb)。
+
+Controller 的 forward() 方法简单的调用 compute_loss()。如果需要预测，应当使用方法 predict_action()。
+
+### predict_action() 和 conditional_sample()：预测动作
+
+condition_data 和 condition_mask 确保指定索引范围的内容为 condition_data 内容，其余部分则由扩散去噪生成。condition_data 和 condition_mask 全部为 torch.zeros()。condition_mask 为 torch.bool 类型，默认全部为 False，全部由扩散的逆向生成动作。具体由 conditional_sample() 调用 TransformerForActionDiffusion 模型预测噪声。
+
+## 双卡 4090 训练注意事项
+
+16 的 batch size，每张卡消耗显约 1600MB。约 2~3 分钟一个 epoch iter。bach size 选择 24，每张显卡消耗约 21800MB，约一分半一个 epoch iter。
 
 ## Planner
 
@@ -282,6 +359,13 @@ else:
 ```
 
 VLM 返回要包含 true 或 false，否则报错。
+
+## 适配到 UMI 的数据
+
+首先，改造 Dataset 和 ObsEncoder。具体数据格式，可以参考 UMI 的配置文件。
+
+### UMIDataset
+
 
 ## Ref and Tag
 

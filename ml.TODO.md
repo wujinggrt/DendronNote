@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1741071470489
+updated: 1741508995383
 created: 1738165674608
 ---
 
@@ -120,9 +120,11 @@ https://www.zhihu.com/question/13238901947/answer/112109118245
 LLM RL入门 - Reku的文章 - 知乎
 https://zhuanlan.zhihu.com/p/27172237359
 
-## PyTorch 技巧
-一文学会 Pytorch 中的 einsum - 梁德澎的文章 - 知乎
-https://zhuanlan.zhihu.com/p/361209187
+
+## Agent
+
+Manus发布一天后迅速出现OpenManus、OWL 等复刻项目，怎么做到的？ - 锦恢的回答 - 知乎
+https://www.zhihu.com/question/14321968965/answer/119732180420
 
 ## Hack 和工程能力
 

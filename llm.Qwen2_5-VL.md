@@ -2,7 +2,7 @@
 id: 2nbimo1w05qd1lpgkghblc7
 title: Qwen2.5-VL
 desc: ''
-updated: 1740589162746
+updated: 1741504424315
 created: 1740130046405
 ---
 
@@ -118,5 +118,7 @@ special_tokens={
 [【论文解读】Qwen2.5-VL：更「真实」的全能视觉语言模型 - tomsheep的文章 - 知乎](https://zhuanlan.zhihu.com/p/25296368487)
 
 [Qwen2.5-VL相比Qwen2-VL的主要改进 - 特里斯丹的文章 - 知乎](https://zhuanlan.zhihu.com/p/25692213650)
+
+[官网博客介绍](https://qwenlm.github.io/blog/qwen2.5-vl/)
 
 #LLM

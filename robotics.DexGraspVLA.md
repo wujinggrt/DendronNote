@@ -2,7 +2,7 @@
 id: szrfzxm3muecjxl00crlgc2
 title: DexGraspVLA
 desc: ''
-updated: 1741357312157
+updated: 1741501729994
 created: 1741077608202
 ---
 
@@ -33,6 +33,8 @@ domain-variance 指在不同环境、条件下，输入数据（如图像、语�
 求遮掩特征时，使用随机初始化的 ViT，提取特征为 $\bold{z}^m_t\in\mathbb{R}^{1369\times768}$。通过逐 patch 拼接 $\bold{z}_t^m, \bold{z}_t^h$，得到特征 $\bar{\bold{z}}_t^h\in\mathbb{R}^{1369\times1536}$。
 
 随后，使用 MLP 投影 $\bold{\bar{z}}_t^h, \bold{z}_t^w, \bold{s}_t$ 到共同的特征空间，维度为 1024，各自得到 $\bold{\tilde{z}}_t^h\in\mathbb{R}^{1369\times1024}$, $\bold{\tilde{z}}_t^w\in\mathbb{R}^{1369\times1024}$ and $\bold{\tilde{z}}_t^s\in\mathbb{R}^{1\times1024}$。拼接得到全部的观察特征序列 $\bold{\tilde{z}}_t^{obs}=\left(\bold{\tilde{z}}_t^h,\bold{\tilde{z}}_t^w,\bold{\tilde{z}}_t^s\right)\in\mathbb{R}^{2739\times1024}$。
+
+1369 是什么？是 timestep？
 
 ### DiT 实现
 

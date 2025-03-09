@@ -2,7 +2,7 @@
 id: eszoks0gixjd0fjyul4wh10
 title: Robotics
 desc: ''
-updated: 1741482801392
+updated: 1741501613641
 created: 1740293600917
 ---
 
@@ -67,7 +67,7 @@ DexVLA 指出，使用子步骤推理至关重要。每个任务拆分和标记�
 
 ### 仅仅 latent 可能不够
 
-需要掩码的方案，比如 DexGraspVLA 才能行得通。VLM 生成 hidden tokens，再加上遮掩。
+需要掩码的方案，比如 DexGraspVLA 才能行得通。VLM 生成 hidden tokens，再加上遮掩。但是 ViT 又展示了，这个 latent 变量，提取的特征，cls_token，能够学到很多内容。因为是可学习，与其他内容一起送入 Transformer，能提取更多内容。
 
 ### 短时记忆，cache 与空间感知
 

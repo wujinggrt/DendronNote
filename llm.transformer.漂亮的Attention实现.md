@@ -2,7 +2,7 @@
 id: kcism5sjj3bvuntcovct65l
 title: 漂亮的Attention实现
 desc: ''
-updated: 1741319555926
+updated: 1741509801955
 created: 1741315704596
 ---
 
@@ -96,6 +96,8 @@ class Attention(nn.Module):
         x = self.proj_drop(x)
         return x
 ```
+
+参考 timm 的 Attention。
 
 ## Ref and Tag
 
