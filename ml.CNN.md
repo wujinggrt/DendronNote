@@ -2,7 +2,7 @@
 id: wcgjhins6g2h2yd1yqpaowm
 title: CNN
 desc: ''
-updated: 1741502699806
+updated: 1741576444464
 created: 1741397322508
 ---
 
@@ -130,5 +130,14 @@ $$
 ![cnn_demo](assets/images/ml.CNN/cnn_demo.png)
 
 第一层卷积有 32 个输出的 feature map。
+
+## Batchnorm
+
+torch.nn.Batchnorm1d(num_features) 接收参数 num_features 与输入的第二维相等，通常是 channels，通道数。输出不改变维度。
+
+Thesis Statement: The effective ways to break information cocoons are empowering individuals, addressing systemic biases, and encouraging exposure to differing perspectives.
+Premise 1: Promoting media literacy education equips individuals to critically evaluate information.
+Premise 2: Transparent and user-controlled algorithms can mitigate echo chambers.
+Premise 3: Diverse social interactions foster exposure to contrasting viewpoints.
 
 ## Ref and Tag

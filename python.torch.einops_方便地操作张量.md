@@ -2,7 +2,7 @@
 id: pycd8tjfjszc6x3g7ghbhs8
 title: Einops_方便地操作张量
 desc: ''
-updated: 1741396722284
+updated: 1741586948456
 created: 1741161107888
 ---
 
@@ -66,6 +66,7 @@ print(result)
 images = [np.random.randn(30, 40, 3) for _ in range(32)] # (32, 30, 40, 3)
 print(rearrange(images, "b h w c -> b w h c").shape) # (32, 40, 30, 3)
 # concatenate images along height (vertical axis), 960 = 32 * 30 ：(960, 40, 3)
+# 在高度拼接 b 张图像，即 b x h ...
 int(rearrange(images, "b h w c -> (b h) w c").shape)
 # concatenated images along horizontal axis, 1280 = 32 * 40 ：(30, 1280, 3)
 print(rearrange(images, "b h w c -> h (b w) c").shape)

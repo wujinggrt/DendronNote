@@ -2,7 +2,7 @@
 id: gqnz9f63oiug596jem6d3m9
 title: ManiSkill-Vitac
 desc: ''
-updated: 1741543037440
+updated: 1741615957049
 created: 1739260392326
 ---
 
@@ -1009,3 +1009,23 @@ Tet inversion! negative J: -0.049104
 ...
 ```
 搜索项目，查看 Tet inversion! negative J: ... 代表什么。
+
+### 使用 DINOv2 中间状态
+
+[Github issue](https://github.com/facebookresearch/dinov2/issues/398)。
+
+注意，只支持在 CUDA 设备进行操作。即，dino_head 模型需要传给 cuda，数据也要在 cuda 上才能使用：
+
+```py
+with torch.no_grad():
+    # rgb_data (B, 3, 518, 518)
+    # rgb_feature (B, 1369 (num_patches), 768 (dinov2_vit14b))
+    rgb_feature = self.dino_head.get_intermediate_layers(rgb_data, n=1)[0]
+```
+
+### 模型组合尝试
+
+| rgbd | tactile | peg | hole | 效果 |
+| --- | --- | --- | --- | --- |
+| ViT (参数大) | CNN | CNN | CNN | 验证集成功 0%, reward -68 |
+| CNN | CNN | CNN | CNN | 验证集成功 2-8%, reward -68 |
