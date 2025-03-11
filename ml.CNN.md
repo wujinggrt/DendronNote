@@ -2,7 +2,7 @@
 id: wcgjhins6g2h2yd1yqpaowm
 title: CNN
 desc: ''
-updated: 1741576444464
+updated: 1741624378447
 created: 1741397322508
 ---
 
@@ -120,6 +120,14 @@ $$
 对于每个批次，每个输出频道的特征图，计算如上式。kernel，也就是 weight，特定的输出 channel 对应的所有输入 channel 个两维的 kernel，用它们与输入的特定批次，对应的所有输入 channel 的二维输入，计算输入 channel 次 cross-correlation，得到输入 channel 张二维特征图。最后相加，再与 bias 相加，得到最后的特定批次特征图。
 
 二维的 cross-correlation 计算与卷积类似，但是不翻转。
+
+### 常用 kernel_size，stride 和 padding 组合
+
+| kernel_size | stride | padding | 输出高和宽的维度 |
+| --- | --- | --- | --- |
+| 14 | 1 | 1 | patch size 为 14，224x224 图像可得 16x16 的特征图。 |
+| 3 | 1 | 1 | 与输入的高和宽相同 |
+| 5 | 1 | 2 | L_out = L_in + 2x2 - (5 - 1) - 1 + 1 = L_in |
 
 ## 池化层
 

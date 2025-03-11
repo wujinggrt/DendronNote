@@ -2,7 +2,7 @@
 id: gqnz9f63oiug596jem6d3m9
 title: ManiSkill-Vitac
 desc: ''
-updated: 1741615957049
+updated: 1741627971849
 created: 1739260392326
 ---
 
@@ -34,7 +34,7 @@ In this track, the experimental setup remains unchanged. However, compared to th
         ...
     ]
 ...
-                obs, _ = env.reset(offset_list[kk])
+    obs, _ = env.reset(offset_list[kk])
 ```
 offset_list 包含测试数据，可以看到，list 中的每条用于重置环境的偏置是 5 个数据的 list，随后根据此环境评估。而 env 是文件 Track_2/envs/peg_insertion_v2.py 下的`class PegInsertionSimEnvV2(gym.Env)`。
 
@@ -1027,5 +1027,13 @@ with torch.no_grad():
 
 | rgbd | tactile | peg | hole | 效果 |
 | --- | --- | --- | --- | --- |
-| ViT (参数大) | CNN | CNN | CNN | 验证集成功 0%, reward -68 |
-| CNN | CNN | CNN | CNN | 验证集成功 2-8%, reward -68 |
+| RGBEncoder (参数大) | CNN | CNN | CNN | 验证集成功 0%, reward -68 |
+| CoordRGBEncoder | CNN | CNN | CNN | 验证集成功 2-8%, reward -68 |
+
+feature_dim 选择情况和在验证集上表现：
+- 256 reward -79
+- 160 reward -60.4 (4%) -69 -63.6(2%)
+- 144 rew -77.8
+- 128 reward -59.1 (success rate 6%) -57.9 (6%)
+- 96 reward -66.8  -64
+- 64 reward -68 -66.5 -68.9
