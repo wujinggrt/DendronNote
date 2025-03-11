@@ -2,7 +2,7 @@
 id: gqnz9f63oiug596jem6d3m9
 title: ManiSkill-Vitac
 desc: ''
-updated: 1741627971849
+updated: 1741702278860
 created: 1739260392326
 ---
 
@@ -1037,3 +1037,21 @@ feature_dim 选择情况和在验证集上表现：
 - 128 reward -59.1 (success rate 6%) -57.9 (6%)
 - 96 reward -66.8  -64
 - 64 reward -68 -66.5 -68.9
+
+## 考察 feature 进入 MLP 前的顺序
+
+- [tactile_features, peg_hole_features, rgbd_features] 为上述情况。是最优解。
+- feature = [tactile_features, rgbd_feature, peg_hole_features]: 0.00 sr, -64, -63.5。
+- feature = [rgbd_feature, tactile_features, peg_hole_features] 时，成功率下降，只有 0% sr，rew 为 -58.6。 -56.7, 0.00 sr。
+- feature = [rgbd_feature, peg_hole_features, tactile_features]：0.00 sr, -59.4, 0.00 sr, -58.5。
+- [peg_hole_features, tactile_features, rgbd_feature]: 0.02 sr, -55
+- [peg_hole_features, rgbd_feature, tactile_features]: 0.00 sr, -62.27 -63.7
+
+
+猜测，使用 Attention，可以缓解对顺序的依赖。
+
+### class FusionPegInsertionActor(Actor):
+
+sr for success rate, rew for reward
+
+使用三层 MLP 作为投影到 head 的部分，每个 nn.Linear 前使用 LayerNorm。-51 reward，但是 0% sr;
