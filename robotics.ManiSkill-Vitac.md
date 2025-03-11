@@ -2,7 +2,7 @@
 id: gqnz9f63oiug596jem6d3m9
 title: ManiSkill-Vitac
 desc: ''
-updated: 1741702278860
+updated: 1741712161825
 created: 1739260392326
 ---
 
@@ -1055,3 +1055,7 @@ feature_dim 选择情况和在验证集上表现：
 sr for success rate, rew for reward
 
 使用三层 MLP 作为投影到 head 的部分，每个 nn.Linear 前使用 LayerNorm。-51 reward，但是 0% sr;
+
+### 训练集和验证集的表现
+
+也可以调整 DISPLAY 查看插入情况。
