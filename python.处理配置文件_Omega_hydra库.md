@@ -2,7 +2,7 @@
 id: qb5cah4vrkew5znsyd9u9ur
 title: 处理配置文件_Omega_hydra库
 desc: ''
-updated: 1741877064248
+updated: 1741877635867
 created: 1741869359576
 ---
 
@@ -108,7 +108,7 @@ main 中提到的 ${now:} 是配置中用于 log 的部分：
 
 类似 Spring 的 context，hydra 使用 `_target_` 实现依赖注入。我们可以指定一个类或函数的完整路径，以便在配置中实例化该类或调用该函数。这是一种配置驱动的实例化机制，允许你在配置文件中描述你的程序组件应该如何被创建，而无需在代码中硬编码具体的类实例化。
 
-`_target_` 指定实例化的具体类。顶层的 `_target_` 代表整个配置树都用于实例化一个单一的对象。这对于定义复杂对象的构造特别有用，可以在子树继续嵌套地指定 `_target_` 来实例化，用于传给顶层配置指定的类，作为构造器的参数。
+`_target_` 指定实例化的具体类。顶层的 `_target_` 代表整个配置树都用于实例化一个单一的对象。这对于定义复杂对象的构造特别有用，可以在子树继续嵌套地指定 `_target_` 来实例化，用于传给顶层配置指定的类，作为构造器的参数。具体实例化使用 hydra.utils.instantiate(cfg.model) 的形式调用。
 
 ```py
 model:
@@ -174,7 +174,7 @@ if __name__ == "__main__":
         print(app.db is logger.db)  # 输出: True
 ```
 
-如果 `_target_` 放到最外层，即 `_target_` 不依靠任何节点。那么，此 YAML 配置文件以 OmegaConf 实例的方式，传递给 `_target_` 指定的 class，后续可通过此参数访问所有配置内容。
+如果 `_target_` 放到最外层，即 `_target_` 不依靠任何节点。那么，此 YAML 配置文件以 OmegaConf 实例的方式，传递给 `_target_` 指定的 class，或者是 `@hydra.main` 修饰的 main(cfg: OmegaConf) 函数，后续可通过此参数访问所有配置内容。
 
 ```yaml
 defaults:
@@ -237,7 +237,15 @@ if __name__ == "__main__":
     main()
 ```
 
-可以看到，以参数传给了构造器。最后使用 python train.py --config-name=train_diffusion_unet_timm_umi_workspace 的方式调用，开始训练。
+### 在命令行传入参数，覆盖配置文件内容
+
+命令行传入的参数优先级更高，可以覆盖 YAML 配置文件中的内容。比如：
+
+```bash
+(umi)$ python train.py --config-name=train_diffusion_unet_timm_umi_workspace \
+    task.dataset_path=example_demo_session/dataset.zarr.zip
+```
+
 
 hydra 的 instantiate 总是会创建新的实例。由于我们的 db 没有手动创建，hydra 自动维护了这个实例，就像 Spring 的 context。
 
