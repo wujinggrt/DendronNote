@@ -2,7 +2,7 @@
 id: c11ttawlltxe671k5e99ldq
 title: Helix：用于通才人形机器人控制的_VLM
 desc: ''
-updated: 1740201567156
+updated: 1741843198160
 created: 1740123321005
 ---
 
@@ -33,6 +33,7 @@ VLM 主干是通用的，但是速度不快。而机器人视觉运动策略 (Vi
 4. 关注点分离：解耦 S1 和 S2，能分别迭代。
 
 ## 模型训练细节
+
 ### 数据
 手机高质量的多机器人、多操作员数据集，包括要操作行为，总计约 500 小时。为了生成自然语言条件训练对，用自动标注 VLM 生成事后指令 (hindsight instructions)。VLM 处理来自记载机器人摄像头的分段视频片段，提示 "What instruction would you have given the robot to get the action seen in this video?" 训练期间处理所有项目均排除评估之外，避免污染。
 

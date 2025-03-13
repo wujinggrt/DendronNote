@@ -2,7 +2,7 @@
 id: gqnz9f63oiug596jem6d3m9
 title: ManiSkill-Vitac
 desc: ''
-updated: 1741712161825
+updated: 1741792410058
 created: 1739260392326
 ---
 
@@ -1059,3 +1059,27 @@ sr for success rate, rew for reward
 ### 训练集和验证集的表现
 
 也可以调整 DISPLAY 查看插入情况。
+
+### 配置参数选择
+
+aciton noise 2.0, step penalty 0.40, final reward 和 max step 75
+
+env 的 normalize 设置为 True，会导致测试集出现成功的概率变为 0。查看定义，在 Track_2/envs/peg_insertion_v2.py:PegInsertionSimMarkerFLowEnvV2 中，解释了此参数对 marker flow 观察进行了归一化。
+
+## 修改细节
+
+configs/parameters/peg_insertion_v2_points_wj.yaml
+
+加大 action_noise，增大探索能力，在 rollout 可以看到有成功。
+
+## 与 ~/.docker/config.json 的问题
+
+config.json 中，指定了 auth=xxx，与 wandb 的操作 docker 的部分有冲突。使用时，暂存 docker 即可。比如：
+
+```bash
+mv ~/.docker/config.json ~/.docker/config.json.bak
+```
+
+### 训练
+
+验证集有 38% 成功率。Track_2/training_log/peg_insertion_v2_points_2025-03-12_22-18-49.241/best_model.zip

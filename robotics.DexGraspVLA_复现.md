@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1741541605349
+updated: 1741869315494
 created: 1741144146461
 ---
 
@@ -22,6 +22,25 @@ created: 1741144146461
 
 data 部分，则包含了 action, rgbm, right_cam_img, right_state，类型也是 Array。对于相机部分，比如 rgbm (RGB 不分图像和掩码部分) 和 right_cam_img (仅 RGB)，使用 ZarrImageReference 来封装。对于其它的，比如 action 和 right_state，使用原来的数据，使用切片访问便可得到 np.ndarry 对象。于是，从 zarr 读取数据后，全部都转换为了 np 对象，或 ZarrImageReference 对象。
 
+### 示例数据及格式
+
+官网给了 zarr 格式的示例。
+
+meta 数据内容和类型如下：
+```
+key is episode_ends, v is <zarr.core.Array '/meta/episode_ends' (51,) int64 read-only>
+```
+
+data 数据内容和数据类型如下，其中 uint8 代表 0-255，0-3 代表 rgb，最后一维代表 mask，只取 0 或 1：
+```
+<class 'zarr.storage.DirectoryStore'>
+<zarr.storage.DirectoryStore object at 0x784c73733550>
+key is action, v is <zarr.core.Array '/data/action' (3825, 13) float32 read-only>
+key is rgbm, v is <zarr.core.Array '/data/rgbm' (3825, 480, 640, 4) uint8 read-only>
+key is right_cam_img, v is <zarr.core.Array '/data/right_cam_img' (3825, 480, 640, 3) uint8 read-only>
+key is right_state, v is <zarr.core.Array '/data/right_state' (3825, 13) float32 read-only>
+```
+
 ## Sampler
 
 buffer_start_idx, buffer_end_idx 指出了 episode 在 buffer 中的区间。sample_start_idx, sample_end_idx 指出了具体每次训练时，每个时间步 t 对应的 horizon 区间。有可能 start_idx < 0，这在 n_obs_step > 1 时会出现，使用复制和填充第一个观察来处理。末尾部分同理。
@@ -30,9 +49,11 @@ sample_sequence() 方法最终返回字典，每个 key 对应的 value 为 shap
 
 ## MaskImageDataset
 
-相机分辨原来是 (640, 480)，处理 rgbm 时，在 _process_mask_image_batch() 方法中，将图像的 channel 轴转置到第二维，得到形状 (T, 3, H, W)。使用 torchvision.transform.interpolate() 插值，把图像 resize 到 (518,518)。
+### 归一化图像和插值到 518x518
 
-是否有归一化？
+相机分辨原来是 (640, 480)，处理 rgbm 时，在 _process_mask_image_batch() 方法中，将图像的 channel 轴转置到第二维，得到形状 (T, 3, H, W)。接下来将 rgb 图像除以 255.0，归一化到 [0.0, 1.0]。紧接着，使用 torch.nn.functional.interpolate() 插值，把图像 resize 到 (518,518)。
+
+归一化如何执行的？
 
 ## ObsEncoder
 
@@ -367,6 +388,43 @@ VLM 返回要包含 true 或 false，否则报错。
 首先，改造 Dataset 和 ObsEncoder。具体数据格式，可以参考 UMI 的配置文件。
 
 ### UMIDataset
+
+参考 UMI 的配置文件，涉及如下部分：
+```yaml
+shape_meta: &shape_meta
+  obs: 
+    camera0_rgb:
+      shape: [3, 224, 224]
+      horizon: ${task.img_obs_horizon} # int
+      latency_steps: 0 # float
+      down_sample_steps: ${task.obs_down_sample_steps} # int
+      type: rgb
+      ignore_by_policy: False
+    robot0_eef_pos:
+      shape: [3] #表示末端执行器的位置（x, y, z）。
+      horizon: ${task.low_dim_obs_horizon} # int
+      latency_steps: ${eval:'(${task.camera_obs_latency} - ${task.robot_obs_latency}) * ${task.dataset_frequeny}'} # float
+      down_sample_steps: ${task.obs_down_sample_steps} # float
+      type: low_dim
+      ignore_by_policy: ${task.ignore_proprioception}
+    robot0_eef_rot_axis_angle:
+      raw_shape: [3] #原始旋转向量的维度
+      shape: [6] #经过旋转表示转换后的维度（6D 表示）。
+      horizon: ${task.low_dim_obs_horizon} # int
+      latency_steps: ${eval:'(${task.camera_obs_latency} - ${task.robot_obs_latency}) * ${task.dataset_frequeny}'} # float
+      down_sample_steps: ${task.obs_down_sample_steps} # float
+      type: low_dim
+      rotation_rep: rotation_6d #指定旋转的表示方式。
+      ignore_by_policy: ${task.ignore_proprioception}
+  action: 
+    shape: [9] #动作的维度，包括位置（3）、旋转（6)
+    horizon: ${task.action_horizon}
+    latency_steps: 0 # float
+    down_sample_steps: ${task.obs_down_sample_steps} # int
+    rotation_rep: rotation_6d
+```
+
+配置文件修改。
 
 
 ## Ref and Tag
