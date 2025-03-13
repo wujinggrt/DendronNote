@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1741869315494
+updated: 1741888226253
 created: 1741144146461
 ---
 
@@ -49,11 +49,15 @@ sample_sequence() 方法最终返回字典，每个 key 对应的 value 为 shap
 
 ## MaskImageDataset
 
+在 replay_buffer 中取出的数，都是由 zarr.Array 转为了 np.Array。
+
 ### 归一化图像和插值到 518x518
 
 相机分辨原来是 (640, 480)，处理 rgbm 时，在 _process_mask_image_batch() 方法中，将图像的 channel 轴转置到第二维，得到形状 (T, 3, H, W)。接下来将 rgb 图像除以 255.0，归一化到 [0.0, 1.0]。紧接着，使用 torch.nn.functional.interpolate() 插值，把图像 resize 到 (518,518)。
 
-归一化如何执行的？
+### 原生数据送给模型需要哪些操作
+
+部署时，相机获取 RGB，SAM 等模块生成 mask。得到 rgbm 后，首先插值，resize 到 (518, 518)。随后经过归一化，便可送给模型。最后再 unnormalize 即可。数据即如此处理。
 
 ## ObsEncoder
 
@@ -387,7 +391,7 @@ VLM 返回要包含 true 或 false，否则报错。
 
 首先，改造 Dataset 和 ObsEncoder。具体数据格式，可以参考 UMI 的配置文件。
 
-### UMIDataset
+### UmiDataset
 
 参考 UMI 的配置文件，涉及如下部分：
 ```yaml
@@ -424,7 +428,24 @@ shape_meta: &shape_meta
     rotation_rep: rotation_6d
 ```
 
-配置文件修改。
+输入的图像仅一个 224x224 的 RGB。状态有 robot0_eef_pos。最后，action 为 9 维的。那么，UmiDataset 应该把数据调整为对应这样的。由于是正方形，不用再调整 patch，避免影响效果。
+
+目标掩膜生成和跟踪模块（如 SAM 分割初始掩膜、Cutie 持续跟踪）可能需要与 DINOv2 特征提取器共享相同的输入分辨率，以确保空间对齐和计算一致性。
+
+dinov2_vits14 以 14 为 patch size，恰好将 224 分为 16 个 patch。可以得到编码的特征维度为 384。
+
+设计参考 MaskImageDataset，修改返回的元素即可。
+
+### ObsEncoder
+
+需要调整参数，以适应我们需要的数据集。只要都编码到与 features_dim 相同的内容，便可使用 Transformer 架构。
+
+### TransformerForActionDiffusion
+
+修改参数即可。n_emb 会自动在 policy 中，根据 ObsEncoder 编码的 feature_dim 为多少来设置。隐藏嵌入的维度即 feature_dim。
+
+### SAM
+
 
 
 ## Ref and Tag
