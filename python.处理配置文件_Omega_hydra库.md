@@ -2,7 +2,7 @@
 id: qb5cah4vrkew5znsyd9u9ur
 title: 处理配置文件_Omega_hydra库
 desc: ''
-updated: 1741877635867
+updated: 1741886409389
 created: 1741869359576
 ---
 
@@ -174,7 +174,7 @@ if __name__ == "__main__":
         print(app.db is logger.db)  # 输出: True
 ```
 
-如果 `_target_` 放到最外层，即 `_target_` 不依靠任何节点。那么，此 YAML 配置文件以 OmegaConf 实例的方式，传递给 `_target_` 指定的 class，或者是 `@hydra.main` 修饰的 main(cfg: OmegaConf) 函数，后续可通过此参数访问所有配置内容。
+如果 `_target_` 放到最外层，即 `_target_` 不依靠任何节点。那么，此 YAML 配置文件以 OmegaConf 实例的方式，传递给  `@hydra.main` 修饰的 main(cfg: OmegaConf) 函数，进一步使用 `hydra.utils.get_class(cfg._target_)` 解析此配置文件对应的 class。紧接着，实例化此 class，得到对应的 Workspace 实例，再传入此 cfg 实例给它初始化和处理即可。具体例子如下：
 
 ```yaml
 defaults:
@@ -237,24 +237,16 @@ if __name__ == "__main__":
     main()
 ```
 
-### 在命令行传入参数，覆盖配置文件内容
+比如，通过命令行参数 --config-name 指定 train_diffusion_unet_timm_umi_workspace，代表 cfg 为 train_diffusion_unet_timm_umi_workspace.yaml。进一步通过 hydra.utils.get_class 找到需要加载的类，从而初始化 workspace。至此，得到了对应的 `_target_` 的实例。
 
-命令行传入的参数优先级更高，可以覆盖 YAML 配置文件中的内容。比如：
+### 不能在配置中调用实例的方法
 
-```bash
-(umi)$ python train.py --config-name=train_diffusion_unet_timm_umi_workspace \
-    task.dataset_path=example_demo_session/dataset.zarr.zip
-```
-
-
-hydra 的 instantiate 总是会创建新的实例。由于我们的 db 没有手动创建，hydra 自动维护了这个实例，就像 Spring 的 context。
-
-但是注意，不能在yaml中调用实例的方法，比如：
+hydra 的 instantiate 总是会创建新的实例。由于我们的 db 没有手动创建，hydra 自动维护了这个实例，就像 Spring 的 context。但是不能在yaml中调用实例的方法，比如：
 
 ```
 optimizer: # AdamW
   _target_: torch.optim.AdamW
-  params: ${eval:'${model}.parameters()'}
+  params: ${eval:'${model}.parameters()'} # BAD
   lr: 1.0e-4
   weight_decay: 0.01
   betas: [0.9, 0.95]
@@ -266,8 +258,91 @@ model 此时只是 dict，并非对象，自然没有参数。但是我们可以
 optimizer = hydra.utils.instantiate(config.optimizer, params=model.parameters())
 ```
 
-hydra的instantiate
-如果配置中定义_target_，那么会根据指定类实例化对象。如果你的应用程序有更复杂的配置结构，例如嵌套的配置组，可以继续使用 _target_ 来指定嵌套的类或函数。instantiate 方法会根据配置文件中的 _target_ 键动态地实例化相应的类，并使用配置文件中的参数来构造对象。Hydra 会递归地解析配置组中的所有_target_键，并实例化相应的类。
+### 命令行参数
+
+#### 指定配置文件路径
+
+在装饰器 `@hydra.main` 中，从指定的 config_path 目录加载 YAML 配置文件，默认加载目录下的 config.yaml 作为配置文件。如果需要加载其他配置文件，则需要指定 config-name。可以通过命令行参数 --config-name=YOUR_CONFIG 加载 YOUR_CONFIG.yaml。例如：
+
+```bash
+(umi)$ python train.py --config-name=train_diffusion_unet_timm_umi_workspace
+```
+
+### 覆盖配置文件内容
+
+命令行传入参数优先级更高，可以覆盖 YAML 配置文件中的内容。比如：
+
+```bash
+(umi)$ python train.py --config-name=train_diffusion_unet_timm_umi_workspace \
+    task.dataset_path=example_demo_session/dataset.zarr.zip
+```
+
+对于 YAML 配置中的顶层键，直接指出并覆盖。对于嵌套键，使用点 `.` 访问嵌套结构的键。即使是动态生成的键，也可以覆盖。如果键不再 YAML，命令行参数直接新增和添加到最终配置中。
+
+`=` 覆盖列表元素，`+=` 追加到列表末尾。
+
+```bash
+python script.py data.transforms+="[normalize]"
+```
+
+覆盖字典的键，删除键，转义特殊字符：
+
+```bash
+python script.py optimizer.params='{"lr":0.01, "momentum":0.9}'
+python script.py ~model.optimizer  # 删除整个 optimizer 键
+python script.py "key.with.dots=value"
+```
+
+### 对 logging 的影响
+
+Hydra 对 Python 日志系统有影响。主要体现在日志配置的自动化和输出目录管理上。
+
+#### 默认日志行为
+
+当使用 `@hydra.main` 装饰器时，Hydra 会 自动初始化日志系统，无需手动配置：
+
+```py
+@hydra.main(config_path="config", config_name="default")
+def main(cfg):
+    logging.info("This will be captured by Hydra's logging")  # 无需手动配置 logging
+```
+
+默认日志格式： 时间戳 + 日志级别 + 模块名 + 消息（例如 `[2023-10-01 12:00:00][INFO][__main__] This is a log`）
+
+默认日志级别： INFO 级别及以上（INFO, WARNING, ERROR, CRITICAL）
+
+#### 输出目录管理
+
+每次运行生成唯一目录。默认在 output/<当前日期>/<时间>。日志文件路径 可通过 cfg.hydra.run.dir 在代码中访问。
+
+#### 覆盖日志配置
+
+```yaml
+# hydra.yaml
+hydra:
+  logging:
+    # 日志级别配置
+    level:
+      root: INFO          # 全局日志级别
+      your_module: DEBUG  # 特定模块的日志级别
+
+    # 日志格式配置
+    formatter:
+      simple:
+        format: "[%(asctime)s][%(levelname)s] %(message)s"
+        datefmt: "%Y-%m-%d %H:%M:%S"
+    
+    # 日志处理器
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra:runtime.output_dir}/custom.log
+```
 
 hydra对logging会有影响
 使用logging的输出，最终会被放置到目录output下，并且以时间命名，随后再${task_name}.log下找到。
