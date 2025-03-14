@@ -2,7 +2,7 @@
 id: qb5cah4vrkew5znsyd9u9ur
 title: 处理配置文件_Omega_hydra_tomllib库
 desc: ''
-updated: 1741918358756
+updated: 1741972242589
 created: 1741869359576
 ---
 
@@ -295,11 +295,11 @@ python script.py "key.with.dots=value"
 
 ### 对 logging 的影响
 
-Hydra 对 Python 日志系统有影响。主要体现在日志配置的自动化和输出目录管理上。
+logging 库初始化设置比较繁琐，而 Hydra 默认配置了 logging，并且同时输出到终端和文件。
 
 #### 默认日志行为
 
-当使用 `@hydra.main` 装饰器时，Hydra 会 自动初始化日志系统，无需手动配置：
+当使用 `@hydra.main` 装饰器时，Hydra 会自动初始化日志系统，无需手动配置。使用如下：
 
 ```py
 @hydra.main(config_path="config", config_name="default")
@@ -307,116 +307,13 @@ def main(cfg):
     logging.info("This will be captured by Hydra's logging")  # 无需手动配置 logging
 ```
 
-默认日志格式： 时间戳 + 日志级别 + 模块名 + 消息（例如 `[2023-10-01 12:00:00][INFO][__main__] This is a log`）
+默认日志格式： 时间戳 + 日志级别 + 模块名 + 消息（例如 `[2019-06-27 00:52:46,653][__main__][INFO] - Info level message`）
 
 默认日志级别： INFO 级别及以上（INFO, WARNING, ERROR, CRITICAL）
 
-#### 输出目录管理
+每次运行时，生成唯一目录，默认在 output/<当前日期>/<时间>。日志文件路径 可通过 cfg.hydra.run.dir 在代码中访问。
 
-每次运行生成唯一目录。默认在 output/<当前日期>/<时间>。日志文件路径 可通过 cfg.hydra.run.dir 在代码中访问。
-
-#### 覆盖日志配置
-
-```yaml
-# hydra.yaml
-hydra:
-  logging:
-    # 日志级别配置
-    level:
-      root: INFO          # 全局日志级别
-      your_module: DEBUG  # 特定模块的日志级别
-
-    # 日志格式配置
-    formatter:
-      simple:
-        format: "[%(asctime)s][%(levelname)s] %(message)s"
-        datefmt: "%Y-%m-%d %H:%M:%S"
-    
-    # 日志处理器
-    handlers:
-      console:
-        class: logging.StreamHandler
-        formatter: simple
-        stream: ext://sys.stdout
-      file:
-        class: logging.FileHandler
-        formatter: simple
-        filename: ${hydra:runtime.output_dir}/custom.log
-```
-
-hydra对logging会有影响
-使用logging的输出，最终会被放置到目录output下，并且以时间命名，随后再${task_name}.log下找到。
-https://hydra.cc/docs/tutorials/basic/running_your_app/logging/
-https://hydra.cc/docs/configure_hydra/logging/
-import logging
-from omegaconf import DictConfig
-import hydra
-
-# A logger for this file
-log = logging.getLogger(__name__)
-
-@hydra.main()
-def my_app(_cfg: DictConfig) -> None:
-    log.info("Info level message")
-    log.debug("Debug level message")
-
-if __name__ == "__main__":
-    my_app()
-
-$ python my_app.py
-[2019-06-27 00:52:46,653][__main__][INFO] - Info level message
-
-设置输出格式
-日志输出会保存，设置如下：
-
-
-formatters:
-  simple:
-    format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
-handlers:
-  console:
-    class: logging.StreamHandler
-    level: DEBUG
-    formatter: simple
-    stream: ext://sys.stdout
-  file:
-    class: logging.FileHandler
-    level: INFO
-    formatter: simple
-    # filename: ${hydra.job.name}.log
-    filename: ./log/${logging.name}.log
-loggers:
-  my_logger:
-    level: DEBUG
-    handlers: [console, file]
-    propagate: false
-  hydra:
-    handlers: [console]
-    level: INFO
-    propagate: false
-root:
-  level: DEBUG
-  handlers: [console, file]
-
-最后使用logging.getLogger获取注册的日志，比如my_logger
-import logging
-from omegaconf import DictConfig
-import hydra
-
-@hydra.main(config_path="conf", config_name="config")
-def main(cfg : DictConfig) -> None:
-    # 获取日志记录器
-    logger = logging.getLogger('my_logger')
-    
-    # 使用日志记录器记录信息
-    logger.info('Hello from Hydra!')
-    
-if __name__ == "__main__":
-    main()
-
-最后输出文件会保存在如outputs/2024-07-08/13-38-33/diffusion_train.log的位置。
-
-## tomllib：3.11 后的标准库之一
+## tomllib：版本 3.11 后标准库之一
 
 tomllib 是 Python 3.11 及以上版本中新增的标准库，专门用于解析 TOML（Tom's Obvious Minimal Language）格式的配置文件。如果使用的是 Python 3.11+，可以直接使用它；若版本较低（如 Python 3.9），可以通过安装第三方库 tomli 实现相同功能。比如 OpenManus 使用了 toml 配置文件。
 
