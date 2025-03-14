@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1741694242201
+updated: 1741919516106
 created: 1738165674608
 ---
 
@@ -128,6 +128,7 @@ https://mp.weixin.qq.com/s?__biz=Mzg5MTU1NTE1OQ==&mid=2247492943&idx=1&sn=aed1d1
 
 Manus发布一天后迅速出现OpenManus、OWL 等复刻项目，怎么做到的？ - 锦恢的回答 - 知乎
 https://www.zhihu.com/question/14321968965/answer/119732180420
+> 学习 OpenManus，做成熟和工程化的 Agent。
 
 ## Hack 和工程能力
 

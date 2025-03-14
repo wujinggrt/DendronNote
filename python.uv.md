@@ -2,7 +2,7 @@
 id: tmruqcalaaqsqzkj35nehsq
 title: Uv
 desc: ''
-updated: 1739203275966
+updated: 1741916449703
 created: 1737822755943
 ---
 
@@ -38,6 +38,17 @@ uv pip install -U flask==3.0.0
 # 从当前目录安装，并且支持editable实时更新代码模式
 uv pip install -e .
 uv pip uninstall flask
+```
+
+## 最佳实践
+
+一般在一个工程根目录下，创建一个新的虚拟环境。即：
+
+```bash
+git clone URI
+cd DIR
+uv ven
+source .ven/bin/activate
 ```
 
 ## Tag

@@ -2,7 +2,7 @@
 id: u0ydqn2ohvl9vw86t1e8mt8
 title: UMI
 desc: ''
-updated: 1741158501270
+updated: 1741924413494
 created: 1739810960614
 ---
 
@@ -408,6 +408,8 @@ data/pusht_cchi_v7_replay.zarr
             self.episode_ends.resize(len(episode_ends) - 1, refcheck=False)
 ```
 
+
+
 ## 数据预处理：保存训练数据
 ### 保存数据为 ReplayBuffer
 在 scripts_slam_pipeline/07_generate_replay_buffer.py 中，首先创建空的 zarr：
@@ -474,6 +476,58 @@ meta
  └── episode_ends (128,) int64
 ```
 meta 部分，可以看到有 128 条 episode_ends，指出了 128 条 episode 的位置。
+
+### 压缩图像：imagecodecs
+
+使用预处理的脚本得到 zarr 文件后，我想简单使用 zarr 库加载查看图像内容。data 下大部分内容能够正常加载。但是，camera0_rgb 加载缺出现了错误：ValueError: codec not available: 'imagecodecs_jpegxl'。这是因为压缩格式的问题。加载的代码如下：
+
+```py
+store = zarr.ZipStore("/data1/cola_big/dataset.zarr.zip", mode="r")
+root = zarr.open_group(store, mode="r")
+data = root["data"]
+print(data["camera0_rgb"]) # ValueErro: codec not available: 'imagecodecs_jpegxl'r
+```
+
+根据报错，需要 jpegxl。根据官网的 [issue](https://github.com/cgohlke/imagecodecs/issues/82)，应当注册 codec 为 numcodecs/zarr，比如：
+
+```py
+ >>> import zarr 
+ >>> import numcodecs 
+ >>> from imagecodecs.numcodecs import Jpeg2k 
+ >>> numcodecs.register_codec(Jpeg2k) 
+ >>> zarr.zeros( 
+ ...     (4, 5, 512, 512, 3), 
+ ...     chunks=(1, 1, 256, 256, 3), 
+ ...     dtype='u1', 
+ ...     compressor=Jpeg2k() 
+ ... ) 
+ ```
+
+即传入 imagecodecs.numcodecs.Jpegxl 以处理。imagecodecs.(jpegxl_encode, jpegxl_decode)。参考 diffusion_policy/codecs/imagecodecs_numcodecs.py:class JpegXL，
+
+查看 camera0_rgb 如何制作和压缩。在 scripts_slam_pipeline/07_generate_replay_buffer.py 下，使用 JpegXL 的实例作为 compressor，保存图像数据。
+
+```py
+    img_compressor = JpegXl(level=compression_level, numthreads=1)
+    for cam_id in range(n_cameras):
+        name = f'camera{cam_id}_rgb'
+        _ = out_replay_buffer.data.require_dataset(
+            name=name,
+            shape=(out_replay_buffer['time'].shape[0],) + out_res + (3,),
+            chunks=(1,) + out_res + (3,),
+            compressor=img_compressor,
+            dtype=np.uint8
+        )
+```
+
+根据 chunks，可以看到按照图片分块和时间步分块存储。第一维 time 作为时间步的，第二维 out_res 代表分辨率，第三维 (3,) 代表三通道。随后使用 compressor 压缩。
+
+压缩保存后，查看训练时如何加载相机的图像数据，特别是解压方面，这对正确使用压缩后的数据有着参考作用。
+
+#### 在 Dataset 中获取并解压 rgb 图像
+
+在 SequenceSampler 中，直接使用下标检索。
+
 
 ## 数据加载：UmiDataset
 ```py
@@ -567,7 +621,7 @@ class UmiDataset(BaseDataset):
         ...
 ```
 
-魔法函数 __getitem__ 用到了 self.sampler，根据 keys 从 replay_buffer 中索引对应 index 的数据，并且组织为了 horizon 的情况。
+魔法函数 `__getitem__` 用到了 self.sampler，根据 keys 从 replay_buffer 中索引对应 index 的数据，并且组织为了 horizon 的情况。
 
 ### SequenceSampler
 diffusion_policy/common/sampler.py:SequenceSampler
@@ -748,7 +802,7 @@ class SequenceSampler:
 ```
 最后，result 是一个 dict，包含了 'action'，内容为 eef_pos 和 eef_rot_axis_angle 部分。包含的 'obs' 为各类的 camera0_rgb 等。
 
-### __getitem__()
+### getitem()
 ```py
     def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
         if not self.threadpool_limits_is_applied:

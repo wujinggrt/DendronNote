@@ -2,9 +2,10 @@
 id: 7cd9he4w15xq7jbt88b3xp4
 title: Zarr
 desc: ''
-updated: 1741185454348
+updated: 1741923568709
 created: 1739872667023
 ---
+
 
 Zarr是一种存储分组、压缩的N维数组的格式。
 
@@ -83,6 +84,25 @@ zarr.save('data/example-2.zarr', a)
 zarr.load('data/example-2.zarr')
 # array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 ```
+
+### zarr.require_dataset()
+
+用于安全创建或访问数据集。如果数据集不存在，按照给定参数创建并打开。如果存在，验证是否和指定参数的形状和数据类型保持一致。比如：
+
+```py
+    img_compressor = JpegXl(level=compression_level, numthreads=1)
+    for cam_id in range(n_cameras):
+        name = f'camera{cam_id}_rgb'
+        _ = out_replay_buffer.data.require_dataset(
+            name=name,
+            shape=(out_replay_buffer['time'].shape[0],) + out_res + (3,),
+            chunks=(1,) + out_res + (3,),
+            compressor=img_compressor,
+            dtype=np.uint8
+        )
+```
+
+随后可以安全使用 out_replay_buffer.data[f"camera{idx}_rgb"] 存入数据。
 
 ## zarr.Group
 以层次化的方式组织和管理 arrays。zarr.Group 也是保存在内存和磁盘上，或者其他存储系统。
@@ -305,3 +325,5 @@ print(imagecodecs.JPEGXL)  # 应显示编解码器信息，而非AttributeError
 
 ## Tag
 #Data
+
+07_generate_replay_buffer.py

@@ -1,8 +1,8 @@
 ---
 id: qb5cah4vrkew5znsyd9u9ur
-title: 处理配置文件_Omega_hydra库
+title: 处理配置文件_Omega_hydra_tomllib库
 desc: ''
-updated: 1741886409389
+updated: 1741918358756
 created: 1741869359576
 ---
 
@@ -416,5 +416,82 @@ if __name__ == "__main__":
 
 最后输出文件会保存在如outputs/2024-07-08/13-38-33/diffusion_train.log的位置。
 
+## tomllib：3.11 后的标准库之一
+
+tomllib 是 Python 3.11 及以上版本中新增的标准库，专门用于解析 TOML（Tom's Obvious Minimal Language）格式的配置文件。如果使用的是 Python 3.11+，可以直接使用它；若版本较低（如 Python 3.9），可以通过安装第三方库 tomli 实现相同功能。比如 OpenManus 使用了 toml 配置文件。
+
+在 VsCode 下载 toml 语法提示的插件。比如 Even Better TOML。
+
+例子：
+
+```toml
+# Global LLM configuration
+[llm]
+model = "claude-3-5-sonnet"
+base_url = "https://api.openai.com/v1"
+api_key = "sk-..."
+max_tokens = 4096
+temperature = 0.0
+
+# Optional configuration for specific LLM models
+[llm.vision]
+model = "claude-3-5-sonnet"
+base_url = "https://api.openai.com/v1"
+api_key = "sk-..."
+```
+
+```py
+class Config:
+
+    @staticmethod
+    def _get_config_path() -> Path:
+        root = PROJECT_ROOT
+        config_path = root / "config" / "config.toml"
+        if config_path.exists():
+            return config_path
+        example_path = root / "config" / "config.example.toml"
+        if example_path.exists():
+            return example_path
+        raise FileNotFoundError("No configuration file found in config directory")
+
+    def _load_config(self) -> dict:
+        config_path = self._get_config_path()
+        with config_path.open("rb") as f:
+            return tomllib.load(f)
+
+    def _load_initial_config(self):
+        raw_config = self._load_config()
+        base_llm = raw_config.get("llm", {})
+        llm_overrides = {
+            k: v for k, v in raw_config.get("llm", {}).items() if isinstance(v, dict)
+        }
+
+        default_settings = {
+            "model": base_llm.get("model"),
+            "base_url": base_llm.get("base_url"),
+            "api_key": base_llm.get("api_key"),
+            "max_tokens": base_llm.get("max_tokens", 4096),
+            "temperature": base_llm.get("temperature", 1.0),
+            "api_type": base_llm.get("api_type", ""),
+            "api_version": base_llm.get("api_version", ""),
+        }
+        ...
+```
+
+tomllib 下的接口：
+- load(fp: BinaryIO, /, *, parse_float: ParseFloat = float) -> dict[str, Any] 接收文件的 Handle
+- loads(s: str, /, *, parse_float: ParseFloat = float) -> dict[str, Any] 接收字符串的配置
+
+获取的内容，是字典形式。随后使用方括号访问，或是 get() 方法。
+
+```py
+toml_str = """
+key = "value"
+[table]
+numbers = [1, 2, 3]
+"""
+data = tomllib.loads(toml_str)
+print(data["table"]["numbers"])  # 输出: [1, 2, 3]
+```
 
 ## Ref and Tag
