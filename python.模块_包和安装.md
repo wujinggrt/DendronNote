@@ -2,7 +2,7 @@
 id: 745l1jwrarwygpelwedsioj
 title: 模块_包和安装
 desc: ''
-updated: 1741846976834
+updated: 1741940096184
 created: 1740714013506
 ---
 
@@ -16,7 +16,32 @@ created: 1740714013506
 
 通过定义 `__all__` 列表，你可以控制 from package import * 语句导入哪些子模块或属性。
 
-## 本地安装包： pip install -e . 会发生什么
+## pip
+
+### 设置镜像
+
+可以每次设置环境变量，每次指出即可。
+
+```bash
+export THU_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
+pip install -i $THU_MIRROR ...
+```
+
+设置全局：
+
+```bash
+pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+# 使用多个镜像源
+pip config set global.index-url "<url1> <url2>..."
+# 查看镜像
+cat /home/wujing/.config/pip/pip.conf
+# 验证
+pip config list
+# 清空，使用默认
+pip config unset global.index-url
+```
+
+### 本地安装包： pip install -e . 会发生什么
 
 -e 是 --editable，以可编辑模式（开发模式）安装包。有以下影响和作用：
 - 包的代码不会复制到 Python 的 site-packages 目录。
@@ -53,7 +78,7 @@ legged_gym  legged_gym.egg-info  LICENSE  licenses  README.md  resources  setup.
 
 卸载使用 pip uninstall PACKAGE_NAME 即可。
 
-## 缓存 wheels 文件的目录
+### 缓存 wheels 文件的目录
 
 在 ~/.cache/<pip 或 uv> 目录下，保留了包的缓存。有时候特别大，可以手动删除此目录，也可以手动清理，比如 pip cache purge 或 uv cache prune。
 

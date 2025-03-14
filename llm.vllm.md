@@ -2,7 +2,7 @@
 id: cy0z1e3avly9p2sitrkajl4
 title: Vllm
 desc: ''
-updated: 1740629495552
+updated: 1741949140220
 created: 1740385950788
 ---
 
@@ -10,6 +10,16 @@ created: 1740385950788
 
 ```bash
 vllm serve Qwen/Qwen2.5-VL-3B-Instruct --port 8000 --host 0.0.0.0 --dtype bfloat16 --limit-mm-per-prompt image=5,video=5
+```
+
+```bash
+vllm serve Qwen/Qwen2.5-VL-3B-Instruct \
+    --port 8000 \
+    --host 0.0.0.0 \
+    --dtype bfloat16 \
+    --limit-mm-per-prompt image=5,video=5 \
+    --gpu_memory_utilization 0.9 \
+    --max_model_len 8000
 ```
 
 ## vllm serve 参数

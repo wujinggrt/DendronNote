@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1741888226253
+updated: 1741935518143
 created: 1741144146461
 ---
 
@@ -403,7 +403,7 @@ shape_meta: &shape_meta
       latency_steps: 0 # float
       down_sample_steps: ${task.obs_down_sample_steps} # int
       type: rgb
-      ignore_by_policy: False
+      ignore_by_poliy: False
     robot0_eef_pos:
       shape: [3] #表示末端执行器的位置（x, y, z）。
       horizon: ${task.low_dim_obs_horizon} # int
@@ -446,7 +446,24 @@ dinov2_vits14 以 14 为 patch size，恰好将 224 分为 16 个 patch。可以
 
 ### SAM
 
+制作数据集的标注思路。可以通过反向播放图像序列。让大模型识别夹住的物体，会更加方便。那么先识别夹住的物体再进一步反向播放图像序列，随后跟踪标边框。
 
+下载 SAM2 的预训练模型后，可以验证：
+
+```py
+import torch
+from sam2.sam2_image_predictor import SAM2ImagePredictor
+
+predictor = SAM2ImagePredictor.from_pretrained("facebook/sam2-hiera-large")
+
+with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
+    predictor.set_image(<your_image>)
+    masks, _, _ = predictor.predict(<input_prompts>)
+```
+
+其中，set_image() 方法接收 numpy.ndarray 或 PIL image 对象。格式为 RGB 或 BGR。
+
+predict() 方法返回
 
 ## Ref and Tag
 

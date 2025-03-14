@@ -2,7 +2,7 @@
 id: 7cd9he4w15xq7jbt88b3xp4
 title: Zarr
 desc: ''
-updated: 1741923568709
+updated: 1741934227199
 created: 1739872667023
 ---
 
@@ -40,7 +40,7 @@ src = zarr.open(path="path/to/file", mode="r")
 
 ### 转换为 numpy.ndarry
 
-直接对 zarr 的 Array 使用切片 [:] 访问，便可获得 numpy.ndarray。
+直接对 zarr 的 Array 使用切片 [:] 访问，或者访问任意一个元素，便可获得 numpy.ndarray。
 
 ### chunks 参数
 [ref](https://zarr.readthedocs.io/en/v3.0.0/user-guide/performance.html#chunk-size-and-shape)
@@ -311,14 +311,55 @@ print("\nLoaded array2 content:")
 print(array2_loaded[0:5, 0:5])
 ```
 
-### 加载图片时，可能出错
+## 压缩保存和解压 RGB 图像
 
-需要安装库 pip install imagecodecs，也需要安装 sudo apt-get install libjxl-dev。最后，在 Python 检查是否支持。
+使用预处理的脚本得到 zarr 文件后，我想简单使用 zarr 库加载查看图像内容。data 下大部分内容能够正常加载。但是，camera0_rgb 加载缺出现了错误：ValueError: codec not available: 'imagecodecs_jpegxl'。这是因为压缩格式的问题。加载的代码如下：
 
 ```py
-import imagecodecs
-print(imagecodecs.JPEGXL)  # 应显示编解码器信息，而非AttributeError
+store = zarr.ZipStore("/data1/cola_big/dataset.zarr.zip", mode="r")
+root = zarr.open_group(store, mode="r")
+data = root["data"]
+print(data["camera0_rgb"]) # ValueErro: codec not available: 'imagecodecs_jpegxl'r
 ```
+
+根据报错，需要 jpegxl。根据官网的 [issue](https://github.com/cgohlke/imagecodecs/issues/82)，应当注册 codec 为 numcodecs/zarr，比如：
+
+```py
+ >>> import zarr 
+ >>> import numcodecs 
+ >>> from imagecodecs.numcodecs import Jpeg2k 
+ >>> numcodecs.register_codec(Jpeg2k) # 关键在于此句
+ >>> zarr.zeros( 
+ ...     (4, 5, 512, 512, 3), 
+ ...     chunks=(1, 1, 256, 256, 3), 
+ ...     dtype='u1', 
+ ...     compressor=Jpeg2k() 
+ ... ) 
+ ```
+
+关键在于 numcodecs.register_codec(Jpeg2k)，Jpegxl 同理。注册后，zarr 可以在数据中找到对应的 compressor。
+
+### 压缩图片以保存
+
+
+查看 camera0_rgb 如何制作和压缩。在 scripts_slam_pipeline/07_generate_replay_buffer.py 下，使用 JpegXL 的实例作为 compressor，保存图像数据。
+
+```py
+    img_compressor = JpegXl(level=compression_level, numthreads=1)
+    for cam_id in range(n_cameras):
+        name = f'camera{cam_id}_rgb'
+        _ = out_replay_buffer.data.require_dataset(
+            name=name,
+            shape=(out_replay_buffer['time'].shape[0],) + out_res + (3,),
+            chunks=(1,) + out_res + (3,),
+            compressor=img_compressor,
+            dtype=np.uint8
+        )
+```
+
+根据 chunks，可以看到按照图片分块和时间步分块存储。第一维 time 作为时间步的，第二维 out_res 代表分辨率，第三维 (3,) 代表三通道。随后使用 compressor 压缩。
+
+压缩保存后，查看训练时如何加载相机的图像数据，特别是解压方面，这对正确使用压缩后的数据有着参考作用。
 
 ## 异步
 ### AsyncGroup

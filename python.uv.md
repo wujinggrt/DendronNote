@@ -2,7 +2,7 @@
 id: tmruqcalaaqsqzkj35nehsq
 title: Uv
 desc: ''
-updated: 1741916449703
+updated: 1741933398003
 created: 1737822755943
 ---
 
@@ -39,6 +39,8 @@ uv pip install -U flask==3.0.0
 uv pip install -e .
 uv pip uninstall flask
 ```
+
+安装的包会放到 .venv/lib/python3.12/site-packages 下。
 
 ## 最佳实践
 
