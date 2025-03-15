@@ -2,7 +2,7 @@
 id: jj9thgwbmiz310p7b21164d
 title: VNC
 desc: ''
-updated: 1740384280528
+updated: 1742024520360
 created: 1740384014855
 ---
 
@@ -21,6 +21,6 @@ vncserver -kill :<port num>
 
 ## 防锁屏
 
-有时，锁屏后，会出现键盘不能输入的情况。最简单的方法是，设置为不锁屏。Settings -> Privacy -> Screen 中，关闭 Automatic Screen Lock 和 Lock Screen on Suspend 选项。
+锁屏后，登录界面偶尔出现键盘不能输入的情况。最简单的解决方法是禁止锁屏。在 Settings -> Privacy -> Screen 中，关闭 Automatic Screen Lock 和 Lock Screen on Suspend 选项。
 
 ## Ref and Tag

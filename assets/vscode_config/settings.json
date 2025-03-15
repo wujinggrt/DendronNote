@@ -7,7 +7,8 @@
     * K 上插空行
     * H, L 行首行尾
     * <space> 打开which key
-    * <leader>q, <leader>Q quit, quit all
+    * <leader>q quit
+    * <leader>Q 退出 Group
     * <leader><w|e|b> CamelCaseMotion移动，驼峰命名或snake命名移动
     * <leader>W save, save all
     * <leader>f format code
@@ -35,10 +36,9 @@
     * < 和 > 控制缩进
     *
     * insert mode:
-    * kj <Esc> 
     * <leader>w save
     * <leader>e <Esc>后e再a，相当于编辑模式下的前移光标
-    * <leader>l <Esc>后l再a，相当于编辑模式下的前移光标
+    * jkl <Esc>后l再a，相当于编辑模式下的前移光标
     * <leader>L <Esc>后L再a，移动光标到末尾
     * <leader>h 相当于光标停在当前位置，用于提示api接口
     * <leader>m 最大化当前编辑窗口
@@ -203,7 +203,7 @@
                 "Q"
             ],
             "commands": [
-                ":qa!"
+                "workbench.action.closeEditorsInGroup"
             ]
         },
         {
