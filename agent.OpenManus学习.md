@@ -2,7 +2,7 @@
 id: hcawzqs5kib9vt4l1gpqclj
 title: OpenManus学习
 desc: ''
-updated: 1742029349610
+updated: 1742030211205
 created: 1741973130080
 ---
 
@@ -180,11 +180,6 @@ Open Manus 项目主要包含以下几个部分：
 5. **返回结果:** `PlanningAgent` 将最终结果返回给用户。
 
 双 Agent 模式需要模型具备较强的规划能力。
-
-```graphviz
-
-```
-
 
 ## 总结
 
