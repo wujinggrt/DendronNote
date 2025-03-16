@@ -1,8 +1,8 @@
 ---
 id: n89ajv3jnm7v87o7x0z3apa
-title: 磁盘分区和挂载
+title: 磁盘分区和挂载_parted
 desc: ''
-updated: 1742060558869
+updated: 1742117207128
 created: 1741940358214
 ---
 
@@ -154,7 +154,7 @@ parted 命令进入交互界面后，选择设备，可以看到：
  5    512GB   1024GB  512GB   logical   ext4
 ```
 
-/dev/nvme0n1p6 在 /dev/nvme0n1p5 之前，所以可以调整其结束点位置，以扩充空间。
+/dev/nvme0n1p6 在 /dev/nvme0n1p5 之后，所以可以调整其结束点位置，以扩充空间。关于查看具体起始点，可以使用 `❯ cat /sys/block/nvme0n1/nvme0n1p5/start` 命令查看。
 
 使用 help 命令，可以看到操作的命令：
 - `resizepart NUMBER END` 改变 NUMBER 的大小

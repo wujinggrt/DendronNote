@@ -2,7 +2,7 @@
 id: eszoks0gixjd0fjyul4wh10
 title: Robotics
 desc: ''
-updated: 1741843128867
+updated: 1742126493695
 created: 1740293600917
 ---
 
@@ -103,5 +103,9 @@ DexVLA 指出，使用子步骤推理至关重要。每个任务拆分和标记�
 
 
 场景：可以先在导航，验证召回情况。在切换到操作场景，找物品场景。
+
+### 推理能力
+
+推理能力都是基于足够强大的基座模型。比如 V3 和 Qwen。
 
 ## Ref and Tag

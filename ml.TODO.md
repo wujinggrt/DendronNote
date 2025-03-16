@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1741919516106
+updated: 1742134926500
 created: 1738165674608
 ---
 
@@ -123,12 +123,20 @@ https://zhuanlan.zhihu.com/p/27172237359
 R1 小模型复刻失败经验总结
 https://mp.weixin.qq.com/s?__biz=Mzg5MTU1NTE1OQ==&mid=2247492943&idx=1&sn=aed1d150faaebb17ac0b9c3d3347e436&chksm=ce0e65e1751e208b29ad2c6c024d4f54504f1d5c43939e447f805d02b447de619f30fd1fd1a3&mpshare=1&scene=23&srcid=03115atkpiBzet6MMBOt0cSX&sharer_shareinfo=f1c7bb00c78885ad976322928466b740&sharer_shareinfo_first=f1c7bb00c78885ad976322928466b740#rd
 
+【论文解读】Chain Of Draft：LLM 少写多想更高效 - tomsheep的文章 - 知乎
+https://zhuanlan.zhihu.com/p/28074420230
 
 ## Agent
 
 Manus发布一天后迅速出现OpenManus、OWL 等复刻项目，怎么做到的？ - 锦恢的回答 - 知乎
 https://www.zhihu.com/question/14321968965/answer/119732180420
 > 学习 OpenManus，做成熟和工程化的 Agent。
+
+李宏毅：从零开始搞懂 AI Agent - tomsheep的文章 - 知乎
+https://zhuanlan.zhihu.com/p/29123783155
+
+【论文解读】：START：让大模型学会「借工具思考」 - tomsheep的文章 - 知乎
+https://zhuanlan.zhihu.com/p/28933816497
 
 ## Hack 和工程能力
 
