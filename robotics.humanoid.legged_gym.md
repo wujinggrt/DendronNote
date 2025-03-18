@@ -2,7 +2,7 @@
 id: dsrwzp0ob6wn0rz185kgq7w
 title: Legged_gym
 desc: ''
-updated: 1742210604549
+updated: 1742262091303
 created: 1742190380730
 ---
 
@@ -44,7 +44,15 @@ set_camera(), `_draw_debug_vis()` 等是 debug 的部分。
 
 `_get_noise_scale_vec()`，在 LeggedRobotCfg:nosie 下指定噪声，增强健壮。
 
-check_termination() 遇到危险情况时，重置。
+check_termination() 遇到危险情况时，重置。比如，根据 self.contact_force 判断身体是否受到了力，即是否摔倒，从而选择重置与否。青龙则添加了更多的判断，比如线速度大于 10，角速度大于 5，高度太低小于 0.3 重置，更多参考青龙的源码。这个方法比较重要，希望训练时不要出现的情况，可以写到此方法。比如不要摔倒等。
+
+reset_idx() 在初始化时，还有 check_termination() 之后会调用。还会调用 `_reset_dofs()`, `_reset_root_states()`, `_resample_commands()` 等方法重置关节、状态和重新给与命令。
+
+## TODO: GRU
+
+LSTM 或 GRU 是否可以 batch 训练？即并行训练。如何处理历史信息？一次 rollout 代表一组训练完整的数据吗？
+
+可以参考 LS-Imagination。
 
 ## 论文内容
 

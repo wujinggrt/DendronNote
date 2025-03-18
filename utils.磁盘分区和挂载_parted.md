@@ -2,7 +2,7 @@
 id: n89ajv3jnm7v87o7x0z3apa
 title: 磁盘分区和挂载_parted
 desc: ''
-updated: 1742260314663
+updated: 1742260545457
 created: 1741940358214
 ---
 
@@ -174,6 +174,7 @@ parted 命令进入交互界面后，选择设备，可以看到：
 resizepart 之后，并不能直接看到扩充的空间，df -h 命令还没显示增加的空间。需要使用命令扩展文件系统，具体如下：
 
 ```bash
+# ext<2-4> 系列的文件系统适用
 sudo resize2fs /dev/nvme0n1p5
 ```
 
