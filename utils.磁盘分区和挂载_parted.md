@@ -2,7 +2,7 @@
 id: n89ajv3jnm7v87o7x0z3apa
 title: 磁盘分区和挂载_parted
 desc: ''
-updated: 1742117207128
+updated: 1742260314663
 created: 1741940358214
 ---
 
@@ -170,6 +170,12 @@ parted 命令进入交互界面后，选择设备，可以看到：
 ```
 
 注意，ext4 支持在线拓展，但是 xfs 不支持。所以需要关注文件系统。
+
+resizepart 之后，并不能直接看到扩充的空间，df -h 命令还没显示增加的空间。需要使用命令扩展文件系统，具体如下：
+
+```bash
+sudo resize2fs /dev/nvme0n1p5
+```
 
 #### 例子
 
