@@ -2,7 +2,7 @@
 id: rjexswayh0yvitkaf9qez5n
 title: 工程硕士英语
 desc: ''
-updated: 1741666453723
+updated: 1742265187985
 created: 1740448957635
 ---
 
@@ -74,5 +74,11 @@ Third, the most important reason is self-defense. It is because America is a spe
 
 Revised
 Third, the most important reason for gun ownership in the US is self-defense (中心距). As the strongest nation in the world, America is also a complex one that has a number of murders and other violent crimes. Gun ownership can help American citizens protect themselves against the many dangers in their society-gangsters, muggers and burglars to name a few. (后两句是论证，不相干部分要移除，信息太多适得其反，要保证简洁和明显。)
+
+## 2025年3月18日
+
+Deduction：演绎。reasoning from general premises, which are known or presumed to be known, to more specific, certain conclusions. 别名形式逻辑 “formal logic".
+
+Induction：归纳。reasoning from specific cases to more general, but uncertain, conclusions. "Informal logic".
 
 ## Ref and Tag
