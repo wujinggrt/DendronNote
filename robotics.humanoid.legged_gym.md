@@ -2,7 +2,7 @@
 id: dsrwzp0ob6wn0rz185kgq7w
 title: Legged_gym
 desc: ''
-updated: 1742303551225
+updated: 1742352168370
 created: 1742190380730
 ---
 
@@ -208,9 +208,6 @@ LSTM 或 GRU 是否可以 batch 训练？即并行训练。如何处理历史信
 
 可以参考 LS-Imagination。
 
-## 站立的奖励
-
-如果与时序有关，比如先附身，后挺直。那么时序上，如何设置奖励？与 episode_length_buf 中的值，要相关吗？用来判断，是否在几个时间步内，要有这个动作？
 
 ## 论文内容
 

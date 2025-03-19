@@ -1,0 +1,66 @@
+export PATH=$PATH:/usr/local/lib
+alias tnew='tmux new -s'
+alias perlio='perl -wln'
+alias perlioe='perl -wlne'
+alias pe='perl -wlne'
+alias gS='git status'
+alias gs='git stage'
+#export DISPLAY=$(cat /etc/resolv.conf | perl -wnla -e 'print "$F[1]:0.0" if /nameserver/')
+export DISPLAY=:0.0
+# for pybullet to use opengl 3.3 or later, the x server was stucted in version 1.4
+# we can use command to check it out: glxinfo | grep "OpenGL version"
+export MESA_GL_VERSION_OVERRIDE=3.3
+unset LIBGL_ALWAYS_INDIRECT
+# docker
+alias dritrm='docker run -it --rm'
+alias deit='docker exec -it'
+alias sd='sudo docker'
+if [[ -n "$ZSH_NAME" ]]; then
+    #source ~/ros2_rolling/install/local_setup.zsh
+    source ~/ros2_rolling/install/setup.zsh
+    #source /opt/ros/rolling/setup.zsh
+    #source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.zsh
+elif [[ -n "$BASH_NAME" ]]; then
+    source ~/ros2_rolling/install/local_setup.bash
+    #source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash
+else
+    echo "Can not setup ros2 rolling"
+fi
+source /usr/share/colcon_cd/function/colcon_cd.sh
+export _colcon_cd_root=/opt/ros/rolling/
+export JAVA_HOME=/home/wujing/tools/jdk-22.0.1
+export JRE_HOME=${JAVA_HOME}/jre
+export CLASSPATH=.:${JAVA_HOME}/lib:${JRE_HOME}/lib
+export PATH=$PATH:${JAVA_HOME}/bin
+export DESKTOP=/mnt/c/Users/10945/Desktop
+export WIN_HOME=/mnt/c/Users/10945
+export DOCUMENTS=/mnt/c/Users/10945/Documents
+export DOWNLOADS=/mnt/c/Users/10945/Downloads
+export THU_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
+# clash for windows
+hostip=$(cat /etc/resolv.conf | grep nameserver | awk '{ print $2 }')
+wslip=$(hostname -I | awk '{print $1}')
+PROXY_HTTP="http://127.0.0.1:7890"
+proxy_on() {
+    export http_proxy="${PROXY_HTTP}"
+    export HTTP_PROXY="${PROXY_HTTP}"
+    export https_proxy="${PROXY_HTTP}"
+    export HTTPS_poxy="${PROXY_HTTP}"
+    git config --global http.proxy "${PROXY_HTTP}"
+    git config --global https.proxy "${PROXY_HTTP}"
+    echo "http proxy success"
+}
+proxy_off() {
+    unset http_proxy
+    unset HTTP_PROXY
+    unset https_proxy
+    unset HTTPS_proxy
+    git config --global --unset http.proxy
+    git config --global --unset https.proxy
+    echo "disabled proxy"
+}
+test_setting(){
+        echo "Host ip:" ${hostip}
+        echo "WSL ip:" ${wslip}
+        echo "Current proxy:" $http_proxy
+}

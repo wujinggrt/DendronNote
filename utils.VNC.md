@@ -2,11 +2,11 @@
 id: jj9thgwbmiz310p7b21164d
 title: VNC
 desc: ''
-updated: 1742024520360
+updated: 1742381812154
 created: 1740384014855
 ---
 
-使用 TigerVNC。
+服务器使用 TigerVNC，客户端使用 VNC Viewer，mobaXterm 的 VNC 视频解码有问题。
 
 ## 分配端口
 

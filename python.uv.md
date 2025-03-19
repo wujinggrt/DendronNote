@@ -2,7 +2,7 @@
 id: tmruqcalaaqsqzkj35nehsq
 title: Uv
 desc: ''
-updated: 1741933398003
+updated: 1742309626457
 created: 1737822755943
 ---
 
@@ -34,7 +34,7 @@ uv 不会自动下载 Python 包，所以上述命令只能够在当前 Python 3
 # 从镜像网站上拉取安装包
 uv pip install flask -i https://pypi.tuna.tsinghua.edu.cn/simple
 # 更新包版本，并安装特定版本的包：
-uv pip install -U flask==3.0.0
+uv pip install -U flask==3.0.0 # --upgrade
 # 从当前目录安装，并且支持editable实时更新代码模式
 uv pip install -e .
 uv pip uninstall flask

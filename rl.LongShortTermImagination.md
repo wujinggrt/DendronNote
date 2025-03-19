@@ -2,7 +2,7 @@
 id: qon8owvfwcckh0l0fl9e8ee
 title: LongShortTermImagination
 desc: ''
-updated: 1740473537652
+updated: 1742371716027
 created: 1739694710359
 ---
 
@@ -33,6 +33,9 @@ Affordance map computation via virtual exploration. 使用滑动边框扫描各�
 
 首先，采用一个随机的 agent 与任务相关的环境交互，进一步收集数据。在观察的时间步 $t$ 得到的观察 $o_t$。使用一个滑动边框，其维度为观察图像的 15% 的宽和高，从左至右，从上至下地遍历整个观察图像。滑动边框水平和垂直地移动 9 步，在每个维度都覆盖每个潜在区域 (potential region)。作者每个观察 $o_t$ 的滑动边框中都囊括的位置，裁剪出 16 张图像。这些图像缩小了视场角，聚焦了区域，随后对这些图像重新调整到与观察图像大小的维度。如图 Fig 2(a) 上面部分，16 个 frames 模拟了探索。这 16 张有序的图像，用来模拟 agent 向着滑动边框确定的目的位置移动的视觉转移。重新调整的图像记为 $x_t^k (0 <= k < 16)$。使用 MineCLIP 模型计算这些图片集合 (视频帧) 与任务文本描述的相关性。随后量化了边框的 affordance value，最后得到潜在探索的感兴趣区域。Affordance value 根据感兴趣区域的边框数量求出。
 
+#### 3.3 Long Short-Term World Model
+
+定义世界模型为 long-term and short-term state transitions
 
 ## Tag
 #Paper
