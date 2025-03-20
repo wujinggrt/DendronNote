@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1742134926500
+updated: 1742450213612
 created: 1738165674608
 ---
 
@@ -59,6 +59,10 @@ UCB cs294/194-196 Large Language Model Agents 课程笔记 - Perf的文章 - 知
 - [UCB_CS294_LLmAgents](https://github.com/WangYuHang-cmd/UCB_CS294_LLmAgents)
 
 LLamaV-o1: (https://mbzuai-oryx.github.io/LlamaV-o1/)
+
+昆仑万维正式开源了全球首个工业界多模态推理模型 Skywork R1V，你对该模型有哪些评价？ - tomsheep的回答 - 知乎
+https://www.zhihu.com/question/15333687654/answer/128260535572
+> 使用 MLP 简单缝合了 ViT 和 LLM，简单的理念可以学习。
 
 ## Robotics
 
@@ -125,6 +129,15 @@ https://mp.weixin.qq.com/s?__biz=Mzg5MTU1NTE1OQ==&mid=2247492943&idx=1&sn=aed1d1
 
 【论文解读】Chain Of Draft：LLM 少写多想更高效 - tomsheep的文章 - 知乎
 https://zhuanlan.zhihu.com/p/28074420230
+
+### World Model
+
+【强化学习教程 20】世界模型（World Models） - tomsheep的文章 - 知乎
+https://zhuanlan.zhihu.com/p/21498615281
+> 使用策略预测环境的变化
+
+【论文解读】IRIS：用Transformer构建世界模型 - tomsheep的文章 - 知乎
+https://zhuanlan.zhihu.com/p/21353183728
 
 ## Agent
 

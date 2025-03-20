@@ -2,7 +2,7 @@
 id: fbbhwt128xaojy66nxffgv0
 title: HumanUp_站立策略
 desc: ''
-updated: 1742393726482
+updated: 1742453715515
 created: 1742189717381
 ---
 
@@ -122,11 +122,32 @@ $r_{roll}=r_{gravity}$，鼓励机器人变换身体朝向。
 
 ## Code Base
 
-在 train 脚本中，指定的 proj_name 为 ${robot_name}_up，比如传入 bash run.sh g1waist stage1_get_up cuda:0，robot_name 代表 g1waist，则 task_name 和 proj_name 都是 g1waist_up。
+在 train 脚本中，第一个参数为 robot_name，指定的 task_name 和 proj_name 为 `${robot_name}_up`；第二个参数为 exptid，指定了日志目录下保存的路径。具体地，一个 proj_name 可以包含多个 exptid 目录，结构为 `logs/${proj_name}/${exptid}`，exptid 保存了权重文件。比如， `bash run.sh g1waist stage1_get_up cuda:0`，robot_name 代表 g1waist，则 task_name 和 proj_name 是 g1waist_up，权重文件在 logs/g1waist_up/stage1_get_up 目录。
 
-日志在 logs 目录下，按照 proj_name 细分为训练的目录，权重、日志文件保存在 logs/${proj_name} 下。
+阶段一训练后，需要生成轨迹，使用 bash log.sh g1waistroll exptid checkpoint，生成的轨迹在 logs/env_logs/${exptid} 下。
 
-评估，eval 时，指定的 checkpoint 为 int 类型，加载 logs/${proj_name}/${exptid}/model_${checkpoint}.pt，如果指定 -1 则加载最后的模型。
+评估，eval 时，指定的 checkpoint 为 int 类型，加载 `logs/${proj_name}/${exptid}/model_${checkpoint}.pt`，如果指定 -1 则加载最后的模型。
+
+- LEGGED_GYM_ROOT_DIR 在 legged_gym.envs 中定义，指出了 legged_gym 目录，此目录下包含了 logs, resources, legged_gym 等目录。其 legged_gym 目录下，相当于 src 目录。
+- LEGGED_GYM_ENVS_DIR 指出了 legged_gym/legged_gym/envs 目录。
+
+### 轨迹是如何生成和存储的？是否可以用动捕？
+
+参考 legged_gym/legged_gym/scripts/log_traj.py，将 dof_pos_all 存储为 pickle 形式的二进制文件，再反序列化。可以看到，存储的轨迹在 logs/env_logs/${proj_name} 下的 pkl 文件。
+
+### 改进
+
+膝盖不要伸直太多。向 KIMI QA：如果我想要站立时，膝盖不要伸直，而是有一定弯曲，我新增一个奖励为多少更合适？
+
+A：$r_{knee\_bend}=exp(-\frac{(\theta_{knee}-\theta_{target})^2}{\sigma^2})$，$\theta_{knee}, \theta_{target}$ 代表膝关节角度和目标关节角度。σ 代表系数。
+
+### 对比代码解读
+
+查看修改和新增了哪些内容。
+
+### PPO 收集的内容，是什么格式的？能用 Transformer 吗
+
+Transformer 来作为 Actor 和 Critic，需要对时间序列处理。需要 horizon，类似窗口。如果一次只输入一个时间步，那么不能够有效的发挥序列上的预测能力。比如 (batch_size, seq_len, dim) 中，希望 seq_len > 1。
 
 ## Ref and Tag
 

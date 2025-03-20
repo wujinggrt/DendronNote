@@ -2,7 +2,7 @@
 id: xpm7k3l0en3aumjgrs2gri7
 title: HoST_学习不同姿势下人形机器人站立控制
 desc: ''
-updated: 1742403405804
+updated: 1742437648425
 created: 1742398503572
 ---
 
@@ -26,18 +26,26 @@ created: 1742398503572
 
 ### 5. 方案与技术
 
-#### 问题建模
-
-建模为具有时间范围的 MDP，表示为 $\mathcal{M}=⟨\mathcal{S}, \mathcal{A}, \mathcal{T}, \mathcal{R}, \mathcal{\gamma}⟩$
-
-每时刻 t 观察到状态 s_t，策略根据状态生成动作 a_t。根据环境状态转移，得到新的状态 s_t+1 和奖励 r_t。为了最大化奖励，使用 RL，目的得到最优的策略 π_θ，最大化 the expected cumulative reward (return) $\mathbb{E}_{\pi_\theta}[\Sigma_{t=0}^{T-1} \gamma^t r_t], \gamma \in [0,1]$。力求 episode length T 内获取最大奖励。期望的返回由值函数（critic）评测。使用 PPO 作为 RL 算法。
-
 - **强化学习框架**：采用 Proximal Policy Optimization (PPO) 算法，将任务分解为**三个阶段（扶正身体、跪起和站立）**，并为每个阶段设计相应的奖励函数。
 - **环境设置**：在模拟环境中设计了四种地形（地面、平台、墙壁和斜坡），以模拟现实世界中可能遇到的不同起始姿势。
 - **奖励函数设计**：包括任务奖励、风格奖励、正则化奖励和后任务奖励，通过多批评家架构独立地估计回报并优化策略。
 - **探索策略**：在训练初期施加垂直拉力帮助机器人从完全倒下的状态过渡到稳定的跪姿，并通过动作缩放系数 β 逐渐收紧动作输出范围。
 - **运动约束**：采用 L2C2 方法进行平滑性正则化，减少运动的振荡，并通过动作范围限制防止剧烈运动。
 - **sim-to-real 转移技术**：通过领域随机化减少模拟与现实之间的差距，提高控制策略在现实世界中的适应性。
+
+
+#### 问题建模
+
+建模为具有时间范围的 MDP，表示为 $\mathcal{M}=⟨\mathcal{S}, \mathcal{A}, \mathcal{T}, \mathcal{R}, \mathcal{\gamma}⟩$
+
+每时刻 t 观察到状态 s_t，策略根据状态生成动作 a_t。根据环境状态转移，得到新的状态 s_t+1 和奖励 r_t。为了最大化奖励，使用 RL，目的得到最优的策略 π_θ，最大化 the expected cumulative reward (return) $\mathbb{E}_{\pi_\theta}[\Sigma_{t=0}^{T-1} \gamma^t r_t], \gamma \in [0,1]$。力求 episode length T 内获取最大奖励。期望的返回由值函数（critic）评测。使用 PPO 作为 RL 算法。
+
+- State space：本体感知信息包括 IMU 和关节角 $s_t=[\omega_t,r_t,p_t,\dot{p}_t,a_{t-1},\beta]$。其中，$\omega_t$ 代表机器人 base 的角速度，$r_t$ 和  $p_t$ 代表 roll pitch，$p_t$，$\dot{p}_t$ 代表关节角位置和速度。$a_{t-=1}$ 代表上一次动作，$\beta\in(0,1]$ 代表输出动作的缩放因子。
+- Action space：使用 PD 控制器，基于力矩来驱动。动作 a_t 代表当前和下一步关节角位置的差值，于是 PD 目标计算为 $p_t^d=p_t + \beta a_t$，其中，a_t 每一维度的值都限制在 [-1,1]。β 隐式地限制动作的速度，是重要的部分。力矩可以根据刚度系数 $K_p$ 和阻尼系数 $K_d$ 计算。$\tau_t=K_p \cdot (p_t^d - p_t) - K_d \cdot \dot{p}_t$
+
+#### 更多细节
+
+奖励设置和优化方面，站立涉及多个电机相关的技能：比如身体、屈膝、上升。
 
 ### 6. 实验与结论
 - **模拟实验**：在四种模拟地形上进行了广泛的实验，验证了 HoST 框架的有效性，成功率达到 99.5% 以上，运动平滑性和能量消耗也得到了有效控制。

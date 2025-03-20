@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1741935518143
+updated: 1742481558873
 created: 1741144146461
 ---
 
@@ -457,13 +457,42 @@ from sam2.sam2_image_predictor import SAM2ImagePredictor
 predictor = SAM2ImagePredictor.from_pretrained("facebook/sam2-hiera-large")
 
 with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
-    predictor.set_image(<your_image>)
-    masks, _, _ = predictor.predict(<input_prompts>)
+    predictor.set_image(image) # numpy.ndarray or PIL image
+    masks, _, _ = predictor.predict(...)
 ```
 
 其中，set_image() 方法接收 numpy.ndarray 或 PIL image 对象。格式为 RGB 或 BGR。
 
-predict() 方法返回
+为了选择想要的对象，选择在它上面的一个点即可。一般以 (x,y) 格式指出点，使用 label 为 1 (foreground point) 或 0 (background point)。可以是多个 (x,y) 的点，传二维的 np.ndarray 即可。
+
+predictor.predict() 方法返回三个 masks，还有对应的质量分数和 logits。如果指定 multimaskJ_output=False，则只返回一个。
+
+### 对头部图像标边框
+
+使用 vllm 本地部署 Qwen2.5-VL-3B-Instruct 来标边框。zarr 保存数据位 np.ndarray 形式，cv2 读取也是 np.ndarray，把 np.ndarray 转换为 JPEG 字节流，向 Qwen 询问是重要一步。
+
+```py
+import numpy as np
+from PIL import Image
+from io import BytesIO
+import base64
+
+def numpy_to_base64(np_image: np.ndarray) -> str:
+    """将numpy数组转换为base64编码的JPEG格式"""
+    # 确保数据类型为uint8
+    if np_image.dtype != np.uint8:
+        np_image = np_image.astype(np.uint8)
+    # 转换维度顺序为HWC格式（如果必要），3 通道代表 RGB，4 代表 RGBA
+    if np_image.shape[-1] not in [3, 4]:
+        np_image = np.transpose(np_image, (1, 2, 0))
+    # 转换为PIL图像并编码
+    pil_img = Image.fromarray(np_image)
+    buffered = BytesIO()
+    pil_img.save(buffered, format="JPEG")
+    return base64.b64encode(buffered.getvalue()).decode("utf-8")
+```
+
+有了 str，便可向 Qwen2.5-VL 询问了。
 
 ## Ref and Tag
 
