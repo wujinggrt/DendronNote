@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1742481558873
+updated: 1742493484896
 created: 1741144146461
 ---
 
@@ -493,6 +493,101 @@ def numpy_to_base64(np_image: np.ndarray) -> str:
 ```
 
 有了 str，便可向 Qwen2.5-VL 询问了。
+
+### 多进程制作数据
+
+由于两个项目的环境不同，强行安装 sam2 的环境到 DexGraspVLA，处理冲突是十分繁琐的工作，于是使用多进程协作。
+
+通信内容：io 进程取出图像，为 np.ndarray，向 VLA 请求并标出边框。sam2 根据图像，这个 np.ndarray 和边框，生成相同高和宽的二值掩码。涉及到的通信，是图像、边框和二值掩码。
+
+IPC 方案选择：
+- 使用 mutex 和 pickle 序列化
+- 共享内存，使用 multiprocessing.shared_memory 的 SharedMemory，使用 named 的共享内存区域即可。同步控制可以用文件锁、信号量来完成。此外，还可以用扩展的 posix_ipc 库，更精准地跨进程同步。实现简单的消费者生产者的模型即可。
+- 消息队列，ZeroMQ，性能高，开发复杂度中等。并且，ZeroMQ 也有零拷贝机制。
+- REST API (HTTP 通信)，性能低，但通用性强，易开发。
+
+由于小模型需要高频执行，所以对性能有要求。因此，尽可能选择吞吐量的。所以有共享内存由于 ZeroMQ，ZeroMQ 优于 Kafka。但是，有时候单台 PC 可能 GPU 资源不够，需要网络请求，共享内存方案不适合，所以需要消息队列。后期部署，可以使用 ZeroMQ 作为网络通信。
+
+#### ZeroMQ：（REQ-REP 模式） + 零拷贝传输
+
+安装 `pip install pyzmq`，通过 zmq.send/recv 的 copy=False 参数实现零拷贝，适合大数组传输。
+
+实现架构：
+- 服务端（进程A）：启动 ZeroMQ 服务端，监听客户端请求，接收数据并处理后返回结果。
+- 客户端（进程B）：连接到服务端，发送初始数据，等待响应后继续处理。
+- 交替处理：通过 REQ-REP 模式强制请求-响应顺序，确保双方交替操作。
+
+简短示例如下，对于服务端的进程 A，类比实现 sam2 的求掩码：
+
+```py
+0, 640, 4)
+        bbox_2d = np.frombuffer(
+            msg.buffer[-BOUNDING_BOX_CHUNK_SIZE:], dtype=np.uint16
+        ).reshape(4,)
+        # 处理数据（示例：简单反转数值）
+        processed_arr = 255 - arr
+        print(f"Received and processed data: {arr.shape} {bbox_2d.shape}\n{bbox_2d}...")
+
+        # 发送处理后的数据（零拷贝）
+        socket.send(processed_arr.tobytes(), copy=False)
+
+
+if __name__ == "__main__":
+    process_server()
+```
+
+客户端：
+
+```py
+import zmq
+import time
+import numpy as np
+
+
+def process_client():
+    context = zmq.Context()
+    socket = context.socket(zmq.REQ)  # REQ 模式（客户端）
+    socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5秒超时
+    socket.connect("tcp://localhost:15555")  # 连接到服务端
+
+    # 初始化数据（示例：全零数组）
+    data = np.zeros((480, 640, 4), dtype=np.uint8)
+    bbox_2d = np.array([1, 2, 3, 4], dtype=np.uint16)
+    max_try = 5
+    tried = 0
+    IMAGE_CHUNK_SIZE = 480 * 640 * 4
+    BOUNDING_BOX_CHUNK_SIZE = 4 * 2
+    chunk_size = IMAGE_CHUNK_SIZE + BOUNDING_BOX_CHUNK_SIZE
+    while True:
+        # 发送数据（零拷贝）
+        socket.send(data.tobytes() + bbox_2d.tobytes(), copy=False)
+        time.sleep(1)
+
+        # 接收服务端处理后的数据（零拷贝）
+        try:
+            msg = socket.recv(copy=False)
+            tried = 0
+            data = np.frombuffer(msg.buffer, dtype=np.uint8).reshape(480, 640, 4)
+            # 客户端进一步处理（示例：加 1）
+            # 注意，与整数操作后，可能会从 uint8 变为 int16，会影响 buffer 大小
+            data = (data + 1) % 256
+            data = data.astype(np.uint8)
+        except zmq.Again:
+            if tried >= max_try:
+                print("max_try count reached, stop trying")
+                break
+            print("Timeout, retrying...")
+            tried += 1
+            socket.send(data.tobytes(), copy=False)  # 重发请求
+
+
+if __name__ == "__main__":
+    process_client()
+```
+
+因为处理速度问题，客户端一次性可能收到两次请求的数据，即 (2, ...) 的形状，所以需要处理。否则不能 reshape 为 (480, 640, 4)。同理，一次传回客户端，可能数据也会不合适，reshape 也会报错。解决方案如下：
+- 一次性读取所有消息队列中的内容，随后处理，并返回。比如，判断数据数量，读取后 reshape(-1, 480, 640, 4)，逐个处理第一维，再返回给客户端。
+- 模拟实现一次只读取 `480*640*4`，随后再处理。zeroMQ 没有截断的功能，只能一次性读完，所以可以添加头部元数据的方式，避免“粘包”问题。
 
 ## Ref and Tag
 
