@@ -2,7 +2,7 @@
 id: 7cd9he4w15xq7jbt88b3xp4
 title: Zarr
 desc: ''
-updated: 1741934227199
+updated: 1742550038875
 created: 1739872667023
 ---
 
@@ -36,7 +36,9 @@ z[:, 0] = np.arange(10000)
 src = zarr.open(path="path/to/file", mode="r")
 ```
 
-此时，src 使用了 DirectoryStore。
+此时，src 使用了 DirectoryStore。如果顶层是 Group，则是 Group。
+
+注意，以 w 模式打开，会删除原文件上的所有内容。所以，以 a 模式打开更保险，可以追加或修改。
 
 ### 转换为 numpy.ndarry
 
@@ -85,6 +87,42 @@ zarr.load('data/example-2.zarr')
 # array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 ```
 
+### Resizing and appending
+
+Zarr 数组可以 resize，其维度可以增加和减少，长度也是。内在的数据不会被重排。如果 resize 导致了缩小，在外部的数据会被丢弃。导致了扩充，则默认 0。
+
+```py
+store = zarr.storage.MemoryStore()
+z = zarr.open_array(
+    store="./data/example-1.zarr",
+    shape=(10000, 10000),
+    dtype="int32",
+    chunks=(1000, 1000),
+)
+z[:] = 42
+print(z[0, 0], z[-1, -1]) # 42 42
+z.resize((20000, 10000))
+print(z[0, 0], z[-1, -1]) # 42 0
+z.resize((200, 100))
+print(z[0, 0], z[-1, -1]) # 42 42
+```
+
+append(data: numpy.typing.ArrayLike, axis: int = 0) 方法则更方便，直接在任何轴上追加。比如：
+
+```py
+a = np.arange(10000000, dtype='int32').reshape(10000, 1000)
+z = zarr.create_array(store='data/example-4.zarr', shape=a.shape, dtype=a.dtype, chunks=(1000, 100))
+z[:] = a
+z.shape
+# (10000, 1000)
+z.append(a)
+# (20000, 1000)
+z.append(np.vstack([a, a]), axis=1)
+# (20000, 2000)
+z.shape
+# (20000, 2000)
+```
+
 ### zarr.require_dataset()
 
 用于安全创建或访问数据集。如果数据集不存在，按照给定参数创建并打开。如果存在，验证是否和指定参数的形状和数据类型保持一致。比如：
@@ -102,7 +140,23 @@ zarr.load('data/example-2.zarr')
         )
 ```
 
-随后可以安全使用 out_replay_buffer.data[f"camera{idx}_rgb"] 存入数据。
+out_replay_buffer.data 是一个 zarr.Group。随后可以安全使用 out_replay_buffer.data[f"camera{idx}_rgb"] 存入数据。
+
+### 删除
+
+```py
+# 创建组并添加数组
+group = zarr.open_group("data.zarr", mode="a")
+group.create_dataset("my_array", shape=(2, 2), dtype=int)
+
+# 删除数组
+del group["my_array"]  # 或者 group.pop("my_array")
+
+# 验证是否删除
+print("my_array" in group)  # 输出 False
+```
+
+或直接删除对应目录下的子目录。
 
 ## zarr.Group
 以层次化的方式组织和管理 arrays。zarr.Group 也是保存在内存和磁盘上，或者其他存储系统。

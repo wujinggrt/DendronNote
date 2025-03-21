@@ -2,7 +2,7 @@
 id: eszoks0gixjd0fjyul4wh10
 title: Robotics
 desc: ''
-updated: 1742517472430
+updated: 1742552182367
 created: 1740293600917
 ---
 
@@ -104,6 +104,8 @@ DexVLA 指出，使用子步骤推理至关重要。每个任务拆分和标记�
 场景：可以先在导航，验证召回情况。在切换到操作场景，找物品场景。
 
 Mask is attention？在场景，使用 mask，高效注意？
+
+上下文注意力，还是自回归的 decoder 比较在行，关于记忆。
 
 ### 推理能力
 

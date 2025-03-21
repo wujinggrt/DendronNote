@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1742493484896
+updated: 1742536477561
 created: 1741144146461
 ---
 
@@ -520,7 +520,27 @@ IPC 方案选择：
 简短示例如下，对于服务端的进程 A，类比实现 sam2 的求掩码：
 
 ```py
-0, 640, 4)
+import zmq
+import numpy as np
+
+
+def process_server():
+    context = zmq.Context()
+    socket = context.socket(zmq.REP)  # REP 模式（服务端）
+    socket.bind("tcp://*:15555")  # 监听 15555 端口
+    print("Server started")
+    # 2 bytes for points
+    IMAGE_CHUNK_SIZE = 480 * 640 * 4
+    BOUNDING_BOX_CHUNK_SIZE = 4 * 2
+    chunk_size = IMAGE_CHUNK_SIZE + BOUNDING_BOX_CHUNK_SIZE
+    while True:
+        # 接收客户端发送的二进制数据（零拷贝）
+        msg = socket.recv(copy=False)
+        print(f"recerved msg size: {len(msg)}")
+        assert len(msg) == chunk_size
+        arr = np.frombuffer(
+            msg.buffer[:-BOUNDING_BOX_CHUNK_SIZE], dtype=np.uint8
+        ).reshape(480, 640, 4)
         bbox_2d = np.frombuffer(
             msg.buffer[-BOUNDING_BOX_CHUNK_SIZE:], dtype=np.uint16
         ).reshape(4,)
@@ -534,6 +554,7 @@ IPC 方案选择：
 
 if __name__ == "__main__":
     process_server()
+
 ```
 
 客户端：
@@ -587,7 +608,19 @@ if __name__ == "__main__":
 
 因为处理速度问题，客户端一次性可能收到两次请求的数据，即 (2, ...) 的形状，所以需要处理。否则不能 reshape 为 (480, 640, 4)。同理，一次传回客户端，可能数据也会不合适，reshape 也会报错。解决方案如下：
 - 一次性读取所有消息队列中的内容，随后处理，并返回。比如，判断数据数量，读取后 reshape(-1, 480, 640, 4)，逐个处理第一维，再返回给客户端。
-- 模拟实现一次只读取 `480*640*4`，随后再处理。zeroMQ 没有截断的功能，只能一次性读完，所以可以添加头部元数据的方式，避免“粘包”问题。
+- 模拟实现一次只读取 `480*640*4`，随后再处理。zeroMQ 没有截断的功能，只能一次性读完，所以可以添加头部元数据的方式，避免“粘包”问题。或者一次只传一个。
+
+### 跟踪对象掩码
+
+SAM2 和 Cutie 都可以跟踪时间序列上的掩码。为了节省显存和资源，使用 SAM2 统一处理。视频可以看做是一系列有序的图像。对于视频，可以用 ffmpeg 分解为多个 jpeg：
+
+```bash
+ffmpeg -i <your_video>.mp4 -q:v 2 -start_number 0 <output_dir>/'%05d.jpg'
+```
+
+-q:v 代表高质量 jpeg 图像，生成 00000.jpg 起始的图片。
+
+推理视频，需要保存状态。首先，要加载所有 frame 的状态。
 
 ## Ref and Tag
 
