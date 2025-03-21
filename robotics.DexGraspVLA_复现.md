@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1742572387809
+updated: 1742578208310
 created: 1741144146461
 ---
 
@@ -625,6 +625,8 @@ ffmpeg -i <your_video>.mp4 -q:v 2 -start_number 0 <output_dir>/'%05d.jpg'
 #### Cutie
 
 mask 值为 0，代表遮盖，其他不同值代表各自对应的物体，比如 1 和 2 可以代表留下的两个物体。并且，只需要传递一次 mask，随后 processor 会记住。在设计时，进程间通信中，前面
+
+注意，processor 不像 SAM2 直接接受 [0, 255] 的像素值，而是使用归一化后的值。具体使用 torchvision.transforms.functional 的 to_tensor，将 PIL 图像或在 [0, 255] 值域，形状为 (H, W, C) 且 dtype 为 np.uint8 的 np.ndarray 转换为 torch.FloatTensor，形状为 (C, H, W)，值域为 [0.0, 1.0]。
 
 ## Ref and Tag
 
