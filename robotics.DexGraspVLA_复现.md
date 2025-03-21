@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1742536477561
+updated: 1742572387809
 created: 1741144146461
 ---
 
@@ -621,6 +621,10 @@ ffmpeg -i <your_video>.mp4 -q:v 2 -start_number 0 <output_dir>/'%05d.jpg'
 -q:v 代表高质量 jpeg 图像，生成 00000.jpg 起始的图片。
 
 推理视频，需要保存状态。首先，要加载所有 frame 的状态。
+
+#### Cutie
+
+mask 值为 0，代表遮盖，其他不同值代表各自对应的物体，比如 1 和 2 可以代表留下的两个物体。并且，只需要传递一次 mask，随后 processor 会记住。在设计时，进程间通信中，前面
 
 ## Ref and Tag
 
