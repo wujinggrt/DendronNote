@@ -2,7 +2,7 @@
 id: jfnhawp9z6yefk5zedupbht
 title: 画布划分_subplot
 desc: ''
-updated: 1742574733573
+updated: 1742617134718
 created: 1742573563940
 ---
 
@@ -75,5 +75,9 @@ def show_box(box, ax):
         plt.Rectangle((x0, y0), w, h, edgecolor="green", facecolor=(0, 0, 0, 0), lw=2)
     )
 ```
+
+## 展示动画（时间序列的图）
+
+
 
 ## Ref and Tag

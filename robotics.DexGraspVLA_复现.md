@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1742578208310
+updated: 1742611785418
 created: 1741144146461
 ---
 
@@ -624,7 +624,9 @@ ffmpeg -i <your_video>.mp4 -q:v 2 -start_number 0 <output_dir>/'%05d.jpg'
 
 #### Cutie
 
-mask 值为 0，代表遮盖，其他不同值代表各自对应的物体，比如 1 和 2 可以代表留下的两个物体。并且，只需要传递一次 mask，随后 processor 会记住。在设计时，进程间通信中，前面
+Cutie 环境创建，Python 3.9 比较合适，3.10+ 版本在 cchardet 会出现找不到 longintrepr.h 的问题，新版本对此头文件的使用进行了调整。
+
+mask 值为 0，代表遮盖，其他不同值代表各自对应的物体，比如 1 和 2 可以代表留下的两个物体。对于相同场景，只需要传递一次 mask，随后 processor 会记住。在设计时，进程间通信中，第一次的场景传入图像和 SAM2 提取的 mask，processor 重新清空记忆，使用此上下文信息；随后，不再传 mask，仅传递图像，使用 processor 记录的上下文来追踪 mask。
 
 注意，processor 不像 SAM2 直接接受 [0, 255] 的像素值，而是使用归一化后的值。具体使用 torchvision.transforms.functional 的 to_tensor，将 PIL 图像或在 [0, 255] 值域，形状为 (H, W, C) 且 dtype 为 np.uint8 的 np.ndarray 转换为 torch.FloatTensor，形状为 (C, H, W)，值域为 [0.0, 1.0]。
 

@@ -2,7 +2,7 @@
 id: eszoks0gixjd0fjyul4wh10
 title: Robotics
 desc: ''
-updated: 1742552182367
+updated: 1742615886635
 created: 1740293600917
 ---
 
@@ -106,6 +106,10 @@ DexVLA 指出，使用子步骤推理至关重要。每个任务拆分和标记�
 Mask is attention？在场景，使用 mask，高效注意？
 
 上下文注意力，还是自回归的 decoder 比较在行，关于记忆。
+
+### DexGraspVLA
+
+mask 作为视觉的注意力关键，通过视觉，通过 mask 找到操作的物体。进一步地，可以看做 VLM 找到 affordance，随后提取 mask 给低级策略，由它操作。DexGraspVLA 看重物体，那么，是否可以改进为关心 affordance，把标边框变为标 affordance 部分。
 
 ### 推理能力
 

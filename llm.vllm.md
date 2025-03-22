@@ -2,7 +2,7 @@
 id: cy0z1e3avly9p2sitrkajl4
 title: Vllm
 desc: ''
-updated: 1741949140220
+updated: 1742643579412
 created: 1740385950788
 ---
 
@@ -143,6 +143,12 @@ systemctl enable qwen2.5-14b-instruct
 systemctl start qwen2.5-14b-instruct
 # 查看启动日志
 journalctl -u qwen2.5-14b-instruct -f
+```
+
+## 提示安装 flash-attn
+
+```bash
+WARNING 03-22 19:38:03 vision.py:94] Current `vllm-flash-attn` has a bug inside vision module, so we use xformers backend instead. You can run `pip install flash-attn` to use flash-attention backend.
 ```
 
 ## Ref and Tag
