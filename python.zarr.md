@@ -2,7 +2,7 @@
 id: 7cd9he4w15xq7jbt88b3xp4
 title: Zarr
 desc: ''
-updated: 1742654536357
+updated: 1742665462432
 created: 1739872667023
 ---
 
@@ -62,6 +62,8 @@ print("Chunks shape:", array_custom_chunks.chunks)
 # Array shape: (100, 100)
 # Chunks shape: (20, 10)
 ```
+
+最佳实践，把 chunks 的 shape 选择为训练时，最常用的 (batch_size, data_shape[:])，而不是 (1, data_shape[:])。
 
 ### 持久化
 ```py

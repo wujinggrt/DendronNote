@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1742611785418
+updated: 1742665058528
 created: 1741144146461
 ---
 
@@ -106,7 +106,7 @@ self.dino_head.eval()
 
 分别对头部、腕部和状态提取特征，形状分别为 (batch_size, T * 1369, dim), (batch_size, T * 1369, dim), (batch_size, T, dim)。最后，在第 1 维拼接，即 rearrange([...], "N B C D -> B (N C) D")。得到 (B, T*(num_patches * 2 + 1), feature_dim)。作为 obs_tokens。可以直接送给 TransformerForActionDiffusion。
 
-output_shape() 方法不止返回特征维度，还返回头部、腕部和状态的特征长度，即每部分分别对应的 [1369, 1369, 1]。用于分辨特征中的位置。在 use_attn_mask 时起作用。
+output_shape() 方法不止返回特征维度，还返回头部、腕部和状态的特征长度，即每部分分别对应的 [1369, 1369, 1]。用于分辨特征中的位置。在 use_attn_mask 时起作用。此外，硬编码了特征有 2739 个，即 num_patches * 2 + 1，1 对应的是 timestep。
 
 ## DexGraspVLAController
 
@@ -629,6 +629,14 @@ Cutie 环境创建，Python 3.9 比较合适，3.10+ 版本在 cchardet 会出�
 mask 值为 0，代表遮盖，其他不同值代表各自对应的物体，比如 1 和 2 可以代表留下的两个物体。对于相同场景，只需要传递一次 mask，随后 processor 会记住。在设计时，进程间通信中，第一次的场景传入图像和 SAM2 提取的 mask，processor 重新清空记忆，使用此上下文信息；随后，不再传 mask，仅传递图像，使用 processor 记录的上下文来追踪 mask。
 
 注意，processor 不像 SAM2 直接接受 [0, 255] 的像素值，而是使用归一化后的值。具体使用 torchvision.transforms.functional 的 to_tensor，将 PIL 图像或在 [0, 255] 值域，形状为 (H, W, C) 且 dtype 为 np.uint8 的 np.ndarray 转换为 torch.FloatTensor，形状为 (C, H, W)，值域为 [0.0, 1.0]。
+
+### 制作数据集后
+
+### 修改 action 和 state 维度，适配我们的机械臂
+
+修改 grasp.yaml 的 action 和 state 下的 shape 为 6
+
+重点修改 obs_encoder.py 下的 forward_state() 和 forward() 方法下的注释提示 action 和 state 最后一维是 13。由于修改了 state 和 action 的维度，首先考虑观测中 state 的维度。图像都插值到了 (518,518)，而 state 的网络 self.state_net 第一个线性层的维度是 13，修改为 6。
 
 ## Ref and Tag
 
