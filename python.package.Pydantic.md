@@ -2,7 +2,7 @@
 id: qtr5ed8hxwnpk8zl3u49l1f
 title: Pydantic
 desc: ''
-updated: 1742734026141
+updated: 1742752272545
 created: 1742729166237
 ---
 
@@ -118,6 +118,34 @@ class User(BaseModel):
         regex=r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"  # 正则校验
     )
 ```
+
+### 常用参数
+
+- default: 传入默认值。如果是 `...`，代表无默认值，必须显式提供。 
+- default_factory: 动态生成默认值，比如 `special_tool_names: List[str] = Field(default_factory=lambda: [Terminate().name])`。
+
+数据验证
+- default: 字段的默认值（若字段非必填）。
+- gt / ge: 数值大于（gt）或大于等于（ge）。
+- lt / le: 数值小于（lt）或小于等于（le）。
+- min_length / max_length: 字符串、列表等类型的长度限制。
+- regex: 用正则表达式验证字符串格式。
+- allow_inf_nan: 是否允许 inf 或 nan（默认为 True，浮点型字段适用）。
+
+元数据与文档
+- alias: 字段的别名（用于解析/序列化时映射不同名称，如 JSON 键名）。
+- title: 字段的标题（用于生成文档）。
+- description: 字段的详细描述。
+- example: 在文档中展示的示例值（如 OpenAPI 文档）。
+- deprecated: 标记字段已弃用。
+
+其他
+- const: 强制字段必须等于某个固定值（类似常量）。
+- repr: 是否在模型的 __repr__ 中显示该字段（默认为 True）。
+- exclude: 在导出模型（如 .dict()）时排除此字段。
+
+
+避免在 Field 中定义过于复杂的逻辑，必要时使用 `@validator` 分离校验逻辑。 优先使用 Python 原生语法：比如简单的默认值（如 age: int = 18）无需使用 Field，直接用赋值语法更简洁。
 
 ### 序列化
 
