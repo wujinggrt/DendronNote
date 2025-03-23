@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1742450213612
+updated: 1742750798138
 created: 1738165674608
 ---
 
@@ -120,6 +120,11 @@ https://www.zhihu.com/question/13238901947/answer/111931939432
 https://www.zhihu.com/question/13238901947/answer/112109118245
 > 项目中的奖励函数设计对其他类似任务有重要的实践意义，建议 RL 做其他任务的学习下。如果 reward 判定写得不够严密，模型学习过程容易钻空子，骗取高 reward。K & K 是合成逻辑谜题 (K & K puzzle) 数据集。
 > 参考：https://github.com/Unakar/Logic-RL/blob/main/verl/utils/reward_score/kk.py
+
+Logic-RL: Deepseek R1复现中的七大发现! 用益智谜题强化学习竟能提升数学竞赛水平！ - 涮月亮的谪仙人的文章 - 知乎
+https://zhuanlan.zhihu.com/p/25355823769
+
+Logic-RL 表现不错，值得学习。
 
 LLM RL入门 - Reku的文章 - 知乎
 https://zhuanlan.zhihu.com/p/27172237359
