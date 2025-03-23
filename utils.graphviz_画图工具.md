@@ -2,7 +2,7 @@
 id: zxyj1vsrwis1akafkmhfbs4
 title: Graphviz_画图工具
 desc: ''
-updated: 1742044227777
+updated: 1742718875757
 created: 1740414047659
 ---
 
@@ -244,6 +244,91 @@ digraph G {
     A -> B;
 }
 ```
+
+```graphviz
+digraph structs {
+  node [shape=record, style=filled];
+  key [label="Key", shape=box, fillcolor="#8ec5cc"];
+  string [label="<string0>is string", width=2, fillcolor="#f5c18e"];
+  hashtable [label="{key1|key2}|{value1|value2}", width=2, fillcolor="#9dd69f"]
+  linklist [label="{<list0> C | B | B | A}", width=2, fillcolor="#c4f8f5"]
+  set [label="{C | B | D | A}", width=2, fillcolor="#fac4f5"]
+  sortset [label="{C\n1 | B\n2.6 | D\n500 | A\n500}",width=2, fillcolor="#fac4d5"];
+   
+  key:e -> string:string0 [minlen=2];
+  key:e -> hashtable:w [minlen=2];
+  key:e -> linklist:list0 [minlen=2];
+  key:e -> set:w [minlen=2];
+  key:e -> sortset:w [minlen=2];
+   
+  rankdir = LR;
+   
+}
+```
+
+### Table
+
+箭头可以指向 label 的 TABLE 中的 PORT 元素。比如 a:here -> b:there
+
+```graphviz
+digraph G {
+  rankdir=LR
+  node [shape=plaintext]
+  a [
+     label=<
+        <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+        <TR><TD ROWSPAN="3" BGCOLOR="yellow">class</TD></TR>
+        <TR><TD PORT="here" BGCOLOR="lightblue">qualifier</TD></TR>
+        </TABLE>>
+  ]
+  b [shape=ellipse style=filled
+     label=<
+        <TABLE BGCOLOR="bisque">
+            <TR>
+                <TD COLSPAN="3">elephant</TD> 
+                <TD ROWSPAN="2" BGCOLOR="chartreuse" 
+                    VALIGN="bottom" ALIGN="right">two</TD>
+            </TR>
+            <TR>
+                <TD COLSPAN="2" ROWSPAN="2">
+                <TABLE BGCOLOR="grey">
+                    <TR><TD>corn</TD></TR> 
+                    <TR><TD BGCOLOR="yellow">c</TD></TR> 
+                    <TR><TD>f</TD></TR> 
+                </TABLE>
+                </TD>
+                <TD BGCOLOR="white">penguin</TD> 
+            </TR> 
+            <TR>
+                <TD COLSPAN="2" BORDER="4" ALIGN="right" PORT="there">4</TD>
+            </TR>
+        </TABLE>
+    >
+  ]
+  
+  c [ 
+    label=<展示对齐 long line 1<BR/>line 2<BR ALIGN="LEFT"/>line 3<BR ALIGN="RIGHT"/>>
+  ]
+
+  subgraph { rank=same b c }
+
+  a:here -> b:there [dir=both arrowtail=diamond]
+  c -> b
+  d [shape=triangle]
+
+  d -> c [
+    label=<
+    <TABLE>
+        <TR>
+            <TD BGCOLOR="red" WIDTH="10"> </TD>
+            <TD>Edge labels<BR/>also</TD>
+            <TD BGCOLOR="blue" WIDTH="10"> </TD>
+        </TR>
+    </TABLE>>
+  ]
+}
+```
+
 ### 绘制时序图
 
 ## Ref and Tag
@@ -251,3 +336,5 @@ digraph G {
 [一小时实践入门 Graphviz - Native8418的文章 - 知乎](https://zhuanlan.zhihu.com/p/644358139)
 [让世界多一份 Graphviz 教程！](https://www.bilibili.com/opus/1033642025060139017)
 [milo yip 游戏程序员 road map](https://github.com/miloyip/game-programmer/blob/master/game-programmer.dot)
+
+[Doc](https://graphviz.org/_print/documentation/#epsf)

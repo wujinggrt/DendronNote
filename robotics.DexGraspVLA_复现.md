@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1742665058528
+updated: 1742700867520
 created: 1741144146461
 ---
 
@@ -26,7 +26,7 @@ data 部分，则包含了 action, rgbm, right_cam_img, right_state，类型也�
 
 官网给了 zarr 格式的示例。
 
-meta 数据内容和类型如下：
+meta 数据内容和类型如下，注意，制作数据集时，episode_ends 的格式必须是 np.int64，否则 episode_ends 的元素比如 np.uint64 计算时会得到 np.float64，导致 sampler 制作 slice 时，不能以非 int 类型为切片：
 ```
 key is episode_ends, v is <zarr.core.Array '/meta/episode_ends' (51,) int64 read-only>
 ```
@@ -637,6 +637,65 @@ mask 值为 0，代表遮盖，其他不同值代表各自对应的物体，比�
 修改 grasp.yaml 的 action 和 state 下的 shape 为 6
 
 重点修改 obs_encoder.py 下的 forward_state() 和 forward() 方法下的注释提示 action 和 state 最后一维是 13。由于修改了 state 和 action 的维度，首先考虑观测中 state 的维度。图像都插值到了 (518,518)，而 state 的网络 self.state_net 第一个线性层的维度是 13，修改为 6。
+
+### 加载 dinov2 模型
+
+第一次，从网络下载模型，torch.hub 会下载模型和权重文件到 ~/.cache/torch/hub 目录下，可以看到：
+
+```bash
+❯ ls -al  ~/.cache/torch/hub
+total 16
+drwxrwxr-x 4 wj-24 wj-24 4096 Mar  7 18:50 .
+drwxrwxr-x 4 wj-24 wj-24 4096 Mar  7 18:44 ..
+drwxrwxr-x 2 wj-24 wj-24 4096 Mar 21 18:57 checkpoints
+drwxrwxr-x 7 wj-24 wj-24 4096 Mar  7 18:50 facebookresearch_dinov2_main
+-rw-rw-r-- 1 wj-24 wj-24    0 Mar  7 18:50 trusted_list
+```
+
+checkpoints 则是对应的权重文件：
+
+```bash
+❯ ls -al  ~/.cache/torch/hub/checkpoints
+total 1759384
+drwxrwxr-x 2 wj-24 wj-24       4096 Mar 21 18:57 .
+drwxrwxr-x 4 wj-24 wj-24       4096 Mar  7 18:50 ..
+-rw-rw-r-- 1 wj-24 wj-24  346378731 Mar  9 17:28 dinov2_vitb14_pretrain.pth
+-rw-rw-r-- 1 wj-24 wj-24 1217586395 Mar  9 17:29 dinov2_vitl14_pretrain.pth
+-rw-rw-r-- 1 wj-24 wj-24   88283115 Mar  7 18:55 dinov2_vits14_pretrain.pth
+-rw-rw-r-- 1 wj-24 wj-24   46827520 Mar 21 18:57 resnet18-5c106cde.pth
+-rw-rw-r-- 1 wj-24 wj-24  102502400 Mar 21 18:57 resnet50-19c8e357.pth
+```
+
+facebookresearch_dinov2_main 则是仓库的源代码。
+
+接着，可以指定 grasp.yaml 配置如下，避免每次都要下载模型：
+
+```yaml
+policy:
+  ...
+  obs_encoder:
+    ...
+    model_config:
+      head:
+        model_type: dinov2_vitb14
+        # local weights path, null for online loading
+        local_weights_path: /home/wj-24/.cache/torch/hub/checkpoints/dinov2_vitb14_pretrain.pth
+```
+
+### np.uint64 与任何数计算，都会得到 np.float64，不能作为下标
+
+episode_ends 需要使用类型 np.int64，np.uint64 会解析为 float64
+
+注意大坑，np.ndarray 中，访问数组得到的数字不是原生类型的 int, float 等，而是类似 np.uint64 的类。比如:
+
+```py
+arr1 = np.array([123], dtype=np.uint64)
+end = arr[0] # type is class of np.uint64
+start = 0 # type is native int
+float_difference = end - start # 得到的结果是 np.float64，而非 int
+```
+
+np.uint64 与 int 类型的四则运算，都不会得到 int，只会得到 np.float64。这会有问题，如果计算的结果用于**索引**或是**切片**，则会导致**异常**。
 
 ## Ref and Tag
 

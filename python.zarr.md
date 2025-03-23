@@ -2,7 +2,7 @@
 id: 7cd9he4w15xq7jbt88b3xp4
 title: Zarr
 desc: ''
-updated: 1742665462432
+updated: 1742699057257
 created: 1739872667023
 ---
 
@@ -144,20 +144,29 @@ out_replay_buffer.data 是一个 zarr.Group。随后可以安全使用 out_repla
 
 ### 重命名
 
+最佳实践，使用 group 的 move(self, source: str, dest: str) 方法处理。
+
+```py
+import zarr
+
+# 打开存储
+store = zarr.DirectoryStore("my_dataset.zarr")
+group = zarr.Group(store)
+
+# 将键名从 'my_array' 改为 'new_array'
+group.move('my_array', 'new_array')
+
+# 验证
+print(group.keys())  # 输出 ['new_array']
+```
+
+复杂处理场景，只能选择复制并处理的方案。
+
 ```py
 group["new_name"] = group["old_name"]  # 将数据复制到新键即可，但是有开销
 del group["old_name"]
 ```
 
-替代方案：别名，在 group 中维护一个键名字典。
-
-```py
-group.attrs["alias"] = {"display_name": "old_name"}
-
-# 通过映射访问数组
-real_key = group.attrs["alias"]["display_name"]
-array = group[real_key]
-```
 
 ### 删除
 
