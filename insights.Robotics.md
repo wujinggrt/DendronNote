@@ -2,7 +2,7 @@
 id: eszoks0gixjd0fjyul4wh10
 title: Robotics
 desc: ''
-updated: 1742743616550
+updated: 1742750896345
 created: 1740293600917
 ---
 
@@ -110,6 +110,12 @@ Mask is attention？在场景，使用 mask，高效注意？
 ### DexGraspVLA
 
 mask 作为视觉的注意力关键，通过视觉，通过 mask 找到操作的物体。进一步地，可以看做 VLM 找到 affordance，随后提取 mask 给低级策略，由它操作。DexGraspVLA 看重物体，那么，是否可以改进为关心 affordance，把标边框变为标 affordance 部分。
+
+DexGraspVLA 只有抓取的能力，仅仅训练了抓取。如果，我想要 VLM 规划了握手，挥手，触碰开关，那么需要如何实现？这才是泛化性。挥手时，便没有了视觉重心，不需要 mask。握手则需要。思考解决思路：利用泛化性，VLM 上下文包含挥手定义，可以询问 VLM 什么是挥手和打招呼。随后规划一系列动作。为了能够规划，动作需要更细粒度。参考 DexVLA 等工作，最好将细粒度的动作规划为 1-5s 内。比如，"Close it"，"Grasp it" 等。那么，还是需要使用 latent variable 才能够处理双系统的通信和对齐，这样才有强化学习的可能。
+
+#### 细粒度动作
+
+应当包含哪些？结合平时操作，手臂应当包含靠近、远离、发力（快速地靠近），手指则包含抓、按。
 
 ### 推理能力
 

@@ -2,7 +2,7 @@
 id: hcawzqs5kib9vt4l1gpqclj
 title: OpenManus学习
 desc: ''
-updated: 1742030211205
+updated: 1742724138960
 created: 1741973130080
 ---
 
@@ -62,19 +62,19 @@ Open Manus 项目主要包含以下几个部分：
 
 ### 4.2 `open_Manus` 目录
 
-*  **`agents`:** 定义了各种 Agent，其中最重要的是：
-  *  `MamusAgent`: 继承自 `ToolCallingAgent`，是单 Agent 模式下的主要 Agent。
-  *  `PlanningAgent`: 用于双 Agent 模式，负责任务规划。
-*  **`flows`:** 包含双 Agent 模式 (`run_flow.py`) 的相关逻辑，单 Agent 模式下不使用。
-*  **`prompts`:** 定义了每个 Agent 的提示信息，包括：
-  *  **System Prompt:** 描述 Agent 的角色和职责。
-  *  **Next Step Prompt (User Instruction):** 指示 Agent 下一步要做什么。
-*  **`tools`:** 定义了 Agent 可以使用的各种工具，例如：
-  *  `python_code_executor.py`: 执行 Python 代码。
-  *  `google_search.py`: 进行 Google 搜索。
-  *  `browser.py`: 模拟浏览器操作。
-  *  `file_writer.py`: 保存文件。
-  *  `finish.py`: 终止流程。
+-  **`agents`:** 定义了各种 Agent，其中最重要的是：
+    *  `MamusAgent`: 继承自 `ToolCallingAgent`，是单 Agent 模式下的主要 Agent。
+    *  `PlanningAgent`: 用于双 Agent 模式，负责任务规划。
+-  **`flows`:** 包含双 Agent 模式 (`run_flow.py`) 的相关逻辑，单 Agent 模式下不使用。
+-  **`prompts`:** 定义了每个 Agent 的提示信息，包括：
+    *  **System Prompt:** 描述 Agent 的角色和职责。
+    *  **Next Step Prompt (User Instruction):** 指示 Agent 下一步要做什么。
+-  **`tools`:** 定义了 Agent 可以使用的各种工具，例如：
+   *  `python_code_executor.py`: 执行 Python 代码。
+   *  `google_search.py`: 进行 Google 搜索。
+   *  `browser.py`: 模拟浏览器操作。
+   *  `file_writer.py`: 保存文件。
+   *  `finish.py`: 终止流程。
 
   每个 Agent 可以使用不同的工具组合。Manus Agent 可以使用上述五个工具。
 
@@ -93,90 +93,49 @@ Open Manus 项目主要包含以下几个部分：
 
 ### 5.2 循环执行
 
-
-
 1. **接收用户输入:** 等待用户输入下一条指令。
-
 2. **Agent.Run:** 调用 Agent 的 `run` 方法。
-
-  * `run` 方法内部调用 `step` 方法。
-
+    * `run` 方法内部调用 `step` 方法。
 3. **Step:** 执行单个步骤，包括：
-
-  *  **Think:** 模型思考，决定下一步行动。
-
-    *  获取 Next Step Prompt (用户指令)。
-
-    *  结合 System Prompt。
-
-    *  调用 `client.chat.completions.create` API (底层使用 LLM) 生成思考结果 (Action/Function Call)。
-
-  *  **Act:** 根据思考结果执行相应的工具。
-
-    *  解析思考结果中的 JSON 或 Function Call 信息。
-
-    *  调用相应的工具函数。
-
-    *  将工具执行结果 (Observation) 记录下来。
-
-  *  **更新记忆 (Update Memory):** 将思考结果和工具执行结果添加到 Agent 的历史消息 (History Message) 中。
-
+   *  **Think:** 模型思考，决定下一步行动。
+      *  获取 Next Step Prompt (用户指令)。
+      *  结合 System Prompt。
+      *  调用 `client.chat.completions.create` API (底层使用 LLM) 生成思考结果 (Action/Function Call)。
+   *  **Act:** 根据思考结果执行相应的工具。
+      *  解析思考结果中的 JSON 或 Function Call 信息。
+      *  调用相应的工具函数。
+      *  将工具执行结果 (Observation) 记录下来。
+   *  **更新记忆 (Update Memory):** 将思考结果和工具执行结果添加到 Agent 的历史消息 (History Message) 中。
 4. **判断是否终止:** 如果模型认为任务已完成，则调用 `finish.py` 终止流程。
-
 5. **返回结果:** 将最终结果返回给用户。
-
 6. **循环:** 回到步骤 1，等待下一条指令。
 
 
 
 ### 5.3 `ToolCallingAgent` 与 `ReactAgent`
 
-
-
 *  `ManusAgent` 继承自 `ToolCallingAgent`。
-
 *  `ToolCallingAgent` 实现了 React 模式的具体逻辑。
-
 *  `ReactAgent` 定义了基本的 `run` 和 `step` 方法，实现 Think-Act-Observe 的循环过程。
-
-
 
 ### 5.4 工具执行 (`execute_tool`)
 
-
-
 *  解析 Action/Function Call 中的 JSON 数据。
-
 *  根据解析结果调用相应的工具函数。
-
 *  将工具执行结果作为 Observation 返回。
-
 *  将 Observation 添加到 Agent 的历史消息中。
-
-
 
 ## 六、双 Agent 模式 (`run_flow.py`) 流程简述
 
-
-
 1. **初始化 Planning Agent:** 创建 `PlanningAgent` 对象。
-
 2. **生成 Checklist:** Planning Agent 根据用户输入生成任务清单。
-
 3. **循环执行 Checklist 中的每个任务:**
-
-  *  获取当前步骤 (Step)。
-
-  *  确定执行者 (Executor)，始终为 `ManusAgent`。
-
-  *  `ManusAgent` 执行任务，使用其可用的工具。
-
-  *  `ManusAgent` 将执行结果返回给 `PlanningAgent`。
-
-  *  `PlanningAgent` 更新 Checklist 和状态。
-
+   *  获取当前步骤 (Step)。
+   *  确定执行者 (Executor)，始终为 `ManusAgent`。
+   *  `ManusAgent` 执行任务，使用其可用的工具。
+   *  `ManusAgent` 将执行结果返回给 `PlanningAgent`。
+   *  `PlanningAgent` 更新 Checklist 和状态。
 4. **判断是否终止:** 如果 `ManusAgent` 认为任务完成，则触发终止流程。
-
 5. **返回结果:** `PlanningAgent` 将最终结果返回给用户。
 
 双 Agent 模式需要模型具备较强的规划能力。
@@ -184,6 +143,22 @@ Open Manus 项目主要包含以下几个部分：
 ## 总结
 
 Open Manus 项目提供了一个学习和研究基于 LLM 的 Agent 系统的良好范例。其代码结构清晰，模块化设计良好，易于理解和扩展。通过对 Open Manus 源代码的深入分析，可以掌握 Reactor 模式、Agent 设计、工具调用等关键概念，并了解如何构建一个基于 LLM 的智能 Agent 系统。
+
+### 工作流程
+
+![overview](assets/images/agent.OpenManus学习/overview.png)
+
+项目基于 Agent，是一个工作流的自动化框架，支持复杂任务的规划、执行和验证。系统通过可拓展的工具集和提示模板库，实现灵活的任务处理能力。
+
+Agent 系统如下：
+
+![agents](assets/images/agent.OpenManus学习/agents.png)
+
+### 另一解读
+
+![workflow0](assets/images/agent.OpenManus学习/workflow0.png)
+
+![workflow](assets/images/agent.OpenManus学习/workflow.png)
 
 ## Ref and Tag
 
