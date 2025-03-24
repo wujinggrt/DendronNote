@@ -2,7 +2,7 @@
 id: hcawzqs5kib9vt4l1gpqclj
 title: OpenManus学习
 desc: ''
-updated: 1742842197030
+updated: 1742842227866
 created: 1741973130080
 ---
 
@@ -147,7 +147,7 @@ BaseAgent 定义了 run() 的流程，循环调用 step() 不断执行和更新 
 
 ## BaseAgent
 
-集成了 BaseModel 和 ABC，是抽象的基类。常用成员由：
+集成了 BaseModel 和 ABC，是抽象的基类。常用成员有：
 - name: 需显式提供
 - system_prompt: 系统级别的指令提示
 - next_step_prompt: 提示决定下一步动作
