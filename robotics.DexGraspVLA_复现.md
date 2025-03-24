@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1742700867520
+updated: 1742832960178
 created: 1741144146461
 ---
 
@@ -696,6 +696,18 @@ float_difference = end - start # 得到的结果是 np.float64，而非 int
 ```
 
 np.uint64 与 int 类型的四则运算，都不会得到 int，只会得到 np.float64。这会有问题，如果计算的结果用于**索引**或是**切片**，则会导致**异常**。
+
+## 部署
+
+### pymodbus: 通信工具
+
+Modbus 通信支持以下：
+- 串行通信：RS-232、RS-422 和 RS-485 等串口通信。RS-485 有长距离和高速度的特点，通常是首选。
+- 以太网通信：Modbus TCP 基于 TCP/IP 协议栈的 Modbus 应用协议，采用以太网物理层作为通信媒介，支持点到点或多点到多点通信。
+
+ 
+
+### pyrealsense2: 获取 RGBD
 
 ## Ref and Tag
 

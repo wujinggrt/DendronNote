@@ -2,7 +2,7 @@
 id: qb5cah4vrkew5znsyd9u9ur
 title: 处理配置文件_Omega_hydra_tomllib库
 desc: ''
-updated: 1741972242589
+updated: 1742832264746
 created: 1741869359576
 ---
 
@@ -82,6 +82,13 @@ if __name__ == "__main__":
 
 ```python
 # allows arbitrary python code execution in configs using the ${eval:''} resolver
+# Register now resolver
+def now_resolver(pattern: str):
+    """Handle ${now:} time formatting"""
+    return datetime.now().strftime(pattern)
+
+# Register resolvers
+OmegaConf.register_new_resolver("now", now_resolver, replace=True)
 OmegaConf.register_new_resolver("eval", eval, replace=True)
 
 @hydra.main(

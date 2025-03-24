@@ -2,7 +2,7 @@
 id: hcawzqs5kib9vt4l1gpqclj
 title: OpenManus学习
 desc: ''
-updated: 1742802196022
+updated: 1742836680705
 created: 1741973130080
 ---
 
@@ -150,11 +150,67 @@ Agent 系统的集成结构如下：
 - system_prompt: 系统级别的指令提示
 - next_step_prompt: 提示决定下一步动作
 - llm: LLM，具体参考 tool 目录。常用的是 ask(), ask_with_images() 和 format_messages() 方法
-- memory:
+- memory: 保存询问的 Message
 - state: 状态包含 AgentState 中的 IDLE, RUNNING, FINISHED, ERROR
+- current_step 
+- max_steps 当 current_step 的超过 max_steps 时，跳出循环。
 
-方法：
-- initialize_agent() 主要初始化 self.llm
+initialize_agent() 主要初始化 self.llm。state_context() 切换状态。update_memory() 添加 Message 到 memory。一次仅更新一个角色的 Message。
+
+run() 执行主要的循环。
+
+```py
+    async def run(self, request: Optional[str] = None) -> str:
+        """Execute the agent's main loop asynchronously.
+
+        Args:
+            request: Optional initial user request to process.
+
+        Returns:
+            A string summarizing the execution results.
+
+        Raises:
+            RuntimeError: If the agent is not in IDLE state at start.
+        """
+        if self.state != AgentState.IDLE:
+            raise RuntimeError(f"Cannot run agent from state: {self.state}")
+
+        if request:
+            self.update_memory("user", request)
+
+        results: List[str] = []
+        async with self.state_context(AgentState.RUNNING):
+            while (
+                self.current_step < self.max_steps and self.state != AgentState.FINISHED
+            ):
+                self.current_step += 1
+                logger.info(f"Executing step {self.current_step}/{self.max_steps}")
+                step_result = await self.step()
+
+                # Check for stuck state
+                if self.is_stuck():
+                    self.handle_stuck_state()
+
+                results.append(f"Step {self.current_step}: {step_result}")
+
+            if self.current_step >= self.max_steps:
+                self.current_step = 0
+                self.state = AgentState.IDLE
+                results.append(f"Terminated: Reached max steps ({self.max_steps})")
+        await SANDBOX_CLIENT.cleanup()
+        return "\n".join(results) if results else "No steps executed"
+```
+
+run() 是异步的，首先
+
+```py
+    @abstractmethod
+    async def step(self) -> str:
+        """Execute a single step in the agent's workflow.
+
+        Must be implemented by subclasses to define specific behavior.
+        """
+```
 
 ## ReActAgent: think(), act(), step() 分别会做什么？
 
@@ -213,9 +269,9 @@ stream 默认为 True，streaming 请求
 
 在 app/prompt 目录下的文件，保存了各 agent 对应的提示词。通常包含了两条，分别是 SYSTEM_PROMPT 和 NEXT_STEP_PROMPT，
 
-SYSTEM_PROMPT 系统级别提示词，假定角色和场景提示。
+SYSTEM_PROMPT 是系统级别提示词，规定了角色和场景。
 
-NEXT_STEP_PROMPT 提示下一步动作。
+NEXT_STEP_PROMPT 提示下一步动作，即用户指令。
 
 每个 Agent 都有适合自己的提示词，不论是否继承。
 
