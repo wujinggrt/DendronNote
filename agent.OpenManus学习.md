@@ -2,7 +2,7 @@
 id: hcawzqs5kib9vt4l1gpqclj
 title: OpenManus学习
 desc: ''
-updated: 1742755707480
+updated: 1742802196022
 created: 1741973130080
 ---
 
@@ -178,6 +178,36 @@ class ReActAgent 负责思考，执行。step() 方法会先调用 think()，得
 ```
 
 think() 和 act() 在具体子类中实现，比如 class ToolCallAgent 中，实现了 think() 和 act()。子类 BrowserAgent 和 Manus 都在 think() 上额外增加了一些判断工作
+
+## tool
+
+### llm.LLM
+
+负责与 LLM 或 VLM 交互，可以看做是一个 Client。OpenManus 耦合了 VLM 和 LLM。提供了询问接口，ask(), ask_tool() 和 ask_with_images() 方法。也许可以再分层，设计为 LLMBase，子类为 RawLLM, VLM, ToolLLM。
+
+字段：
+- model: str 标识模型名
+- max_tokens: int
+- max_input_tokens: int | None
+- api_type: str
+- api_key: str
+- base_url: str
+- self.client 在 `__init__` 中使用 self.api_key 和 self.base_url 实例化一个 AsyncOpenAI
+- temperature: float
+
+静态方法
+- format_messages() 格式化为 OpenAI message format。接收参数是是字典，或 class Message 的实例，随后会转化为字典。通常都会传入 Message 的实例，而非字典。
+
+方法
+
+#### ask()
+
+根据传入的 Message，组织格式后，组织传递给 OpenAI 客户端的并获取内容。
+
+stream 默认为 True，streaming 请求
+
+### schema.Message
+
 
 ## 各类 prompt 是如何安排的？
 

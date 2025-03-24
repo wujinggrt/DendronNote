@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1742753655494
+updated: 1742790462302
 created: 1738165674608
 ---
 
@@ -138,6 +138,9 @@ https://zhuanlan.zhihu.com/p/27699656438
 
 【论文解读】Chain Of Draft：LLM 少写多想更高效 - tomsheep的文章 - 知乎
 https://zhuanlan.zhihu.com/p/28074420230
+
+Diffusion Model 和强化学习，稀疏奖励。
+https://arxiv.org/pdf/2503.11240
 
 ### World Model
 
