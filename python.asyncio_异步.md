@@ -2,7 +2,7 @@
 id: blk1s4zbfhd016wg0ppuatd
 title: Asyncio_异步
 desc: ''
-updated: 1742838710969
+updated: 1742838989794
 created: 1742836619998
 ---
 
@@ -162,6 +162,26 @@ asyncio.run(main())
 #     Task C: Compute factorial(4), currently i=4...
 #     Task C: factorial(4) = 24
 #     [2, 6, 24]
+```
+
+### async with 异步上下文管理器
+
+一个类支持上下文管理，需要实现 `__aenter__` 和 `__aexit__` 方法。用于初始化资源和清理资源。
+
+`@asynccontextmanager` 是一个异步上下文的注释神器，在标准库 contextlib 中，将一个异步函数转换为上下文管理器。核心作用是管理异步资源的生命周期，确保资源在使用完毕后能够被正确释放。
+
+```py
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def my_async_context():
+    # 初始化逻辑
+    resource = await initialize_resource()
+    try:
+        yield resource  # 返回资源给调用方
+    finally:
+        # 清理逻辑
+        await cleanup_resource(resource)
 ```
 
 ### Timeout：超时

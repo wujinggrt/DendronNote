@@ -2,7 +2,7 @@
 id: hcawzqs5kib9vt4l1gpqclj
 title: OpenManus学习
 desc: ''
-updated: 1742836680705
+updated: 1742842197030
 created: 1741973130080
 ---
 
@@ -143,6 +143,8 @@ Agent 系统的集成结构如下：
 
 对于单个 agent，即 main.py，只关心了 Manus 的调用。设计的继承关系是 Manus -> BrowserAgent -> ToolCallAgent -> ReActAgent -> BaseAgent。对于 run_flow.py，需要根据 FlowFactory 创建 FlowType 类型对象，再调用其 execute(prompt) 来执行。目前只涉及到 PlanningFlow。
 
+BaseAgent 定义了 run() 的流程，循环调用 step() 不断执行和更新 AgentState 是否为 Finished。ReActAgent 定义了 step()，先 think() 再 act()。ToolCallAgent 实现了具体的 think() 和 act()。后续的子类继承时，通常只会再修改部分内容。
+
 ## BaseAgent
 
 集成了 BaseModel 和 ABC，是抽象的基类。常用成员由：
@@ -150,12 +152,12 @@ Agent 系统的集成结构如下：
 - system_prompt: 系统级别的指令提示
 - next_step_prompt: 提示决定下一步动作
 - llm: LLM，具体参考 tool 目录。常用的是 ask(), ask_with_images() 和 format_messages() 方法
-- memory: 保存询问的 Message
+- memory: List[Message] 保存询问的 Message，提供给子类来询问 LLM。设计为 List，能够保存上下文，有 QA 历史。Message 有不同分类，
 - state: 状态包含 AgentState 中的 IDLE, RUNNING, FINISHED, ERROR
 - current_step 
 - max_steps 当 current_step 的超过 max_steps 时，跳出循环。
 
-initialize_agent() 主要初始化 self.llm。state_context() 切换状态。update_memory() 添加 Message 到 memory。一次仅更新一个角色的 Message。
+initialize_agent() 主要初始化 self.llm。state_context() 是异步上下文管理器，用于切换状态。update_memory() 添加 Message 到 memory。一次仅更新一个角色的 Message。
 
 run() 执行主要的循环。
 
@@ -201,7 +203,9 @@ run() 执行主要的循环。
         return "\n".join(results) if results else "No steps executed"
 ```
 
-run() 是异步的，首先
+run() 是异步的，执行直到状态切换为 FINISHED 或超过最大步数。在 step() 中执行，操作得到最终的状态。具体由 act() 来切换状态。
+
+prompt 是如何组织的？run() 的参数传入了 request，并存入 memory，在后续的过程中，由 think() 和 act() 取出并使用。注意 self.is_stuck()，当循环出现了与最后一条信息相同的重复内容，需要处理困境。
 
 ```py
     @abstractmethod
@@ -214,7 +218,7 @@ run() 是异步的，首先
 
 ## ReActAgent: think(), act(), step() 分别会做什么？
 
-class ReActAgent 负责思考，执行。step() 方法会先调用 think()，得到是否应该执行的判断。如果可以，则执行，并返回执行后的字符串。如果不该执行，返回 "Thinking complete - no action needed"。
+继承了 BaseAgent，负责思考，执行。step() 方法会先调用 think()，得到是否应该执行的判断。如果可以，则执行，并返回执行后的字符串。如果不该执行，返回 "Thinking complete - no action needed"。
 
 ```py
     @abstractmethod
@@ -234,6 +238,38 @@ class ReActAgent 负责思考，执行。step() 方法会先调用 think()，得
 ```
 
 think() 和 act() 在具体子类中实现，比如 class ToolCallAgent 中，实现了 think() 和 act()。子类 BrowserAgent 和 Manus 都在 think() 上额外增加了一些判断工作
+
+## ToolCallAgent(ReActAgent)
+
+此 Agent 用于函数或工具调用，主要关注 think() 和 act()。
+
+### 字段
+
+available_tools: ToolCollection 目前值包含两个工具：CreateChatCompletion(), Terminate()
+
+### think()
+
+处理当前状态，决定下一步使用工具的动作。首先，把 ToolCallAgent.next_step_prompt 添加到 messages。随后向 LLM 询问下一步使用何种工具，即 self.llm.ask_tool()。
+
+对于 system prompt 的设置，都会加载到 self.messages 之前，作为第一条对话的上下文设置。
+
+llm 给与 response 后，解析并保存选择到 self.tool_calls，交给 act() 来执行。
+
+### act()
+
+根据 think() 更新的 self.tool_calls 执行。每次执行后，将执行的结果整理为 Message，并添加到 self.memory，以便下次 LLM 决策。
+
+### execute_tool()
+
+执行后反馈结果到字符串。
+
+## PlanningAgent(ToolCallAgent)
+
+创建和管理规划来解决问题。使用规划工具，管理结构化的规划，记录进度直到完成。
+
+self.system_prompt 修改为自己版本。使用 PLANNING_SYSTEM_PROMPT 和 NEXT_STEP_PROMPT。注意，父类使用 self.system_prompt 和 self.next_step_prompt 时，使用的是最后子类修改的版本，即 PLANNING_SYSTEM_PROMPT 等。
+
+### think()
 
 ## tool
 
@@ -264,6 +300,9 @@ stream 默认为 True，streaming 请求
 
 ### schema.Message
 
+分别为不同角色定制了信息和格式。比如，ROLE_TYPE.ASSISTANT 和 ROLE_TYPE.SYSTEM 等。Message 的组织，直接影响如何询问。角色包含：USER, SYSTEM, ASSISTANT, TOOL。
+
+Message 存储在 BaseAgent.memory.messages 中，向大模型提问时，一并发送。
 
 ## 各类 prompt 是如何安排的？
 
