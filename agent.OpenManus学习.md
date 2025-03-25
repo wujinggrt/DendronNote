@@ -2,7 +2,7 @@
 id: hcawzqs5kib9vt4l1gpqclj
 title: OpenManus学习
 desc: ''
-updated: 1742918329790
+updated: 1742926842156
 created: 1741973130080
 ---
 
@@ -314,7 +314,89 @@ self.active_plan_id 默认初始化 None，
 
 ## tool
 
-### llm.LLM
+### Base
+
+ToolCallAgent 用到的工具等，在这里定义。
+
+BaseTool 是抽象类，主要包含三个字段。方法主要使用 to_param() -> Dict，用于组织 OpenAI 的 API 请求主体的 "tools" 字段：
+
+```py
+class BaseTool(ABC, BaseModel):
+    name: str
+    description: str
+    parameters: Optional[dict] = None
+
+    @abstractmethod
+    async def execute(self, **kwargs) -> Any:
+        """Execute the tool with given parameters."""
+
+    def to_param(self) -> Dict:
+        """Convert tool to function call format."""
+        return {
+            "type": "function",
+            "function": {
+                "name": self.name,
+                "description": self.description,
+                "parameters": self.parameters,
+            },
+        }}
+```
+
+工具调用结果：
+
+```py
+class ToolResult(BaseModel):
+    output: Any = Field(default=None)
+    error: Optional[str] = Field(default=None)
+    base64_image: Optional[str] = Field(default=None)
+    system: Optional[str] = Field(default=None)
+    ...
+
+class CLIResult(ToolResult):
+    """A ToolResult that can be rendered as a CLI output."""
+
+class ToolFailure(ToolResult):
+    """A ToolResult that represents a failure."""
+```
+
+最后两个 CLIResult 和 ToolFailure 用于标识，提高工具调用结果可读性。
+
+### CreateChatCompletion
+
+```py
+class CreateChatCompletion(BaseTool):
+    name: str = "create_chat_completion"
+    description: str = (
+        "Creates a structured completion with specified output formatting."
+    )
+```
+
+### Terminate
+
+```py
+class Terminate(BaseTool):
+    name: str = "terminate"
+    description: str = _TERMINATE_DESCRIPTION
+    parameters: dict = {
+        "type": "object",
+        "properties": {
+            "status": {
+                "type": "string",
+                "description": "The finish status of the interaction.",
+                "enum": ["success", "failure"],
+            }
+        },
+        "required": ["status"],
+    }
+
+    async def execute(self, status: str) -> str:
+        """Finish the current execution"""
+        return f"The interaction has been completed with status: {status}"
+```
+
+标识调用工具链的终止，ToolCallAgent 的。
+
+## llm.LLM
 
 负责与 LLM 或 VLM 交互，可以看做是一个 Client。OpenManus 耦合了 VLM 和 LLM。提供了询问接口，ask(), ask_tool() 和 ask_with_images() 方法。也许可以再分层，设计为 LLMBase，子类为 RawLLM, VLM, ToolLLM。
 
@@ -343,6 +425,15 @@ stream 默认为 True，streaming 请求
 
 ## schema
 
+定义了请求的相关的 schema，就像数据库中，规定表的 schema 一样，用于规定请求语句的 schema。主要包含:
+- Role: 决定请求中的 "role" 字段
+- ToolChoice: 决定 "tools" 字段
+- AgentState: 决定 Agent 状态
+- ToolCall 和 Function: 决定 "tool_calls" 字段内容
+- ToolChoice: 决定 "tool_choice" 字段内容
+- Message: 整合上述所有内容，最后可以调用 to_dict() 获取字典形式的请求信息。子模型也会递归地转化为字典。比如 ToolCall 中的 function 是一个实例，而非字符串，也会由 model_dump() 为字典。比如 {"id": tool_call["id"], ..., "function": {"name": tool_call["function"]["name"], ...}}
+- Memory: 存储多条 Message，提供对话历史。
+
 ### ToolCall
 
 工具选择相关的内容，都在这几个部分：
@@ -369,6 +460,14 @@ class ToolCall(BaseModel):
     id: str
     type: str = "function"
     function: Function
+```
+
+对应 OpenAI 的客户端请求的 tool_call 字段：
+
+```json
+{
+    
+}
 ```
 
 ### Message

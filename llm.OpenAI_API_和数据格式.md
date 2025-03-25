@@ -2,7 +2,7 @@
 id: oojhv04cnkr4q042uc0r9ie
 title: OpenAI_API_和数据格式
 desc: ''
-updated: 1742924047855
+updated: 1742925850808
 created: 1742897914437
 ---
 
@@ -89,13 +89,13 @@ role 和 content 字段必须提供。
 
 role: str 通常是 "assistant"。
 
-content: str 必须提供，提供助手消息的内容。如果在此 assistant message 中，指定 tool_calls 或 function_call 时可以不提供。
+content: str 必须提供，提供助手消息的内容。如果在此 assistant message 中，指定 tool_calls时可以不提供。
 
 name: str 可选。参与对话者的名称。
 
 tool_calls: 可选，类型是数组。使用大模型生成合适的工具调用，例如：函数调用。如果是数组，则每个元素都是 JSON 对象，各自代表函数调用。JSON 字段要有：
 - id：str 必须提供。表示函数调用的id
-- type：str 必须提供，表示工具调用的类型。目前仅支持“function”类型
+- type：str 必须提供，表示工具调用的类型。目前仅支持 "function" 类型
 - function: str 必须提供，表示模型针对工具调用为用户生成的函数说明，即模型在特定任务和场景下，在用户提供的函数中，会推断出应该使用哪一个函数，以及函数的参数应该是什么。所以包括的字段有：
   - name: str 必须提供，要调用的函数的名称
   - arguments: str 必须提供，表示调用函数所用的参数，由模型以 JSON 格式生成(如："{\n\"location\": \"Boston, MA\"\n}")。但是请注意，模型并不总是生成有效的参数，并且可能会产生未由函数定义的参数。在调用函数之前最好验证参数的准确性。
@@ -235,6 +235,35 @@ tool_calls 数组的 JSON 对象包含字段：
 - function: JSON 模型针对工具调用为用户生成的函数说明。在特定任务和场景，根据用户提出函数，推断使用的函数和参数。包含如下字段：
   - name: str 调用的函数名称
   - arguments: str 调用的参数，字符串内容为 JSON 格式。但是注意，并不总是生成有效对象。
+
+## Python 中的接口
+
+
+### ChatCompletionMessage: 响应消息体
+
+```py
+class FunctionCall(BaseModel):
+    arguments: str
+    name: str
+
+class ChatCompletionMessage(BaseModel):
+    content: Optional[str] = None
+    refusal: Optional[str] = None
+    role: Literal["assistant"]
+    audio: Optional[ChatCompletionAudio] = None
+    function_call: Optional[FunctionCall] = None
+    tool_calls: Optional[List[ChatCompletionMessageToolCall]] = None
+```
+
+```py
+class Function(BaseModel):
+    arguments: str
+    name: str
+class ChatCompletionMessageToolCall(BaseModel):
+    id: str
+    function: Function
+    type: Literal["function"]
+```
 
 ## Ref and Tag
 
