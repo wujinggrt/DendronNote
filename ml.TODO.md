@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1742790462302
+updated: 1742897064362
 created: 1738165674608
 ---
 
@@ -141,6 +141,9 @@ https://zhuanlan.zhihu.com/p/28074420230
 
 Diffusion Model 和强化学习，稀疏奖励。
 https://arxiv.org/pdf/2503.11240
+
+复现 DeepSeek-R1 小记 - 周星星的文章 - 知乎
+https://zhuanlan.zhihu.com/p/32485048223
 
 ### World Model
 

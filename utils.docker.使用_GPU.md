@@ -2,7 +2,7 @@
 id: vdmg23j454hslejym14pzwt
 title: 使用_GPU
 desc: ''
-updated: 1742393079827
+updated: 1742873986608
 created: 1742306170823
 ---
 
@@ -90,6 +90,44 @@ docker run -dit \
     --env="NVIDIA_DRIVER_CAPABILITIES=all" \
     nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04 \
     bash
+```
+
+```bash
+docker run -dit \
+    --name="isaaclab_demo" \
+    --privileged \
+    --env DISPLAY=$DISPLAY \
+    --env="QT_X11_NO_MITSHM=1" \
+    --volume="/tmp/.X11-unix:/tmp/.X11-unix" \
+    -v $HOME/.Xauthority:/root/.Xauthority \
+    --runtime=nvidia \
+    --net=host \
+    --env="NVIDIA_VISIBLE_DEVICES=all" \
+    --env="NVIDIA_DRIVER_CAPABILITIES=all" \
+    nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04 \
+    bash
+```
+
+注意配置的卷映射，使用 /tmp.X11-unix 和 $HOME/.Xauthority 在图形化界面比较重要。
+
+`--net=host` 也很重要，让容器使用宿主机的网络栈，而非 Docker 默认创建的虚拟网络。使用场景需为要容器和宿主机网络完全一致的情况。例如，运行 xclock 这类 GUI 应用时，直接使用宿主机的 X11 套接字（DISPLAY=:0）。某些高性能网络应用（如 UDP 广播、多播应用）可能依赖宿主机网络。
+
+默认情况下，Docker 使用 -p 宿主机端口:容器端口 进行端口映射，而 --net=host 让容器直接绑定到宿主机端口。某些特殊网络需求。例如，运行 ping、traceroute 等需要访问宿主机网络设备的命令。
+
+### 服务器的 Docker 使用图形界面
+
+注意，如果 Docker 想用图形界面，需要解决客户端的窗口使用授权问题。使用 `xhost +` 命令，允许所有用户，包括 Docker 访问 X11 显示接口。本地宿主机安装和使用如下：
+
+```bash
+sudo apt-get install x11-xserver-utils
+xhost +
+```
+
+确保你的 X 服务器允许来自容器的连接。`+` 代表允许，`-` 代表禁止。
+```bash
+xhost +local:root # 允许所有连接
+# 或者，对于特定用户，指定：
+xhost +si:localuser:your_username
 ```
 
 ## 安装工具

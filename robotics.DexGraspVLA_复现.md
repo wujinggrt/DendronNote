@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1742832960178
+updated: 1742888724648
 created: 1741144146461
 ---
 
@@ -52,6 +52,8 @@ sample_sequence() 方法最终返回字典，每个 key 对应的 value 为 shap
 在 replay_buffer 中取出的数，都是由 zarr.Array 转为了 np.Array。
 
 ### 归一化图像和插值到 518x518
+
+保存在 zarr 文件中的格式为 (num_steps, H, W, 4)，在 Dataset 中，会转换为重新组织为 (num_steps, 4, H, W)
 
 相机分辨原来是 (640, 480)，处理 rgbm 时，在 _process_mask_image_batch() 方法中，将图像的 channel 轴转置到第二维，得到形状 (T, 3, H, W)。接下来将 rgb 图像除以 255.0，归一化到 [0.0, 1.0]。紧接着，使用 torch.nn.functional.interpolate() 插值，把图像 resize 到 (518,518)。
 
@@ -387,9 +389,11 @@ else:
 
 VLM 返回要包含 true 或 false，否则报错。
 
-## 适配到 UMI 的数据
+## 数据集
 
-首先，改造 Dataset 和 ObsEncoder。具体数据格式，可以参考 UMI 的配置文件。
+首选构造与样例类似的 dataset，可以修改自由度和图像分辨率。但是关键的 key，比如 rgbm, right_cam_img, right_state 和 action 要保持不变。
+
+示教模式中，采集到的数据，只有关节角的状态。可以通过把下一步的关节角作为 action。于是，可以丢弃 episode 中的最后一个时间步。
 
 ### UmiDataset
 
@@ -698,6 +702,31 @@ float_difference = end - start # 得到的结果是 np.float64，而非 int
 np.uint64 与 int 类型的四则运算，都不会得到 int，只会得到 np.float64。这会有问题，如果计算的结果用于**索引**或是**切片**，则会导致**异常**。
 
 ## 部署
+
+### ObsEncoder
+
+forward() 接收形状为：
+
+```py
+    def forward(self, obs_dict, training=True):
+        """
+        Input:
+        obs_dict = {
+            'rgbm': (B,T,4,H,W),      # Head camera RGBM image
+            'right_cam_img': (B,T,3,H,W), # Wrist camera RGB image
+            'right_state': (B,T,13)    # Robot arm state
+        }
+        Output:
+        embeddings: (B,T*(num_patches*2+1),feature_dim) # Concatenate all features along sequence length dimension
+                                                       # head and wrist each output T*num_patches features
+                                                       # state outputs T features
+        """
+        ...
+```
+
+T 是观察的 n_obs_steps，B 是 DataLoader 组织为的 batchsize。所以测试和部署时，要组织为如此的数据格式。从 (num_steps, H, W, 4) 中取出一张图片是，即 (H, W, 4) 形状时，要组织为 (1, 1, 4, H, W)。
+
+
 
 ### pymodbus: 通信工具
 

@@ -2,7 +2,7 @@
 id: hcawzqs5kib9vt4l1gpqclj
 title: OpenManus学习
 desc: ''
-updated: 1742842227866
+updated: 1742898979624
 created: 1741973130080
 ---
 
@@ -145,7 +145,9 @@ Agent 系统的集成结构如下：
 
 BaseAgent 定义了 run() 的流程，循环调用 step() 不断执行和更新 AgentState 是否为 Finished。ReActAgent 定义了 step()，先 think() 再 act()。ToolCallAgent 实现了具体的 think() 和 act()。后续的子类继承时，通常只会再修改部分内容。
 
-## BaseAgent
+## agent
+
+### BaseAgent
 
 集成了 BaseModel 和 ABC，是抽象的基类。常用成员有：
 - name: 需显式提供
@@ -216,7 +218,7 @@ prompt 是如何组织的？run() 的参数传入了 request，并存入 memory�
         """
 ```
 
-## ReActAgent: think(), act(), step() 分别会做什么？
+### ReActAgent: think(), act(), step() 分别会做什么？
 
 继承了 BaseAgent，负责思考，执行。step() 方法会先调用 think()，得到是否应该执行的判断。如果可以，则执行，并返回执行后的字符串。如果不该执行，返回 "Thinking complete - no action needed"。
 
@@ -239,15 +241,15 @@ prompt 是如何组织的？run() 的参数传入了 request，并存入 memory�
 
 think() 和 act() 在具体子类中实现，比如 class ToolCallAgent 中，实现了 think() 和 act()。子类 BrowserAgent 和 Manus 都在 think() 上额外增加了一些判断工作
 
-## ToolCallAgent(ReActAgent)
+### ToolCallAgent(ReActAgent)
 
 此 Agent 用于函数或工具调用，主要关注 think() 和 act()。
 
-### 字段
+#### 字段
 
 available_tools: ToolCollection 目前值包含两个工具：CreateChatCompletion(), Terminate()
 
-### think()
+#### think()
 
 处理当前状态，决定下一步使用工具的动作。首先，把 ToolCallAgent.next_step_prompt 添加到 messages。随后向 LLM 询问下一步使用何种工具，即 self.llm.ask_tool()。
 
@@ -255,21 +257,62 @@ available_tools: ToolCollection 目前值包含两个工具：CreateChatCompleti
 
 llm 给与 response 后，解析并保存选择到 self.tool_calls，交给 act() 来执行。
 
-### act()
+#### act()
 
 根据 think() 更新的 self.tool_calls 执行。每次执行后，将执行的结果整理为 Message，并添加到 self.memory，以便下次 LLM 决策。
 
-### execute_tool()
+#### execute_tool()
 
 执行后反馈结果到字符串。
 
-## PlanningAgent(ToolCallAgent)
+### PlanningAgent(ToolCallAgent)
 
 创建和管理规划来解决问题。使用规划工具，管理结构化的规划，记录进度直到完成。
 
-self.system_prompt 修改为自己版本。使用 PLANNING_SYSTEM_PROMPT 和 NEXT_STEP_PROMPT。注意，父类使用 self.system_prompt 和 self.next_step_prompt 时，使用的是最后子类修改的版本，即 PLANNING_SYSTEM_PROMPT 等。
+self.system_prompt 修改为自己版本。使用 PLANNING_SYSTEM_PROMPT 和 NEXT_STEP_PROMPT。注意，子类能修改父类同名的字段，比如父类 ToolCallAgent 使用 self.system_prompt 和 self.next_step_prompt 时，子类 PlanningAgent 也修改了，最后使用子类修改的版本，即 PLANNING_SYSTEM_PROMPT 等。
 
-### think()
+self.tool_calls: List[ToolCall] 
+
+#### think()
+
+整合当前状态和 next_step_prompt 到 prompt，存入 self.messages。调用上级思考，即 super().think() 来获取 result。
+
+```py
+    async def think(self) -> bool:
+        """Decide the next action based on plan status."""
+        prompt = (
+            f"CURRENT PLAN STATUS:\n{await self.get_plan()}\n\n{self.next_step_prompt}"
+            if self.active_plan_id
+            else self.next_step_prompt
+        )
+        self.messages.append(Message.user_message(prompt))
+
+        # Get the current step index before thinking
+        self.current_step_index = await self._get_current_step_index()
+
+        result = await super().think()
+
+        # After thinking, if we decided to execute a tool and it's not a planning tool or special tool,
+        # associate it with the current step for tracking
+        if result and self.tool_calls:
+            latest_tool_call = self.tool_calls[0]  # Get the most recent tool call
+            if (
+                latest_tool_call.function.name != "planning"
+                and latest_tool_call.function.name not in self.special_tool_names
+                and self.current_step_index is not None
+            ):
+                self.step_execution_tracker[latest_tool_call.id] = {
+                    "step_index": self.current_step_index,
+                    "tool_name": latest_tool_call.function.name,
+                    "status": "pending",  # Will be updated after execution
+                }
+
+        return result
+```
+
+self.active_plan_id 默认初始化 None，
+
+
 
 ## tool
 
@@ -298,9 +341,43 @@ self.system_prompt 修改为自己版本。使用 PLANNING_SYSTEM_PROMPT 和 NEX
 
 stream 默认为 True，streaming 请求
 
-### schema.Message
+#### format_messages(): 静态方法
 
-分别为不同角色定制了信息和格式。比如，ROLE_TYPE.ASSISTANT 和 ROLE_TYPE.SYSTEM 等。Message 的组织，直接影响如何询问。角色包含：USER, SYSTEM, ASSISTANT, TOOL。
+
+
+## schema
+
+### ToolCall
+
+工具选择相关的内容，都在这几个部分：
+
+```py
+class ToolChoice(str, Enum):
+    """Tool choice options"""
+
+    NONE = "none"
+    AUTO = "auto"
+    REQUIRED = "required"
+
+TOOL_CHOICE_VALUES = tuple(choice.value for choice in ToolChoice)
+TOOL_CHOICE_TYPE = Literal[TOOL_CHOICE_VALUES]  # type: ignore，用于 typehint，要求必须是 ToolChoice.AUTO 等
+
+class Function(BaseModel):
+    name: str
+    arguments: str
+
+
+class ToolCall(BaseModel):
+    """Represents a tool/function call in a message"""
+
+    id: str
+    type: str = "function"
+    function: Function
+```
+
+### Message
+
+为不同角色定制了信息和格式。比如，ROLE_TYPE.ASSISTANT 和 ROLE_TYPE.SYSTEM 等。Message 的组织，直接影响如何询问。角色包含：USER, SYSTEM, ASSISTANT, TOOL。设计不同的角色，方便制作格式化的信息，向 VLM 或 LLM 询问。
 
 Message 存储在 BaseAgent.memory.messages 中，向大模型提问时，一并发送。
 
@@ -313,6 +390,8 @@ SYSTEM_PROMPT 是系统级别提示词，规定了角色和场景。
 NEXT_STEP_PROMPT 提示下一步动作，即用户指令。
 
 每个 Agent 都有适合自己的提示词，不论是否继承。
+
+大模型请求的 messages 中的 array 数组元素由 Message 组成。
 
 ## 用户接入层
 
