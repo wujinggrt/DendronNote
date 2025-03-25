@@ -2,7 +2,7 @@
 id: hcawzqs5kib9vt4l1gpqclj
 title: OpenManus学习
 desc: ''
-updated: 1742898979624
+updated: 1742918329790
 created: 1741973130080
 ---
 
@@ -312,8 +312,6 @@ self.tool_calls: List[ToolCall]
 
 self.active_plan_id 默认初始化 None，
 
-
-
 ## tool
 
 ### llm.LLM
@@ -323,7 +321,7 @@ self.active_plan_id 默认初始化 None，
 字段：
 - model: str 标识模型名
 - max_tokens: int
-- max_input_tokens: int | None
+- max_input_tokens: int | None，指定上下文长度。
 - api_type: str
 - api_key: str
 - base_url: str
@@ -342,8 +340,6 @@ self.active_plan_id 默认初始化 None，
 stream 默认为 True，streaming 请求
 
 #### format_messages(): 静态方法
-
-
 
 ## schema
 

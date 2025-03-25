@@ -2,7 +2,7 @@
 id: pxx5142wg1zx96shb8f0wzu
 title: Oop设计
 desc: ''
-updated: 1742834340803
+updated: 1742919889402
 created: 1742834169901
 ---
 
@@ -30,6 +30,44 @@ print(singleton1 is singleton2)  # 输出: True，证明两个变量指向同一
 
 _instance 存储了类 Singleton 的唯一实例。无论创建多少个 Singleton 的实例，返回的都将是同一个对象‌。
 
+## typehint
 
+参数优先使用 typing 的 Optional, List, Literal，除了字典，依然用 dict，但是不指定具体类型。
+
+返回类型不用使用 Optional，比如 str | None 即可。
+
+比如：
+
+```py
+    async def ask_tool(
+        self,
+        messages: List[Union[dict, Message]],
+        system_msgs: Optional[List[Union[dict, Message]]] = None,
+        timeout: int = 300,
+        tools: Optional[List[dict]] = None,
+        tool_choice: TOOL_CHOICE_TYPE = ToolChoice.AUTO,  # type: ignore
+        temperature: Optional[float] = None,
+        **kwargs,
+    ) -> ChatCompletionMessage | None:
+    ...
+```
+
+## 多个返回值时，并且可能为 None 时，优先用字典
+
+比如：
+
+```py
+def process(...) -> tuple[np.ndarray, str] | tuple[None, None]:
+    ...
+    if ...:
+        return None, None
+res1, res2 = process(...)
+```
+
+返回 None, None 的形式看起来比较奇怪。但是为了保证外部处理的代码的形式有 res1, res2，需要写成 tuple[None, None]。
+
+应该封装返回值为一个 class XXResult 
+
+## 
 
 ## Ref and Tag
