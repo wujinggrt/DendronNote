@@ -2,7 +2,7 @@
 id: qtr5ed8hxwnpk8zl3u49l1f
 title: Pydantic
 desc: ''
-updated: 1742752272545
+updated: 1742958946927
 created: 1742729166237
 ---
 
@@ -72,6 +72,8 @@ except ValidationError as e:
     ]
     """
 ```
+
+注意，model_dump() 也会连父类的字段一并添加到字典。
 
 ### 使用类型提示限制输入数据
 

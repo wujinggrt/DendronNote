@@ -2,7 +2,7 @@
 id: eszoks0gixjd0fjyul4wh10
 title: Robotics
 desc: ''
-updated: 1742753721386
+updated: 1742971522030
 created: 1740293600917
 ---
 
@@ -138,5 +138,11 @@ RL 不会带来新知识，所以有些内容，还是要先通过其他方式�
 如何操作，关键还在于定位 affordance，这需要思考，需要 VLM 完成，可能用视觉推理模型来做。
 
 双系统还是很有必要。解耦是需要必要的。思考的部分在于分析和规划，思考来源于分析和预测一系列短命令执行后，是否能够完成任务，从而规划。底层策略则是“肌肉记忆”，比如靠近，还有跟踪物体（属于感知部分），快速执行。思考和执行是异步的。
+
+## Agent 设计
+
+细粒度的 Agent 设计：如果机器人需要完成一个动作，比如抓取，可以设计为 GraspAgent。如果是挥手和递东西，那么是 PassAgent。这样，再设计一个调度的 PlanningAgent 来 dispatch 任务。
+
+粗粒度的 Agent 设计：只有一个 RobotAgent，首先继承自 PlanningAgent，把动作规划为技能调用，即 ToolCalls，向 VLM 进行 ask。比如，清理桌面，清理一半，拿起一个物体时，告诉它那不是垃圾，你得放下。
 
 ## Ref and Tag

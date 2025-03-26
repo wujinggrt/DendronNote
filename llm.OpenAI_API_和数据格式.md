@@ -2,7 +2,7 @@
 id: oojhv04cnkr4q042uc0r9ie
 title: OpenAI_API_和数据格式
 desc: ''
-updated: 1742925850808
+updated: 1742980211643
 created: 1742897914437
 ---
 
@@ -73,7 +73,7 @@ response 如下：
 
 #### user message
 
-用户请求信息，必须包含以下字段 role 和 content。
+用户请求信息，必须包含以下字段 role 和 content。即使是申请规划工具的使用，即函数调用，通常还是用 "user" 的角色。使用 user message。tool message 较少使用。
 
 role 必选，在 user message 中应该为 "user"。
 
@@ -85,7 +85,7 @@ content: 必须提供 string 或 array 类型，二选一
 
 #### assistant message
 
-role 和 content 字段必须提供。
+role 和 content 字段必须提供。通常用于附加在对话历史中。比如，上一次用了 user message，返回响应 body 中有 tool_calls 等内容，便可以将其组织为 assistant message，下次询问时，作为对话历史来提供信息。
 
 role: str 通常是 "assistant"。
 
@@ -238,6 +238,29 @@ tool_calls 数组的 JSON 对象包含字段：
 
 ## Python 中的接口
 
+OpenAI.chat.completions.create() 返回 ChatCompletion 实例。
+
+### ChatCompletion
+
+```py
+class Choice(BaseModel):
+    finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"]
+    index: int
+    logprobs: Optional[ChoiceLogprobs] = None
+    message: ChatCompletionMessage
+
+class ChatCompletion(BaseModel):
+    id: str
+    choices: List[Choice]
+    created: int
+    model: str
+    object: Literal["chat.completion"]
+    service_tier: Optional[Literal["scale", "default"]] = None
+    system_fingerprint: Optional[str] = None
+    usage: Optional[CompletionUsage] = None
+```
+
+一般从 ChatCompletion.choices[0].message 获取对话结果。由于 ChatCompletionMessage 也继承了 Pydantic 的 BaseModel，可以使用 model_dump() 方法来获取其字典格式。
 
 ### ChatCompletionMessage: 响应消息体
 

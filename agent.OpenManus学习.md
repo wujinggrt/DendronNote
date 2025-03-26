@@ -2,7 +2,7 @@
 id: hcawzqs5kib9vt4l1gpqclj
 title: OpenManus学习
 desc: ''
-updated: 1742926842156
+updated: 1743002461908
 created: 1741973130080
 ---
 
@@ -249,17 +249,113 @@ think() 和 act() 在具体子类中实现，比如 class ToolCallAgent 中，�
 
 available_tools: ToolCollection 目前值包含两个工具：CreateChatCompletion(), Terminate()
 
+special_tool_names: List[str] 包含 Terminate().name，标识交互结束，打印状态。
+
 #### think()
 
-处理当前状态，决定下一步使用工具的动作。首先，把 ToolCallAgent.next_step_prompt 添加到 messages。随后向 LLM 询问下一步使用何种工具，即 self.llm.ask_tool()。
+处理当前状态，决定下一步使用工具的动作。
+
+首先，把 self.next_step_prompt 添加到 self.messages。注意，子类可能会覆盖 next_step_prompt。随后向 LLM 询问下一步使用何种工具，即 self.llm.ask_tool()。组织 self.next_step_prompt 为 user message。如果 ask_tool() 出现异常，添加信息到 assistant message，下次请求 LLM 可以提供作为背景。
 
 对于 system prompt 的设置，都会加载到 self.messages 之前，作为第一条对话的上下文设置。
 
-llm 给与 response 后，解析并保存选择到 self.tool_calls，交给 act() 来执行。
+tools 参数中，根据 self.available_tools.to_params() 构造仅包含字符串的 dict，用于作为请求中的 "tools" 对应的数组。即 `"tools": [{...}...]` 部分。
+
+```py
+    async def think(self) -> bool:
+        """Process current state and decide next actions using tools"""
+        if self.next_step_prompt:
+            user_msg = Message.user_message(self.next_step_prompt)
+            self.messages += [user_msg]
+
+        try:
+            # Get response with tool options
+            response = await self.llm.ask_tool(
+                messages=self.messages,
+                system_msgs=(
+                    [Message.system_message(self.system_prompt)]
+                    if self.system_prompt
+                    else None
+                ),
+                tools=self.available_tools.to_params(),
+                tool_choice=self.tool_choices,
+            )
+            ...
+```
+
+response 为 ChatCompletionMessage 类型，tool_calls 的每个对象是 ChatCompletionMessageToolCall，参考 ToolCall 和 Function。
+
+```py
+    async def think(self) -> bool:
+        ...
+        self.tool_calls = tool_calls = (
+            response.tool_calls if response and response.tool_calls else []
+        )
+        content = response.content if response and response.content else ""
+        ...
+        try:
+            ...
+            # Handle different tool_choices modes
+            if self.tool_choices == ToolChoice.NONE:
+                if tool_calls: # 如果有工具
+                    logger.warning(
+                        f"🤔 Hmm, {self.name} tried to use tools when they weren't available!"
+                    )
+                if content:
+                    self.memory.add_message(Message.assistant_message(content))
+                    return True
+                return False
+
+            # Create and add assistant message
+            assistant_msg = (
+                Message.from_tool_calls(content=content, tool_calls=self.tool_calls)
+                if self.tool_calls
+                else Message.assistant_message(content)
+            )
+            self.memory.add_message(assistant_msg)
+
+            if self.tool_choices == ToolChoice.REQUIRED and not self.tool_calls:
+                return True  # Will be handled in act()
+
+            # For 'auto' mode, continue with content if no commands but content exists
+            if self.tool_choices == ToolChoice.AUTO and not self.tool_calls:
+                return bool(content)
+
+            return bool(self.tool_calls)
+            ...
+```
+
+llm 给与 response 后，解析并保存选择到 self.tool_calls，还有 content。根据 self.tool_choices，影响如下：
+- ToolChoice.None 不需要调用工具。如果有 content 的回复，组织为 Message 并保存到 self.memory 中，作为 assistant_message，并返回 True。无 content 返回 False。
+- 如果 self.tool_calls 中有需要调用的函数，则作为 assistant message 保存到 self.memory 中。tool_calls 保存到 message.tool_calls 字段。如果 self.tool_choices 为 ToolChoice.Required 且 self.tool_calls 有工具可以调用，返回 True。如果 AUTO，根据 content 是否存在内容，返回 True or False。如果以上情况都没有考虑到，则查看 bool(self.tool_calls)。
+
+比如，传入可以调用的工具有 CreateChatCompletion(), Terminate()，并且都序列化为了 dict。大模型能够知道调用这两个。以 CreateChatCompletion() 为例，to_param() 方法调用后，得到：
+
+```json
+{
+    "type": "function",
+    "function": {
+        "name": "create_chat_completion",
+        "description": "Creates a structured completion with specified output formatting.",
+        "parameters": {
+                "type": "object",
+                "properties": {
+                    "response": {
+                        "type": "string",
+                        "description": "The response text that should be delivered to the user.",
+                    },
+                },
+                "required": ["response"],
+            },
+    },
+}
+```
 
 #### act()
 
-根据 think() 更新的 self.tool_calls 执行。每次执行后，将执行的结果整理为 Message，并添加到 self.memory，以便下次 LLM 决策。
+根据 think() 更新的 self.tool_calls。
+
+每次执行后，将执行的结果整理为 Message，并添加到 self.memory，以便下次 LLM 决策。
 
 #### execute_tool()
 
@@ -314,11 +410,12 @@ self.active_plan_id 默认初始化 None，
 
 ## tool
 
+
 ### Base
 
 ToolCallAgent 用到的工具等，在这里定义。
 
-BaseTool 是抽象类，主要包含三个字段。方法主要使用 to_param() -> Dict，用于组织 OpenAI 的 API 请求主体的 "tools" 字段：
+BaseTool 是抽象类，主要包含三个字段。方法主要使用 to_param() -> Dict，用于组织 OpenAI 的 API 请求主体的 "tools" 字段。description 要尽可能详细，提供给 LLM，方便规划调用的内容。
 
 ```py
 class BaseTool(ABC, BaseModel):
@@ -361,7 +458,67 @@ class ToolFailure(ToolResult):
 
 最后两个 CLIResult 和 ToolFailure 用于标识，提高工具调用结果可读性。
 
+### ToolCoolection
+
+提供工具的容器，通常放到 Agent 的字段中。
+
+```py
+class ToolCollection:
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def __init__(self, *tools: BaseTool):
+        self.tools = tools
+        self.tool_map = {tool.name: tool for tool in tools}
+
+    def __iter__(self):
+        return iter(self.tools)
+
+    def to_params(self) -> List[Dict[str, Any]]:
+        return [tool.to_param() for tool in self.tools]
+
+    async def execute(
+        self, *, name: str, tool_input: Dict[str, Any] = None
+    ) -> ToolResult:
+        tool = self.tool_map.get(name)
+        if not tool:
+            return ToolFailure(error=f"Tool {name} is invalid")
+        try:
+            result = await tool(**tool_input)
+            return result
+        except ToolError as e:
+            return ToolFailure(error=e.message)
+
+    async def execute_all(self) -> List[ToolResult]:
+        """Execute all tools in the collection sequentially."""
+        results = []
+        for tool in self.tools:
+            try:
+                result = await tool()
+                results.append(result)
+            except ToolError as e:
+                results.append(ToolFailure(error=e.message))
+        return results
+
+    def get_tool(self, name: str) -> BaseTool:
+        return self.tool_map.get(name)
+
+    def add_tool(self, tool: BaseTool):
+        self.tools += (tool,)
+        self.tool_map[tool.name] = tool
+        return self
+
+    def add_tools(self, *tools: BaseTool):
+        for tool in tools:
+            self.add_tool(tool)
+        return self
+```
+
+
 ### CreateChatCompletion
+
+根据 LLM 输出，创建结构化的 completion。
 
 ```py
 class CreateChatCompletion(BaseTool):
@@ -369,7 +526,78 @@ class CreateChatCompletion(BaseTool):
     description: str = (
         "Creates a structured completion with specified output formatting."
     )
+    # Type mapping for JSON schema
+    type_mapping: dict = {
+        str: "string",
+        int: "integer",
+        float: "number",
+        bool: "boolean",
+        dict: "object",
+        list: "array",
+    }
+    response_type: Optional[Type] = None
+    required: List[str] = Field(default_factory=lambda: ["response"])
+
+    def __init__(self, response_type: Optional[Type] = str):
+        super().__init__()
+        self.response_type = response_type
+        self.parameters = self._build_parameters()
 ```
+
+type_mappping 根据 Python 的基础类型，映射到 JSON 的类型。类型也可以作为函数或方法的参数传入。self.response_type 默认为 str。而 self._build_parameters() 根据 self.response_type 构建 dict。得到：
+
+```py
+{
+    "type": "object",
+    "properties": {
+        "response": {
+            "type": "string",
+            "description": "The response text that should be delivered to the user.",
+        },
+    },
+    "required": self.required,
+}
+```
+
+execute() 方法则执行 chat completion。从 required 列表中的 key，选取到后面 kwargs 对应的值。比如 `ccc.execute(["key1"], key1="Value1")`。如果没有指定，则从 "response" 中选取 "response" 不分，若不存在则用空字符串返回。最后，将回答阻值为 self.response_type 的类型。
+
+```py
+    async def execute(self, required: list | None = None, **kwargs) -> Any:
+        # 等价于 required = required if required is not None else self.required
+        required = required or self.required
+
+        if isinstance(required, list) and len(required) > 0:
+            if len(required) == 1:
+                required_field = required[0]
+                result = kwargs.get(required_field, "")
+            else:
+                # Return multiple fields as a dictionary
+                return {field: kwargs.get(field, "") for field in required}
+        else:
+            required_field = "response"
+            result = kwargs.get(required_field, "")
+
+        # Type conversion logic
+        if self.response_type == str:
+            return result
+
+        if isinstance(self.response_type, type) and issubclass(
+            self.response_type, BaseModel
+        ):
+            return self.response_type(**kwargs)
+
+        if get_origin(self.response_type) in (list, dict):
+            return result  # Assuming result is already in correct format
+
+        try:
+            return self.response_type(result)
+        except (ValueError, TypeError):
+            return result
+```
+
+### Terminal
+
+请求 CLI 命令到系统。
 
 ### Terminate
 
@@ -394,7 +622,7 @@ class Terminate(BaseTool):
         return f"The interaction has been completed with status: {status}"
 ```
 
-标识调用工具链的终止，ToolCallAgent 的。
+标识调用工具链的终止，ToolCallAgent 的。执行 execute() 后，得到交互完成和结束的 status。
 
 ## llm.LLM
 
@@ -466,7 +694,29 @@ class ToolCall(BaseModel):
 
 ```json
 {
-    
+    "tools": [
+        {
+            "type": "function",
+            "function": {
+                "name": "get_current_weather",
+                "description": "Get the current weather in a given location",
+                "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {
+                    "type": "string",
+                    "description": "The city and state, e.g. San Francisco, CA"
+                    },
+                    "unit": {
+                    "type": "string",
+                    "enum": ["celsius", "fahrenheit"]
+                    }
+                },
+                "required": ["location"]
+                }
+            }
+        }
+    ]
 }
 ```
 
