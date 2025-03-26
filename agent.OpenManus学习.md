@@ -2,7 +2,7 @@
 id: hcawzqs5kib9vt4l1gpqclj
 title: OpenManus学习
 desc: ''
-updated: 1743002461908
+updated: 1743010797715
 created: 1741973130080
 ---
 
@@ -353,11 +353,52 @@ llm 给与 response 后，解析并保存选择到 self.tool_calls，还有 cont
 
 #### act()
 
-根据 think() 更新的 self.tool_calls。
+根据 think() 更新的 self.tool_calls。如果 self.tool_calls 没有内容，并且要求 self.tool_choices == ToolChoice.REQUIRED，则抛出异常。否则返回 self.messages[-1].content 或 "No content or commends to execute".
 
-每次执行后，将执行的结果整理为 Message，并添加到 self.memory，以便下次 LLM 决策。
+紧接着，遍历 self.tool_calls，调用 self.execute_tool(command) 来执行 tool_call。返回得到的 result，并且以 tool message 存储到 memory，提供上下文。
+
+最后，使用两个换行符拼接每个 result，作为 act() 方法的返回。
 
 #### execute_tool()
+
+接受参数是 ToolCall，与 openai 返回的 ChatCompletionMessageToolCall 一样。方法首先判断有效，是否出现 None 等。
+
+由于参数 command.function.arguments 是字符串类型，但是保存的是 JSON 对象。所以使用 json.loads()，得到字典格式。随后调用 self.available_tools.execute()，传入的参数是函数名和 dict 形式的参数。根据 name，函数名获取工具，比如 CreateChatCompletion()。随后会调用它的 execute() 方法来完成，接收参数为 args，即 tool_input=args。
+
+```py
+    async def execute_tool(self, command: ToolCall) -> str:
+        ...
+        try:
+            # Parse arguments
+            args = json.loads(command.function.arguments or "{}")
+            result = await self.available_tools.execute(name=name, tool_input=args)
+            # Handle special tools
+            await self._handle_special_tool(name=name, result=result)
+            # Check if result is a ToolResult with base64_image
+            if hasattr(result, "base64_image") and result.base64_image:
+                # Store the base64_image for later use in tool_message
+                self._current_base64_image = result.base64_image
+
+                # Format result for display
+                observation = (
+                    f"Observed output of cmd `{name}` executed:\n{str(result)}"
+                    if result
+                    else f"Cmd `{name}` completed with no output"
+                )
+                return observation
+
+            # Format result for display (standard case)
+            observation = (
+                f"Observed output of cmd `{name}` executed:\n{str(result)}"
+                if result
+                else f"Cmd `{name}` completed with no output"
+            )
+
+            return observation
+        ...
+```
+
+遇到特殊工具，比如 Terminate()，则更新 AgentState.FINISHED。
 
 执行后反馈结果到字符串。
 
@@ -365,9 +406,11 @@ llm 给与 response 后，解析并保存选择到 self.tool_calls，还有 cont
 
 创建和管理规划来解决问题。使用规划工具，管理结构化的规划，记录进度直到完成。
 
+### 字段
+
 self.system_prompt 修改为自己版本。使用 PLANNING_SYSTEM_PROMPT 和 NEXT_STEP_PROMPT。注意，子类能修改父类同名的字段，比如父类 ToolCallAgent 使用 self.system_prompt 和 self.next_step_prompt 时，子类 PlanningAgent 也修改了，最后使用子类修改的版本，即 PLANNING_SYSTEM_PROMPT 等。
 
-self.tool_calls: List[ToolCall] 
+self.tool_calls: List[ToolCall] 与父类 ToolCallAgent 不同，包含了 PlanningTool() 和 Terminate()。
 
 #### think()
 
@@ -458,7 +501,7 @@ class ToolFailure(ToolResult):
 
 最后两个 CLIResult 和 ToolFailure 用于标识，提高工具调用结果可读性。
 
-### ToolCoolection
+### ToolCollection
 
 提供工具的容器，通常放到 Agent 的字段中。
 
@@ -515,6 +558,71 @@ class ToolCollection:
         return self
 ```
 
+### PlanningTool
+
+允许 Agent 创建和管理复杂任务，此工具提供创建任务，更新任务步和追踪进度的功能。
+
+```py
+class PlanningTool(BaseTool):
+    name: str = "planning"
+    description: str = _PLANNING_TOOL_DESCRIPTION
+    parameters: dict = {
+        "type": "object",
+        "properties": {
+            "command": {
+                "description": "The command to execute. Available commands: create, update, list, get, set_active, mark_step, delete.",
+                "enum": [
+                    "create",
+                    "update",
+                    "list",
+                    "get",
+                    "set_active",
+                    "mark_step",
+                    "delete",
+                ],
+                "type": "string",
+            },
+            "plan_id": {
+                "description": "Unique identifier for the plan. Required for create, update, set_active, and delete commands. Optional for get and mark_step (uses active plan if not specified).",
+                "type": "string",
+            },
+            "title": {
+                "description": "Title for the plan. Required for create command, optional for update command.",
+                "type": "string",
+            },
+            "steps": {
+                "description": "List of plan steps. Required for create command, optional for update command.",
+                "type": "array",
+                "items": {"type": "string"},
+            },
+            "step_index": {
+                "description": "Index of the step to update (0-based). Required for mark_step command.",
+                "type": "integer",
+            },
+            "step_status": {
+                "description": "Status to set for a step. Used with mark_step command.",
+                "enum": ["not_started", "in_progress", "completed", "blocked"],
+                "type": "string",
+            },
+            "step_notes": {
+                "description": "Additional notes for a step. Optional for mark_step command.",
+                "type": "string",
+            },
+        },
+        "required": ["command"],
+        "additionalProperties": False,
+    }
+
+    plans: dict = {}  # Dictionary to store plans by plan_id
+    _current_plan_id: Optional[str] = None  # Track the current active plan
+```
+
+可以看到，self.parameters 指出的 JSON 对象比较复杂，包含了 key 有：
+- type: 指出参数类型
+- properties： 对应函数的参数属性，描述了函数接受的具体参数。比如 command，类型是枚举的 string。
+- required: 必选的参数
+
+注意，请求得到的响应体中，tool_calls.function.arguments 是一个字符串，可以解析为 JSON 格式。
 
 ### CreateChatCompletion
 
@@ -559,7 +667,7 @@ type_mappping 根据 Python 的基础类型，映射到 JSON 的类型。类型�
 }
 ```
 
-execute() 方法则执行 chat completion。从 required 列表中的 key，选取到后面 kwargs 对应的值。比如 `ccc.execute(["key1"], key1="Value1")`。如果没有指定，则从 "response" 中选取 "response" 不分，若不存在则用空字符串返回。最后，将回答阻值为 self.response_type 的类型。
+execute() 方法则执行 chat completion。从 required 列表中的 key，选取到后面 kwargs 对应的值。比如 `execute(["key1"], key1="Value1")`。如果没有指定，则从 "response" 中选取 "response" 不分，若不存在则用空字符串返回。最后，将回答阻值为 self.response_type 的类型。
 
 ```py
     async def execute(self, required: list | None = None, **kwargs) -> Any:

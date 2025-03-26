@@ -2,7 +2,7 @@
 id: oojhv04cnkr4q042uc0r9ie
 title: OpenAI_API_和数据格式
 desc: ''
-updated: 1742980211643
+updated: 1743010398627
 created: 1742897914437
 ---
 
@@ -172,7 +172,7 @@ curl https://api.openai.com/v1/chat/completions \
 }'
 ```
 
-在 tools[0].function.parameters.type 为 object，代表参数是一个对象。
+在 tools[0].function.parameters.type 为 object，代表参数是一个 JSON 对象。
 
 生成可能如下：
 
