@@ -2,7 +2,7 @@
 id: oojhv04cnkr4q042uc0r9ie
 title: OpenAI_API_和数据格式
 desc: ''
-updated: 1743010398627
+updated: 1743051252380
 created: 1742897914437
 ---
 
@@ -83,17 +83,19 @@ content: 必须提供 string 或 array 类型，二选一
     1. 文本内容：json 对象，包含 type 和 text 的 key。比如: `{"type": "text", "text": "What is the text in the illustrate?" }`
     2. 图像内容：json 对象，type 和 image_url 作为 key，其中，image_url 需要图像的 URL 或 Base64 编码。比如： `{"type": "image_url", "image_url": {"url": base64_qwen}}`
 
+在 OpenManus 中，请求 LLM 决定使用哪些工具时，使用 user message，并且传入 tools 字段。
+
 #### assistant message
 
-role 和 content 字段必须提供。通常用于附加在对话历史中。比如，上一次用了 user message，返回响应 body 中有 tool_calls 等内容，便可以将其组织为 assistant message，下次询问时，作为对话历史来提供信息。
+向 LLM 请求后给出响应后，需要将响应组织为 assistant message，用作在下次询问时的上下文信息。上下文信息为用户的请求和 LLM 的响应历史。assistant message role 和 content 字段必须提供。通常用于附加在对话历史中。
 
-role: str 通常是 "assistant"。
+role: str 通常是 "assistant"。代表 LLM 的角色是 assistant。
 
 content: str 必须提供，提供助手消息的内容。如果在此 assistant message 中，指定 tool_calls时可以不提供。
 
 name: str 可选。参与对话者的名称。
 
-tool_calls: 可选，类型是数组。使用大模型生成合适的工具调用，例如：函数调用。如果是数组，则每个元素都是 JSON 对象，各自代表函数调用。JSON 字段要有：
+tool_calls: 可选，类型是数组。使用大模型生成合适的工具调用后，即 user message 请求字段带有 tools 后，LLM 返回的响应体包含 tool_calls 字段，可以将其组织到本 tool_calls 字段中，组织为 assistant message，用于提供对话历史。例如：函数调用。如果是数组，则每个元素都是 JSON 对象，各自代表函数调用。JSON 字段要有：
 - id：str 必须提供。表示函数调用的id
 - type：str 必须提供，表示工具调用的类型。目前仅支持 "function" 类型
 - function: str 必须提供，表示模型针对工具调用为用户生成的函数说明，即模型在特定任务和场景下，在用户提供的函数中，会推断出应该使用哪一个函数，以及函数的参数应该是什么。所以包括的字段有：
@@ -102,7 +104,7 @@ tool_calls: 可选，类型是数组。使用大模型生成合适的工具调�
 
 #### tool message
 
-根据 assistant 的 tool_calls 内容调用了某个函数后，用户可能还需要再把函数调用结果反馈给大模型，让大模型根据函数调用结果给出最终的总结性的答复。字段有：
+根据 assistant 的 tool_calls 内容调用了某个函数后，用户可能还需要再把函数调用结果**反馈**给大模型，让大模型根据函数调用结果给出最终的总结性的答复。字段有：
 
 - content: str 必须提供，工具消息内容，描述调用函数后的结果
 - role: str 必须提供，作为角色，通常是 "tool"

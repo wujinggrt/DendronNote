@@ -2,14 +2,14 @@
 id: hcawzqs5kib9vt4l1gpqclj
 title: OpenManus学习
 desc: ''
-updated: 1743010797715
+updated: 1743081276634
 created: 1741973130080
 ---
 
 此项目架构清晰，代码优秀，值得学习。能够在 Manus 公布的几小时之后快速实现，证明此架构能够适应快速开发和试错。参考 [Github](https://github.com/mannaandpoem/OpenManus)
 
 
-## 基础知识：Reactor 模式
+## 基础知识：ReAct 模式
 
 Open Manus 实现的是一种 Reactor 模式的单 Agent 系统。Reactor 模式包含两个核心要素：Reason（推理）和 Action（行动）。其基本流程如下：
 1. **用户输入 (Query):** 用户提出一个问题或指令。
@@ -253,7 +253,7 @@ special_tool_names: List[str] 包含 Terminate().name，标识交互结束，打
 
 #### think()
 
-处理当前状态，决定下一步使用工具的动作。
+总体概念：根据 prompt 和当前工具，向 LLM 请求。如果返回了工具调用的内容，则保存到 self.tool_calls，并且返回 True。否则，返回 False 或抛出异常。
 
 首先，把 self.next_step_prompt 添加到 self.messages。注意，子类可能会覆盖 next_step_prompt。随后向 LLM 询问下一步使用何种工具，即 self.llm.ask_tool()。组织 self.next_step_prompt 为 user message。如果 ask_tool() 出现异常，添加信息到 assistant message，下次请求 LLM 可以提供作为背景。
 
@@ -361,12 +361,16 @@ llm 给与 response 后，解析并保存选择到 self.tool_calls，还有 cont
 
 #### execute_tool()
 
-接受参数是 ToolCall，与 openai 返回的 ChatCompletionMessageToolCall 一样。方法首先判断有效，是否出现 None 等。
+接受参数是 ToolCall，与 openai 返回的 ChatCompletionMessageToolCall 一样。调用比如 CreateChatCompletion 或 PlanningTool 的 execute() 方法。
+
+方法首先判断有效，是否出现 None 等。
 
 由于参数 command.function.arguments 是字符串类型，但是保存的是 JSON 对象。所以使用 json.loads()，得到字典格式。随后调用 self.available_tools.execute()，传入的参数是函数名和 dict 形式的参数。根据 name，函数名获取工具，比如 CreateChatCompletion()。随后会调用它的 execute() 方法来完成，接收参数为 args，即 tool_input=args。
 
 ```py
     async def execute_tool(self, command: ToolCall) -> str:
+        ...
+        name = command.function.name
         ...
         try:
             # Parse arguments
@@ -400,21 +404,39 @@ llm 给与 response 后，解析并保存选择到 self.tool_calls，还有 cont
 
 遇到特殊工具，比如 Terminate()，则更新 AgentState.FINISHED。
 
-执行后反馈结果到字符串。
+执行后反馈结果到字符串。尽管结果 result 可能是 ToolResult 的，但是对齐调用 str() 方法，可以格式化地输出各个字段。
 
 ### PlanningAgent(ToolCallAgent)
 
 创建和管理规划来解决问题。使用规划工具，管理结构化的规划，记录进度直到完成。
 
-### 字段
+#### 字段
 
 self.system_prompt 修改为自己版本。使用 PLANNING_SYSTEM_PROMPT 和 NEXT_STEP_PROMPT。注意，子类能修改父类同名的字段，比如父类 ToolCallAgent 使用 self.system_prompt 和 self.next_step_prompt 时，子类 PlanningAgent 也修改了，最后使用子类修改的版本，即 PLANNING_SYSTEM_PROMPT 等。
 
 self.tool_calls: List[ToolCall] 与父类 ToolCallAgent 不同，包含了 PlanningTool() 和 Terminate()。
 
+self.active_plan_id: str | None 当前活跃的 plan_id，可以通过 PlanningTool 的 execute("get")。当初始化 PlanningAgent 后，在 initialize_plan_and_verify_tools
+
+#### run() 和 create_initial_plan()
+
+```py
+    async def run(self, request: Optional[str] = None) -> str:
+        """Run the agent with an optional initial request."""
+        if request:
+            await self.create_initial_plan(request)
+        return await super().run()
+```
+
+根据 request，创建初始化的计划。
+
+create_initial_plan() 根据 request，创建 user message，并请求 llm.ask_tool()。得到响应 response: ChatCompleteMessage。
+
+随后组织响应内容的 content 和 tool_calls 到 assistant message，存入 self.memory 中。再遍历 response.tool_calls，找到 function.name 为 "planning" 的工具，由 self.execute_tool() 执行 planning 的 tool_call。最终，执行对应 PlanningTool.execute() 方法，保存结果保存结果 tool_message，添加到 self.memory。
+
 #### think()
 
-整合当前状态和 next_step_prompt 到 prompt，存入 self.messages。调用上级思考，即 super().think() 来获取 result。
+整合当前 plan 的状态和 next_step_prompt 到 prompt，存入 self.messages。调用上级思考，即 super().think() 来获取 result。
 
 ```py
     async def think(self) -> bool:
@@ -449,14 +471,21 @@ self.tool_calls: List[ToolCall] 与父类 ToolCallAgent 不同，包含了 Plann
         return result
 ```
 
-self.active_plan_id 默认初始化 None，
+_get_current_step_index() 标记第一个未开始或处理中的 step's index 为 in_progress，并返回此下标，并设置到 self.current_step_index。
 
-## tool
+super().think() 思考应该执行的工具，并且更新到 self.tool_calls 字段。
 
+#### get_plan(): 获取当前 plan 的状态
+
+self.active_plan_id 默认是 None，需要有设置和 create。如果非 None 则报错。获取 plan 的状态。调用的 PlanningTool._get_plan()，返回格式化的整个 plan 的状态。
+
+## tool 目录
 
 ### Base
 
 ToolCallAgent 用到的工具等，在这里定义。
+
+#### BaseTool
 
 BaseTool 是抽象类，主要包含三个字段。方法主要使用 to_param() -> Dict，用于组织 OpenAI 的 API 请求主体的 "tools" 字段。description 要尽可能详细，提供给 LLM，方便规划调用的内容。
 
@@ -465,6 +494,10 @@ class BaseTool(ABC, BaseModel):
     name: str
     description: str
     parameters: Optional[dict] = None
+
+    async def __call__(self, **kwargs) -> Any:
+        """Execute the tool with given parameters."""
+        return await self.execute(**kwargs)
 
     @abstractmethod
     async def execute(self, **kwargs) -> Any:
@@ -481,6 +514,8 @@ class BaseTool(ABC, BaseModel):
             },
         }}
 ```
+
+#### ToolResult
 
 工具调用结果：
 
@@ -503,7 +538,7 @@ class ToolFailure(ToolResult):
 
 ### ToolCollection
 
-提供工具的容器，通常放到 Agent 的字段中。
+提供工具的容器，通常放到 Agent 的字段中。通常调用 execute() 方法，将 name 对应的 tool，传入字典参数 tool_input，随后会展开并传给 `tool(**tool_input)`，最后调用 tool.execute(**tool_input)。
 
 ```py
 class ToolCollection:
@@ -560,7 +595,9 @@ class ToolCollection:
 
 ### PlanningTool
 
-允许 Agent 创建和管理复杂任务，此工具提供创建任务，更新任务步和追踪进度的功能。
+允许 Agent 创建和管理复杂任务，此工具提供创建任务，更新任务步和追踪进度的功能。执行的功能不会在此处运行，PlanningTool 旨在更新工具的状态。比如 step
+
+#### 字段
 
 ```py
 class PlanningTool(BaseTool):
@@ -622,7 +659,135 @@ class PlanningTool(BaseTool):
 - properties： 对应函数的参数属性，描述了函数接受的具体参数。比如 command，类型是枚举的 string。
 - required: 必选的参数
 
-注意，请求得到的响应体中，tool_calls.function.arguments 是一个字符串，可以解析为 JSON 格式。
+注意，请求 LLM 后，得到的响应体中，tool_calls.function.arguments 是一个字符串，可以解析为 JSON 格式。
+
+#### execute()
+
+```py
+    async def execute(
+        self,
+        *,
+        command: Literal[
+            "create", "update", "list", "get", "set_active", "mark_step", "delete"
+        ],
+        plan_id: Optional[str] = None,
+        title: Optional[str] = None,
+        steps: Optional[List[str]] = None,
+        step_index: Optional[int] = None,
+        step_status: Optional[
+            Literal["not_started", "in_progress", "completed", "blocked"]
+        ] = None,
+        step_notes: Optional[str] = None,
+        **kwargs,
+    ):
+```
+
+执行时，根据 command 参数来执行各种任务，并且提供各种可能用到的参数。最后，将 _current_plan_id 设置为 plan_id。
+
+思考此设计方案。通常，一个函数或方法负责太多内容，都会拆开，步入直接使用 _create_plan() 而非通过 execute() 并传入参数的方式。或者为了扩展性，使用 IoC 的方式，注入方法来调用。比如：
+
+```py
+class PlanningTool(...):
+    @staticmethod
+    def create_execute_task(...) -> PlanningTask:
+        ...
+
+# 伪代码
+self.tool.execute(PlanningTool.CREATE, plan_id = ...)
+# 或者直接封装调用
+self.tool.execute(PlanningTool.create_execute_task(...))
+```
+
+但是，设计为使用 execute() 来 dispatch 任务，能够保持一致，也是设计和现实的一种折中方案。代码也保持了整洁。
+
+#### _create_plan()
+
+创建新的 plan，每个 plan 由 plan_id, title 和 steps 标识。每个 plan 是一个dict，根据 plan_id 保存到 self.plans[plan_id]。更新和创建的 schema 具体如下： 
+
+```py
+        plan = {
+            "plan_id": plan_id,
+            "title": title,
+            "steps": steps,
+            "step_statuses": ["not_started"] * len(steps),
+            "step_notes": [""] * len(steps),
+        }
+
+        self.plans[plan_id] = plan
+        self._current_plan_id = plan_id  # Set as active plan
+```
+
+#### _update_plan()
+
+根据 plan_id，更新 title 和 step_status, step_notes 等 key 对应的 value。创建 plan 后，如果需要修改 steps: List[str]。比如扩充长度，或者截断来选取部分。对于原来部分，保持不变，新扩充部分的 step_statuses 部分全部为 "not_started", step_notes 新扩充部分全部为空字符串。
+
+```py
+            old_steps = plan["steps"]
+            old_statuses = plan["step_statuses"]
+            old_notes = plan["step_notes"]
+
+            # Create new step statuses and notes
+            new_statuses = []
+            new_notes = []
+
+            for i, step in enumerate(steps):
+                # If the step exists at the same position in old steps, preserve status and notes
+                if i < len(old_steps) and step == old_steps[i]:
+                    new_statuses.append(old_statuses[i])
+                    new_notes.append(old_notes[i])
+                else:
+                    new_statuses.append("not_started")
+                    new_notes.append("")
+
+            plan["steps"] = steps
+            plan["step_statuses"] = new_statuses
+            plan["step_notes"] = new_notes
+
+        return ToolResult(
+            output=f"Plan updated successfully: {plan_id}\n\n{self._format_plan(plan)}"
+        )
+```
+
+#### _get_plan() -> ToolResult
+
+传入 plan_id 如果为 None，返回 _current_plan_id 对应的 plan 的状态。若 plan_id 不为 None，返回对应的 plan 的状态。
+
+ToolResult.output 时字符串，报告了此 plan 的详细状态。例如：
+
+```py
+ToolResult(
+    output="""Plan: Summer Vacation Plan (ID: vacation_plan)
+============================
+
+Progress: 1/3 steps completed (33.3%)
+Status: 1 completed, 1 in progress, 0 blocked, 1 not started
+
+Steps:
+0. [✓] Book flight tickets
+1. [→] Pack luggage
+   Notes: Remember to bring sunscreen
+2. [ ] Reserve hotel"""
+)
+```
+
+输出格式说明：
+1. 标题行显示计划名称和 ID
+2. 进度条显示完成百分比
+3. 状态统计行显示各状态步骤数
+4. 步骤列表使用符号表示状态：
+    - `[✓]` 已完成
+    - `[→]` 进行中
+    - `[!]` 被阻塞
+    - `[ ]` 未开始
+5. 如果有备注 (notes) 会显示在步骤下方缩进，如例子 1
+
+#### _format_plan() -> str
+
+报告了 plan_id 对应计划的进度。从总体情况描述了进度，包括完成、处理中、阻塞和未开始状态的 steps 数量。最后再逐个 step 报告进度。
+
+#### _mark_step()
+
+根据 plan_id (如果为 None，操作 _current_plan_id)，更新对应 step_index 的 plan，将 status 和 notes 更新。最后返回 ToolResult，报告状态。
 
 ### CreateChatCompletion
 
@@ -845,6 +1010,8 @@ NEXT_STEP_PROMPT 提示下一步动作，即用户指令。
 每个 Agent 都有适合自己的提示词，不论是否继承。
 
 大模型请求的 messages 中的 array 数组元素由 Message 组成。
+
+## 配置加载
 
 ## 用户接入层
 

@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1742897064362
+updated: 1743059912060
 created: 1738165674608
 ---
 
@@ -84,9 +84,6 @@ https://zhuanlan.zhihu.com/p/21713958996
 
 VLA 等各种工作合集。博士想读具身智能/智能机器人应该怎么规划自己的科研？ - EyeSight1019的回答 - 知乎
 https://www.zhihu.com/question/655570660/answer/87040917575
-
-Physical Intelligence 最新的 Hi Robot：基于分层的 VLA 模型的开放式指令遵循。
-http://www.pi.website/research/hirobot
 
 基于RoboTwin生成海量数据Finetune RDT-1B等具身大模型保姆级教程 - 穆尧的文章 - 知乎
 https://zhuanlan.zhihu.com/p/22754193110

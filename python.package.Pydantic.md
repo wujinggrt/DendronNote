@@ -2,7 +2,7 @@
 id: qtr5ed8hxwnpk8zl3u49l1f
 title: Pydantic
 desc: ''
-updated: 1742958946927
+updated: 1743057642410
 created: 1742729166237
 ---
 
@@ -152,6 +152,33 @@ class User(BaseModel):
 ### 序列化
 
 可以使用 .json() 方法序列化。
+
+## Validator
+
+### field_validator 验证单个字段
+
+## model_validator 验证模型
+
+参数 model 指定：
+- mode='before' 在模型初始化之前对原始输入数据进行验证或预处理（例如修改原始数据）。
+- mode='after' 在模型初始化之后对已解析的数据进行验证（例如检查字段间的逻辑关系）。
+
+注意，在 mode="after" 时，通常要返回自身的实例。typehint 通常返回用双引号包围的类名。比如：
+
+```py
+class PlanningAgent(ToolCallAgent):
+    @model_validator(mode="after")
+    def initialize_plan_and_verify_tools(self) -> "PlanningAgent":
+        """Initialize the agent with a default plan ID and validate required tools."""
+        self.active_plan_id = f"plan_{int(time.time())}"
+
+        if "planning" not in self.available_tools.tool_map:
+            self.available_tools.add_tool(PlanningTool())
+
+        return self
+
+```
+
 
 ## Ref and Tag
 
