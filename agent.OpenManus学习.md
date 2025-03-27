@@ -2,7 +2,7 @@
 id: hcawzqs5kib9vt4l1gpqclj
 title: OpenManus学习
 desc: ''
-updated: 1743081276634
+updated: 1743097097560
 created: 1741973130080
 ---
 
@@ -133,6 +133,35 @@ Open Manus 项目提供了一个学习和研究基于 LLM 的 Agent 系统的良
 
 ## 工作流程
 
+### main.py
+
+![流程图](assets/images/agent.OpenManus学习/流程图.png)
+
+![时序图](assets/images/agent.OpenManus学习/时序图.png)
+
+- 入口调用: main.py 创建 Manus 实例并调用 run方法处理用户输入。
+- 代理层次: BaseAgent -> ReActAgent -> ToolCallAgent -> Manus，每一层增加特定功能。
+- 执行流程: 用户输入 -> 代理处理 -> LLM思考 -> 工具调用 -> 结果返回 -> 循环或完成。
+- 工具管理: ToolCollection 管理多个 BaseTool 实例，提供统一的执行接口。
+- 内存管理: 代理使用 Memory 存储消息历史，用于上下文理解和决策。
+
+### run_flow.py
+
+- 创建Manus代理实例
+- 接收用户输入
+- 使用FlowFactory创建PlanningFlow实例
+- 执行Flow处理用户请求
+- 返回执行结果
+
+![流程图_flow](assets/images/agent.OpenManus学习/流程图_flow.png)
+
+![时序图_flow](assets/images/agent.OpenManus学习/时序图_flow.png)
+
+![调用关系_flow](assets/images/agent.OpenManus学习/调用关系_flow.png)
+
+
+![调用关系](assets/images/agent.OpenManus学习/调用关系.png)
+
 ![overview](assets/images/agent.OpenManus学习/overview.png)
 
 项目基于 Agent，是一个工作流的自动化框架，支持复杂任务的规划、执行和验证。系统通过可拓展的工具集和提示模板库，实现灵活的任务处理能力。
@@ -245,7 +274,7 @@ think() 和 act() 在具体子类中实现，比如 class ToolCallAgent 中，�
 
 此 Agent 用于函数或工具调用，主要关注 think() 和 act()。
 
-#### 字段
+#### 字段（初始化）
 
 available_tools: ToolCollection 目前值包含两个工具：CreateChatCompletion(), Terminate()
 
@@ -353,9 +382,9 @@ llm 给与 response 后，解析并保存选择到 self.tool_calls，还有 cont
 
 #### act()
 
-根据 think() 更新的 self.tool_calls。如果 self.tool_calls 没有内容，并且要求 self.tool_choices == ToolChoice.REQUIRED，则抛出异常。否则返回 self.messages[-1].content 或 "No content or commends to execute".
+根据 think() 更新的 self.tool_calls 准备调用 self.execute_tool 逐个执行 tool_call。如果 self.tool_calls 没有内容，并且要求 self.tool_choices == ToolChoice.REQUIRED，则抛出异常。否则返回 self.messages[-1].content 或 "No content or commends to execute".
 
-紧接着，遍历 self.tool_calls，调用 self.execute_tool(command) 来执行 tool_call。返回得到的 result，并且以 tool message 存储到 memory，提供上下文。
+具体地，遍历 self.tool_calls，调用 self.execute_tool(command) 来执行 tool_call。返回得到的 result，并且以 tool message 存储到 memory，提供上下文。
 
 最后，使用两个换行符拼接每个 result，作为 act() 方法的返回。
 
@@ -416,9 +445,9 @@ self.system_prompt 修改为自己版本。使用 PLANNING_SYSTEM_PROMPT 和 NEX
 
 self.tool_calls: List[ToolCall] 与父类 ToolCallAgent 不同，包含了 PlanningTool() 和 Terminate()。
 
-self.active_plan_id: str | None 当前活跃的 plan_id，可以通过 PlanningTool 的 execute("get")。当初始化 PlanningAgent 后，在 initialize_plan_and_verify_tools
+self.active_plan_id: str | None 当前活跃的 plan_id，可以通过 PlanningTool 的 execute("get")。当初始化 PlanningAgent 后，在 initialize_plan_and_verify_tools() 中初始化为 f"plan_{int(time.time())}"。
 
-#### run() 和 create_initial_plan()
+#### run()
 
 ```py
     async def run(self, request: Optional[str] = None) -> str:
@@ -430,13 +459,26 @@ self.active_plan_id: str | None 当前活跃的 plan_id，可以通过 PlanningT
 
 根据 request，创建初始化的计划。
 
+##### create_initial_plan()
+
 create_initial_plan() 根据 request，创建 user message，并请求 llm.ask_tool()。得到响应 response: ChatCompleteMessage。
 
-随后组织响应内容的 content 和 tool_calls 到 assistant message，存入 self.memory 中。再遍历 response.tool_calls，找到 function.name 为 "planning" 的工具，由 self.execute_tool() 执行 planning 的 tool_call。最终，执行对应 PlanningTool.execute() 方法，保存结果保存结果 tool_message，添加到 self.memory。
+随后组织响应内容的 content 和 tool_calls 到 assistant message，存入 self.memory 中。再遍历 response.tool_calls，找到 function.name 为 "planning" 的工具，由 self.execute_tool() 执行 planning 的 tool_call。最终，执行对应 PlanningTool.execute() 方法，保存结构化的 ToolResult 为 str，以 tool message 形式添加到 self.memory。
 
 #### think()
 
-整合当前 plan 的状态和 next_step_prompt 到 prompt，存入 self.messages。调用上级思考，即 super().think() 来获取 result。
+整合当前 plan 的状态和 next_step_prompt 到 prompt，存入 self.messages。调用上级思考，即 super().think() 来获取 result 判断是否该 act。根据 self.available_tools 判断应该调用的 tool_calls。
+
+_get_current_step_index() 根据 self.active_plan_id 计划，标记计划中第一个未开始或处理中的 step 为 "in_progress"，并返回此下标，同时设置 self.current_step_index。
+
+super().think() 思考应该执行的工具，并且更新到 self.tool_calls 字段。
+
+若 result 为 True，即应该执行 act，且更新了 self.tool_calls，需要执行工具。那么设置 self.step_execution_tracker[latest_tool_call.id]，随后在 self.act() 方法中用到它，以追踪计划的状态。
+- "step_index": 下一步 act() 方法该推进的 step 下标
+- "tool_name": 应当使用的工具名
+- "status": 状态
+
+疑惑，调用 super().think() 时，向 LLM 请求时，传入工具有两个，self.tool_calls 会有多个吗？
 
 ```py
     async def think(self) -> bool:
@@ -471,13 +513,66 @@ create_initial_plan() 根据 request，创建 user message，并请求 llm.ask_t
         return result
 ```
 
-_get_current_step_index() 标记第一个未开始或处理中的 step's index 为 in_progress，并返回此下标，并设置到 self.current_step_index。
-
-super().think() 思考应该执行的工具，并且更新到 self.tool_calls 字段。
-
-#### get_plan(): 获取当前 plan 的状态
+##### get_plan(): 获取当前 plan 的状态
 
 self.active_plan_id 默认是 None，需要有设置和 create。如果非 None 则报错。获取 plan 的状态。调用的 PlanningTool._get_plan()，返回格式化的整个 plan 的状态。
+
+#### act()
+
+执行一次推进，如果执行后，将 self.step_execution_tracker 中，对应 step 的状态设置为 "completed"，记录结果 "result" 为执行工具后的结果。
+
+如果工具调用不是 "planning" 和特殊工具，调用 self.update_plan_status() 方法更新。
+
+```py
+    async def act(self) -> str:
+        """Execute a step and track its completion status."""
+        result = await super().act()
+
+        # After executing the tool, update the plan status
+        if self.tool_calls:
+            latest_tool_call = self.tool_calls[0]
+
+            # Update the execution status to completed
+            if latest_tool_call.id in self.step_execution_tracker:
+                self.step_execution_tracker[latest_tool_call.id]["status"] = "completed"
+                self.step_execution_tracker[latest_tool_call.id]["result"] = result
+
+                # Update the plan status if this was a non-planning, non-special tool
+                if (
+                    latest_tool_call.function.name != "planning"
+                    and latest_tool_call.function.name not in self.special_tool_names
+                ):
+                    await self.update_plan_status(latest_tool_call.id)
+
+        return result
+```
+
+##### update_plan_status()
+
+根据 tool_call.id，从 self.step_execution_tracker 取出对应的 "step_index"，通过 self.available_tools 执行 planning 工具，调用 "mark_step" 更新对应 step 状态为 "completed"。
+
+```py
+    async def update_plan_status(self, tool_call_id: str) -> None:
+        ...
+        try:
+            # Mark the step as completed
+            await self.available_tools.execute(
+                name="planning",
+                tool_input={
+                    "command": "mark_step",
+                    "plan_id": self.active_plan_id,
+                    "step_index": step_index,
+                    "step_status": "completed",
+                },
+            )
+        ...
+```
+
+####  总结计划创建到完结的状态变化过程
+
+"not started" 或 "in_progress" -> "in_progress": 在 think() 调用 _get_current_step_index() 中，将第一个未开始或推进中的 step 标记为 "in_progress"。
+
+"in_progress" -> "completed"：在 act() 调用 update_plan_status() 中，将对应 step 完成。
 
 ## tool 目录
 
@@ -661,6 +756,10 @@ class PlanningTool(BaseTool):
 
 注意，请求 LLM 后，得到的响应体中，tool_calls.function.arguments 是一个字符串，可以解析为 JSON 格式。
 
+#### 状态
+
+一个计划对应几个 step，工作步骤，可以串行或并行推进。每个步骤都会有状态，对应 ["not_started", "in_progress", "completed", "blocked"]，在 PlanningAgent 中不断推进，更新完成状态。
+
 #### execute()
 
 ```py
@@ -785,9 +884,12 @@ Steps:
 
 报告了 plan_id 对应计划的进度。从总体情况描述了进度，包括完成、处理中、阻塞和未开始状态的 steps 数量。最后再逐个 step 报告进度。
 
-#### _mark_step()
+#### _mark_step(): 更新状态
 
 根据 plan_id (如果为 None，操作 _current_plan_id)，更新对应 step_index 的 plan，将 status 和 notes 更新。最后返回 ToolResult，报告状态。
+
+状态可以是 ["not_started", "in_progress", "completed", "blocked"] 之一。
+
 
 ### CreateChatCompletion
 
@@ -1025,3 +1127,7 @@ NEXT_STEP_PROMPT 提示下一步动作，即用户指令。
 ## Ref and Tag
 
 [B 站：OpenManus 源代码解读和学习，manus 用不了，那就自己实现一个](https://www.bilibili.com/video/BV1SrRhYmEgm/?share_source=copy_web&vd_source=fe1db0b3f565b5940b244b9c7f7b4fa1)
+
+Manus平替OpenManus源码分析系列文章 - aC大的文章 - 知乎
+https://zhuanlan.zhihu.com/p/30576651973
+
