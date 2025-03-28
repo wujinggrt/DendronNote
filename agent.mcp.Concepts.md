@@ -2,7 +2,7 @@
 id: 9gc9g6ffxfzjvj43sh58m28
 title: Concepts
 desc: ''
-updated: 1743149243126
+updated: 1743182778740
 created: 1743147909324
 ---
 
@@ -13,7 +13,28 @@ MCP 是一种开放协议，提供了应用程序向 LLMs 提供上下文的标�
 - 官方文档：[Introduction](https://link.zhihu.com/?target=https%3A//modelcontextprotocol.io/introduction)
 - GitHub 仓库：github.com/modelcontextprotocol
 
+### 为什么需要 MCP
 
+大模型产品有:
+- chatbot: 只会聊天，比如 DeepSeek, ChatGPT
+- composer: 做具体工作，比如 cursor, copilot
+- agent: 私人秘书，输入问题，自动执行，Open Manus
+
+为了实现 Agent，即需要让 LLM 自如灵活地操作软件、物理世界的机器人，需要定义统一的上下文协议和对应的统一工作流。MCP (model context protocol) 是一套基础协议，解决此类问题。感性认识如下：
+
+![感性认识](assets/images/agent.mcp.Concepts/感性认识.png)
+
+### 总体架构
+
+MCP 核心使用客户端-服务器架构，host 可以连接到多个服务器：
+
+![cs](assets/images/agent.mcp.Concepts/cs.png)
+
+- MCP 主机（MCP Hosts）：MCP 主机是指希望通过 MCP 访问数据的程序，例如 Claude Desktop、集成开发环境（IDEs）或其他 AI 工具。
+- MCP 客户端（MCP Clients）：MCP 客户端是与服务器保持 1:1 连接的协议客户端，负责与 MCP 服务器通信。
+- MCP 服务器（MCP Servers）：MCP 服务器是轻量级程序，每个服务器通过标准化的 Model Context Protocol 暴露特定的功能。
+- 本地数据源（Local Data Sources）：本地数据源是指 MCP 服务器可以安全访问的计算机文件、数据库和服务。
+- 远程服务（Remote Services）：远程服务是指 MCP 服务器可以通过互联网连接的外部系统（例如通过 API 访问的服务）。
 
 ## MCP Server 中的基本概念
 

@@ -2,7 +2,7 @@
 id: hcawzqs5kib9vt4l1gpqclj
 title: OpenManus学习
 desc: ''
-updated: 1743153044113
+updated: 1743185642318
 created: 1741973130080
 ---
 
@@ -897,7 +897,7 @@ Steps:
 
 ### CreateChatCompletion
 
-根据 LLM 输出，创建结构化的 completion。
+创建结构化的 completion 文件，方便用于 client.completions 的内容。
 
 ```py
 class CreateChatCompletion(BaseTool):

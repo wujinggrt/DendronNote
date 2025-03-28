@@ -2,7 +2,7 @@
 id: y74wnh1oqjy8n1m8yosskg5
 title: Special_methods_下划线开头结尾的方法
 desc: ''
-updated: 1743100797763
+updated: 1743175939395
 created: 1743097733728
 ---
 
@@ -23,7 +23,5 @@ created: 1743097733728
 ## `__dict__` 属性
 
 每个实例有 `__dict__` 属性，是一个字典，存储了一个实例的所有属性。
-
-
 
 ## Ref and Tag
