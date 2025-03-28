@@ -1,8 +1,8 @@
 ---
 id: edll7o8gebsag50rvjmls0i
-title: 保存和加载模型
+title: 保存和加载模型_save_load
 desc: ''
-updated: 1743141246767
+updated: 1743147194388
 created: 1742751626701
 ---
 
@@ -117,7 +117,9 @@ print(payload)
 
 ### nn.Module._modules：保存 nn.Module 实例和字段名的字典
 
-在 torch.nn.Module 及其子类中，_modules: Dict[str, Optional["Module"]] 字段是一个有序字典。字典的 key 对应类和父类以及各个继承链中，nn.Module 子类字段的名字。字典的值，对应实例中能够存储和加载参数的 nn.Module 模块实例。
+在 torch.nn.Module 及其子类中，_modules: Dict[str, Optional["Module"]] 字段是一个有序字典。​每个 nn.Module 类型及子类实例都拥有的实例属性，而非类专属的静态字段。
+
+字典的 key 对应类和父类以及各个继承链中，nn.Module 子类字段的名字。字典的值，对应实例中能够存储和加载参数的 nn.Module 模块实例。
 
 ```py
 class MyNet(torch.nn.Module):

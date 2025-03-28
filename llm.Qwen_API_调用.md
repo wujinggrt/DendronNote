@@ -2,20 +2,19 @@
 id: n2gd1ryopn502cseud5lg4z
 title: Qwen_API_调用
 desc: ''
-updated: 1742982967848
+updated: 1743173031142
 created: 1742980461639
 ---
 
 base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
 
-我的 API_KEY: sk-68ab7a900621435cb2ba0261865d7f03
 
 可以使用 curl 尝试。如果是 curl，则请求的 url 需要添加 /chat/completions。注意，JSON 中的数组和对象的最后一条不能有逗号。
 
 ```bash
 curl --request POST https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions \
   --header "Content-Type: application/json" \
-  --header "Authorization: Bearer sk-68ab7a900621435cb2ba0261865d7f03" \
+  --header "Authorization: Bearer API_KEY" \
   --data '{
     "model": "qwen2.5-vl-32b-instruct",
     "messages": [
