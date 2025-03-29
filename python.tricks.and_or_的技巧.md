@@ -2,11 +2,11 @@
 id: kg25u98px0acpx0274z3wqp
 title: And_or_的技巧
 desc: ''
-updated: 1742977250570
+updated: 1743186179171
 created: 1742976792797
 ---
 
-除了类似三目运算符的 res0 if cond else res1，还可以使用 and or 简化 if 的长度。当然，可读性会变差。
+除了类似三目运算符的 res0 if cond else res1，还可以使用 and or 简化 if 的长度。当然，可读性会变差。主要在于根据 and or 的表达式是否代表 True，返回对应表达式的结果，而非 True/False。
 
 使用 and 和 or 时，类似 bash 的 && || 等短路执行一样，会返回能够判断表达式为 True 或 False 的对象或元素。比如 `1 and a or b`，中，1 代表 True，继续下一步判断。如果 a 为 True，则返回 a，后续不再判断了。若 a 为 False，还要继续判断 b，最后得到 b 的值。
 
