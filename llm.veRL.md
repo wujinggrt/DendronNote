@@ -2,7 +2,7 @@
 id: jn81tvhrrys05bjr7hd20kj
 title: veRL
 desc: ''
-updated: 1739179340783
+updated: 1743225349451
 created: 1739175432693
 ---
 
@@ -16,5 +16,9 @@ Insights：传统的分布式 RL 在单张 GPU 训练，或者使用数据并行
 
 提高性能，整合，hybrid；提高扩展能力，封装。
 
+## ref and tags
+
 吞吐量最高飙升20倍！豆包大模型团队开源RLHF框架，破解强化学习训练部署难题 - 新智元的文章 - 知乎
 https://zhuanlan.zhihu.com/p/4461725991
+
+https://verl.readthedocs.io/en/latest/start/install.html

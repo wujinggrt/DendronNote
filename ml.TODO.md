@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1743059912060
+updated: 1743226445363
 created: 1738165674608
 ---
 
@@ -170,3 +170,7 @@ https://www.zhihu.com/question/409815271/answer/87375346326
 
 抽象，简化和领域驱动设计 - 阿莱克西斯的文章 - 知乎
 https://zhuanlan.zhihu.com/p/77026267
+
+## 部署
+有没有vLLM/SGLang多机多卡部署详细教程？ - DefTruth的回答 - 知乎
+https://www.zhihu.com/question/1888903744047011293/answer/1888905234241258191

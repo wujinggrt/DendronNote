@@ -2,7 +2,7 @@
 id: hcawzqs5kib9vt4l1gpqclj
 title: OpenManus学习
 desc: ''
-updated: 1743153044113
+updated: 1743238936666
 created: 1741973130080
 ---
 
@@ -1130,6 +1130,10 @@ NEXT_STEP_PROMPT 提示下一步动作，即用户指令。
 ![workflow0](assets/images/agent.OpenManus学习/workflow0.png)
 
 ![workflow](assets/images/agent.OpenManus学习/workflow.png)
+
+## insight
+
+Tools 就像事件一样，加入 event loop。Muduo 的精妙设计在于线程安全地注入事件，Manus 则先保存起来。
 
 ## Ref and Tag
 
