@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1743226445363
+updated: 1743264093683
 created: 1738165674608
 ---
 
@@ -120,6 +120,9 @@ https://www.zhihu.com/question/13238901947/answer/112109118245
 
 Logic-RL: Deepseek R1复现中的七大发现! 用益智谜题强化学习竟能提升数学竞赛水平！ - 涮月亮的谪仙人的文章 - 知乎
 https://zhuanlan.zhihu.com/p/25355823769
+> reinforce++ 性价比最高
+
+https://hijkzzz.notion.site/reinforce-plus-plus
 
 Logic-RL 表现不错，值得学习。
 
