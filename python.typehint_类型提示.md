@@ -1,8 +1,8 @@
 ---
 id: ei5qywn058edm6ypiqrl78b
-title: Typehint
+title: Typehint_类型提示
 desc: ''
-updated: 1743057375752
+updated: 1743350861621
 created: 1742975485079
 ---
 
@@ -51,6 +51,36 @@ ALLOWED = ("yes", "no")
 param: Literal[ALLOWED]  # 类型检查器无法识别
 ```
 
+## 返回类型有双引号的情况
+
+双引号包围的类型，通常由于前向引用 (Forward Reference) 和字符串字面量类型 (String Literal Types) 引起的。
+
+### 前向引用
+
+类型提示是尚未定义的类，那么用双引号括起来，即字符串字面量类型，避免运行错误。常用于 `@classmethod` 返回自身类型的实例：
+
+```py
+    @classmethod
+    def user_message(
+        cls, content: str, base64_image: Optional[str] = None
+    ) -> "Message":
+        """Create a user message"""
+        return cls(role=Role.USER, content=content, base64_image=base64_image)
+```
+
+### 解决循环依赖
+
+两个类互相引用对方的类型，必须用引号包围其中一个类型：
+
+```py
+class A:
+    def get_b(self) -> "B":  # 引号包围 B
+        return B()
+
+class B:
+    def get_a(self) -> A:   # A 已经定义，无需引号
+        return A()
+```
 
 ## Ref and Tag
 
