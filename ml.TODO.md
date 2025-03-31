@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1743264093683
+updated: 1743398378939
 created: 1738165674608
 ---
 
@@ -177,3 +177,7 @@ https://zhuanlan.zhihu.com/p/77026267
 ## 部署
 有没有vLLM/SGLang多机多卡部署详细教程？ - DefTruth的回答 - 知乎
 https://www.zhihu.com/question/1888903744047011293/answer/1888905234241258191
+
+## 灵巧手和 affordance
+
+ManiTrans 和 AffordDP
