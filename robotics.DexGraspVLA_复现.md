@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1743272564383
+updated: 1743406005110
 created: 1741144146461
 ---
 
@@ -727,6 +727,8 @@ forward() 接收形状为：
 T 是观察的 n_obs_steps，B 是 DataLoader 组织为的 batchsize。所以测试和部署时，要组织为如此的数据格式。从 (num_steps, H, W, 4) 中取出一张图片是，即 (H, W, 4) 形状时，要组织为 (1, 1, 4, H, W)。
 
 发现 ObsEncoder 的 dinov2 部分加载比较慢。似乎每次都尝试下载。有无方法使用自定义的参数初始化，并加载保存到 checkpoints 模型的参数？
+
+ZeroMQ 的 REQ-REP 必须按照严格的顺序，发送和接收，接受和发送，不能持续的发生
 
 ### pymodbus: 通信工具
 
