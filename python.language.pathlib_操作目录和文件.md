@@ -1,6 +1,6 @@
 ---
 id: oyt05lfqh26c699x2kvokbw
-title: 操作目录和文件_pathlib
+title: Pathlib_操作目录和文件
 desc: ''
 updated: 1741059008020
 created: 1741030522182

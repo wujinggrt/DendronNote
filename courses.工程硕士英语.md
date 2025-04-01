@@ -2,7 +2,7 @@
 id: rjexswayh0yvitkaf9qez5n
 title: 工程硕士英语
 desc: ''
-updated: 1742265187985
+updated: 1743473516341
 created: 1740448957635
 ---
 
@@ -80,5 +80,13 @@ Third, the most important reason for gun ownership in the US is self-defense (�
 Deduction：演绎。reasoning from general premises, which are known or presumed to be known, to more specific, certain conclusions. 别名形式逻辑 “formal logic".
 
 Induction：归纳。reasoning from specific cases to more general, but uncertain, conclusions. "Informal logic".
+
+## 2025年4月1日
+
+稻草人谬误：扭曲、夸张对方观点到极端的情况。
+
+人身攻击：Ad Ham... 攻击他人的背景，不算逻辑谬误，而是人身攻击。
+
+错误二分法/虚假两难：非黑即白。
 
 ## Ref and Tag

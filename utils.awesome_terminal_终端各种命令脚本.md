@@ -2,11 +2,12 @@
 id: ovto6hepvtttctxmnypiebq
 title: Awesome_terminal_终端各种命令脚本
 desc: ''
-updated: 1743398715413
+updated: 1743473546007
 created: 1742868524198
 ---
 
-## 网桥
+## ip 工具
+### 网桥
 
 ```bash
 sudo apt install bridge-utils
@@ -41,6 +42,65 @@ sudo ip link set dev eth0 up
 如果配置了静态地址，需要清楚配置
 ```bash
 sudo ip addr flush dev eth0
+```
+
+### ip route 路由
+
+```bash
+ip route # 查看路由表
+```
+
+用例：内部内网穿透。
+
+服务器：IP 192.168.19.204，子网掩码（假设为 255.255.255.0），网关（假设为 192.168.19.254）。目标：让服务器能访问 192.168.123.0/24 网段的主机（如 192.168.123.81）。
+
+路由器：
+- 接口1：IP 192.168.19.54（与服务器同网段 192.168.19.0/24）。
+- 接口2：IP 192.168.123.1（子网 192.168.123.0/24，假设是 LAN 口）。
+
+在服务器上添加静态路由，将目标子网流量指向路由器的接口 192.168.19.54。
+
+```bash
+sudo ip route add 192.168.123.0/24 via 192.168.19.54
+```
+
+上述指令临时生效。可以修改路由配置，开机启动即生效。配置 /etc/netplan/01-netcfg.yaml
+
+```yaml
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    ens33:
+      addresses: [192.168.19.204/24]
+      routes:
+        - to: 192.168.123.0/24
+          via: 192.168.19.54
+      nameservers:
+        addresses: [8.8.8.8]
+```
+
+```bash
+sudo netplan apply
+```
+
+确保路由器允许将 192.168.123.0/24 的流量路由到 192.168.19.0/24，并启用 IP 转发。
+
+如果路由器或服务器启用了防火墙，需允许跨子网通信。
+
+```bash
+# 允许来自 192.168.123.0/24 的流量（如使用 ufw）
+sudo ufw allow from 192.168.123.0/24
+```
+
+## ufw 端口的防火墙
+
+有时需要打开对应端口，其他主机才能访问。
+
+```bash
+sudo ufw status
+sudo ufw allow {{Port}}/tcp
+sudo ufw allow from 192.168.123.0/24 # 允许来自此网络的流量
 ```
 
 ## Ref and Tag
