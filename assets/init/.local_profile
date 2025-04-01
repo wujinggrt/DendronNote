@@ -6,15 +6,15 @@ alias pe='perl -wlne'
 alias gS='git status'
 alias gs='git stage'
 #export DISPLAY=$(cat /etc/resolv.conf | perl -wnla -e 'print "$F[1]:0.0" if /nameserver/')
-export DISPLAY=:0.0
+# export DISPLAY=:0.0
 # for pybullet to use opengl 3.3 or later, the x server was stucted in version 1.4
 # we can use command to check it out: glxinfo | grep "OpenGL version"
 export MESA_GL_VERSION_OVERRIDE=3.3
 unset LIBGL_ALWAYS_INDIRECT
 # docker
-alias dritrm='docker run -it --rm'
+alias dritr='docker run -it --rm'
 alias deit='docker exec -it'
-alias sd='sudo docker'
+
 if [[ -n "$ZSH_NAME" ]]; then
     #source ~/ros2_rolling/install/local_setup.zsh
     source ~/ros2_rolling/install/setup.zsh

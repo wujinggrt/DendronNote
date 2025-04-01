@@ -2,7 +2,7 @@
 id: fyepomr2rnswm2zsv3hk12s
 title: Quick_start
 desc: ''
-updated: 1743517112338
+updated: 1743525941933
 created: 1743493714764
 ---
 
@@ -374,6 +374,60 @@ ros2 run my_package my_node
 package.xml，我们可以看到 description 和 liscence 有 TODO 内容，可以修改。在 `<license>` 标签下方，有很多以 `_depend` 结尾的标签，比如 `<test_depend>`，代表依赖别的包，colcon 会搜索。
 
 setup.py 包含了与 package.xml 相同的描述、维护者和证书字段。还有 version 和 name 字段。
+
+## 多机通信
+
+ROS 2 使用分布式通信框架，基于 DDS，满足网络配置条件即可在不同主机上的节点进行数据交互。
+
+两台主机位于同一局域网，且 ping 通。并且要求 ROS 2 环境一致，确保所有节点使用消息类型完全一致，比如 (如 std_msgs/String)。
+
+设置 Domain ID 配置，并且节点在同一 Domain ID 的逻辑分组，不同分组则不能通信。两台主机的 .bashrc 中设置相同的 Domain ID 为：
+
+```bash
+export ROS_DOMAIN_ID=42 # 保持一致即可，默认 0，范围从 0-101
+```
+
+### 发布者主机设置
+
+设置主机 IP 如下：
+
+```bash
+export ROS_IP=192.168.1.100
+```
+
+启动发布者节点：
+
+```bash
+ros2 run demo_nodes_cpp taker
+```
+
+### 订阅者从机设置
+
+设置从机 IP 和启动订阅者节点：
+
+```bash
+export ROS_IP=192.168.1.101
+ros2 run demo_nodes_cpp listener
+```
+
+### 通信验证
+
+在从机上查看接受的消息：
+
+```bash
+ros2 topic echo /chatter
+```
+
+### 常见问题与解决方案
+
+| ​问题 | ​原因 | ​解决方案 |
+| --- | --- | --- |
+| 节点无法发现彼此 | Domain ID 不一致 | 检查两台主机的 .bashrc 中 ROS_DOMAIN_ID 是否相同。 |
+| 话题数据无法接收 | 防火墙阻拦 | 开放 UDP 端口（默认 7400-7500）或临时禁用防火墙。 |
+| 消息类型不匹配 | 不同主机编译的消息接口不一致 | 在两台主机上重新编译相同功能包，确保消息定义同步。 |
+| IP 地址配置错误 | 网络桥接或静态 IP 设置错误 | 使用 ifconfig 确认 IP，并在 .bashrc 中正确导出 ROS_IP。 |
+
+TODO...
 
 ## 例子
 

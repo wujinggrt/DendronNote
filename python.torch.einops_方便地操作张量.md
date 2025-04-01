@@ -2,7 +2,7 @@
 id: pycd8tjfjszc6x3g7ghbhs8
 title: Einops_方便地操作张量
 desc: ''
-updated: 1741586948456
+updated: 1743529514104
 created: 1741161107888
 ---
 
@@ -50,21 +50,24 @@ arr2 = np.array([[7, 8, 9], [10, 11, 12]])
 r0 = rearrange([arr1, arr2], 'x y z -> x y z')
 ```
 
-在转置和交换轴重中，只要把**轴，axis** 对应的数如何变换想清楚，如何索引轴上的数想清楚，rearrange 的操作会变得直观。比如，如下第二维换到第一维，第三维换到第二维，第一维换到最后。即原来有 k 个 i x j 矩阵，变为有 i 个 j x k 矩阵。
+在转置和交换轴重中，只要把**轴，axis** 对应的数如何变换想清楚，理解如何索引轴上的数，rearrange 的操作会变得直观。比如，如下第二维换到第一维，第三维换到第二维，第一维换到最后。"k i j -> i j k" 代表原来有 k 个 i x j 矩阵，变为有 i 个 j x k 矩阵。
 
-原最后一维数据变为第二维，比如 r0[0,0,:] 的 [1,2,3]，变为第二维,即 r1[0,:,0]。可以看做原来的 1 2 3 保存是连续的，但是每个数隔着 k 个数。本质还是在的 axis 是第三，现在放置在第二。其他类似。
+原最后一维数据变为第二维，原来数相隔后面轴对应数量的内容。比如 r0[0,0,:] 的 [1,2,3]，变为第二维,即 r1[0,:,0]。可以看做原来的 1 2 3 保存是**连续的**，但是每个数**隔着 k 个数**，由后面的所有轴的数相隔。本质还是在的 axis 是第三，现在放置在第二。其他类似。
 
 ```py
 r1 = rearrange([arr1, arr2], 'k i j -> i j k')
 assert np.allclose(r0[0,0,:], r1[0,:,0])
 # 沿着一个新维度，第二维 i，拼接并展平
+# k i j -> i j k，再 i j k -> i (j k)
 result = rearrange([arr1, arr2], 'k i j -> i (j k)')
 print(result)
 ```
 
 ```py
-images = [np.random.randn(30, 40, 3) for _ in range(32)] # (32, 30, 40, 3)
-print(rearrange(images, "b h w c -> b w h c").shape) # (32, 40, 30, 3)
+# (32, 30, 40, 3)
+images = [np.random.randn(30, 40, 3) for _ in range(32)]
+# (32, 40, 30, 3)
+print(rearrange(images, "b h w c -> b w h c").shape)
 # concatenate images along height (vertical axis), 960 = 32 * 30 ：(960, 40, 3)
 # 在高度拼接 b 张图像，即 b x h ...
 int(rearrange(images, "b h w c -> (b h) w c").shape)
@@ -74,6 +77,7 @@ print(rearrange(images, "b h w c -> h (b w) c").shape)
 print(rearrange(images, "b h w c -> b c h w").shape)
 # flattened each image into a vector, 3600 = 30 * 40 * 3 ：(32, 3600)
 print(rearrange(images, "b h w c -> b (c h w)").shape)
+# (c ph) 代表 (1 3)，1 个 3 维的向量。
 print(rearrange(images, "b h w (c ph) -> b (c h) (w ph)", ph=1).shape)
 ```
 
@@ -99,7 +103,7 @@ print(rearrange(t1, "b ... -> b (...)"))
 
 ## repeat 增加维度
 
-注意 h repeat 与 repeat h 代表不同，repeat 代表重复所在维度，repeat 所在前后，会代表所在轴的位置不同。从而拼接起来，(h repeat) 与 (repeat h) 不同。(h repeat) 中，每连续的 repeat 个都是相同元素，以 repeat 个一组，连续的重复 h 次。(repeat h) 中，每连续 h 个代表原来的张量，以 h 组为单位重复 repeat 次。
+注意 "h repeat" 与 "repeat h" 代表不同，repeat 代表重复所在维度，repeat 所在前后，会代表所在轴的位置不同。从而拼接起来，(h repeat) 与 (repeat h) 不同。(h repeat) 中，每连续的 repeat 个都是相同元素，以 repeat 个一组，连续的重复 h 次。(repeat h) 中，每连续 h 个代表原来的张量，以 h 组为单位重复 repeat 次。
 
 ```py
 import numpy as np
@@ -109,8 +113,10 @@ image = np.random.randn(30, 40)
 # change it to RGB format by repeating in each channel：(30, 40, 3)
 # 最后会产生新的维度，将原来最后一维重复 c 次，作为新的最后一维。
 # c 所在维度复制，即最后一维复制，最后是连续 c 个相同的数字
-print(repeat(image, "h w -> h w c", c=3).shape) # 最后一维是重复的，得到 (h, w, 3)
-# c 所在维度复制，即第二维，连续 c 个 w 维张量相同（复制而来），即 [i, :c, ...] 全是相同的。
+# 最后一维是重复的，得到 (h, w, 3)
+print(repeat(image, "h w -> h w c", c=3).shape)
+# c 所在维度复制，即第二维，连续 c 个 w 维张量相同（复制而来）
+# 即 [i, :c, ...] 全是相同的。
 print(repeat(image, "h w -> h c w", c=3).shape) # (h, 3, w)
 print(repeat(image, "h w -> h (c w)", c=3).shape) # 展平两维，最后一维是重复的 c 次 w
 # repeat image 2 times along height (vertical axis)：(60, 40)

@@ -1,14 +1,13 @@
 {
     // 避免debug的控制程序step into等控制条遮挡菜单和tab
     "debug.toolBarLocation": "docked",
-    /* 
+    /*
     * normal mode:
     * E, R 移动右、左标签
     * K 上插空行
     * H, L 行首行尾
     * <space> 打开which key
-    * <leader>q quit
-    * <leader>Q 退出 Group
+    * <leader>q, <leader>Q quit, quit all
     * <leader><w|e|b> CamelCaseMotion移动，驼峰命名或snake命名移动
     * <leader>W save, save all
     * <leader>f format code
@@ -36,9 +35,10 @@
     * < 和 > 控制缩进
     *
     * insert mode:
+    * kj <Esc>
     * <leader>w save
     * <leader>e <Esc>后e再a，相当于编辑模式下的前移光标
-    * jkl <Esc>后l再a，相当于编辑模式下的前移光标
+    * <leader>l <Esc>后l再a，相当于编辑模式下的前移光标
     * <leader>L <Esc>后L再a，移动光标到末尾
     * <leader>h 相当于光标停在当前位置，用于提示api接口
     * <leader>m 最大化当前编辑窗口
@@ -203,7 +203,7 @@
                 "Q"
             ],
             "commands": [
-                "workbench.action.closeEditorsInGroup"
+                ":qa!"
             ]
         },
         {
@@ -725,6 +725,13 @@
             ]
         },
     ],
+    // 在 vim 输入时，从 insert 模式切换回 normal 时，自动切换输入法为英文。
+    // {im} 会被替换为 defaultIM 的值（即 1033），从插入模式返回普通模式时，会切换输入法到键盘。
+    // 如果需要切换到其他窗口，比如浏览器，需要输入时，使用 Win + 空格 或 alt + shift 即可切换输入法。
+    // "vim.autoSwitchInputMethod.enable": true,
+    // "vim.autoSwitchInputMethod.defaultIM": "1033", // 2052 代表中文，1033 代表英文
+    // "vim.autoSwitchInputMethod.obtainIMCmd": "C:\\Users\\wujing\\im-select.exe",
+    // "vim.autoSwitchInputMethod.switchIMCmd": "C:\\Users\\wujing\\im-select.exe {im}",
     "whichkey.bindings": [
         // a 辅助栏
         {
@@ -1055,9 +1062,15 @@
                 },
                 {
                     "key": "p",
-                    "name": "Publish",
+                    "name": "Publish (Sync Changes)",
                     "type": "command",
                     "command": "git.publish"
+                },
+                {
+                    "key": "P",
+                    "name": "Pull",
+                    "command": "git.pullRef",
+                    "when": "scmProvider == 'git'"
                 },
                 {
                     "key": "g",
@@ -1346,9 +1359,9 @@
     "workbench.colorCustomizations": {
         "titleBar.activeBackground": "#54a3ff",
         "titleBar.activeForeground": "#ffffff",
-        "statusBar.background": "#8FBCBB",
-        "statusBar.noFolderBackground": "#8FBCBB",
-        "statusBar.debuggingBackground": "#8FBCBB",
+        "statusBar.background": "#B48EAD",
+        "statusBar.noFolderBackground": "#B48EAD",
+        "statusBar.debuggingBackground": "#B48EAD",
         "statusBar.foreground": "#000",
         "statusBar.debuggingForeground": "#000"
     },
@@ -1356,7 +1369,7 @@
     "editor.unicodeHighlight.allowedCharacters": {
         "，": true,
         "（": true,
-        "）": true
+        "）": true,
     },
     "[python]": {
         "editor.rulers": [
@@ -1367,7 +1380,7 @@
         "diffEditor.ignoreTrimWhitespace": false, // 默认使用 Ruff 格式化
         // "editor.formatOnSave": true, // 保存时自动格式化
         // ruff默认单行长度88，修改之
-        "ruff.lineLength": 88
+        "ruff.lineLength": 88,
     },
     // "notebook.formatOnSave.enabled": true, // notebook 保存时自动格式化
     // ruff-lsp 服务端已经标记为 deprecated，使用新的 rust 实现的后端 ruff server

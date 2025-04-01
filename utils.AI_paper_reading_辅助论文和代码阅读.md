@@ -2,7 +2,7 @@
 id: 8uriumohgfxd1icere7lvus
 title: AI_paper_reading_辅助论文和代码阅读
 desc: ''
-updated: 1742189802639
+updated: 1743526434139
 created: 1740377066945
 ---
 
@@ -67,9 +67,6 @@ QA：
 - 实际部署中有哪些挑战？
 - Qwen2.5-VL 在多模态融合中采用简单的 MLP 投影器，是否称为性能瓶颈？相比更复杂的跨模态注意力机制，涉及有何优劣？
 - 实现伪代码。
-
-
-
 
 其他的问题：
 - 为什么 XX 比 XX 更适合作为 XX ？
