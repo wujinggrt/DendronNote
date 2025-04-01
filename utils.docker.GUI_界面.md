@@ -2,7 +2,7 @@
 id: 4ogju3fm1rt556puboo1zzb
 title: GUI_界面
 desc: ''
-updated: 1743470152671
+updated: 1743493631561
 created: 1743468987345
 ---
 
@@ -27,6 +27,18 @@ docker run -dit \
     --env="NVIDIA_VISIBLE_DEVICES=all" \
     --env="NVIDIA_DRIVER_CAPABILITIES=all" \
     nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04 \
+    bash
+```
+
+```bash
+docker run -dit \
+    --name myros2 \
+    --env DISPLAY=$DISPLAY \
+    --env QT_X11_NO_MITSHM=1 \
+    --volume /tmp/.X11-unix:/tmp/.X11-unix \
+    --volume $HOME/.Xauthority:/root/.Xauthority \
+    --net host \
+    osrf/ros2:nightly \
     bash
 ```
 
