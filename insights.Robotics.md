@@ -2,7 +2,7 @@
 id: eszoks0gixjd0fjyul4wh10
 title: Robotics
 desc: ''
-updated: 1743526153596
+updated: 1743576992442
 created: 1740293600917
 ---
 
@@ -142,6 +142,18 @@ RL 不会带来新知识，所以有些内容，还是要先通过其他方式�
 ### 不拆分大小模型的弊端
 
 复杂度，训练难度上涨，难以追溯原因和训练。
+
+## VRFT + Robot
+
+VLM 进行 VRFT，使用 Reinforce++ 或 GRPO。随后，小模型在使用 CLIP-text encoder 和 DINOv2 提供视觉。
+
+VLM 需要有识别能力。随后，能够识别，才能够思考。正如 DeepSeek R1 的工作。思考如何与机器人工作配合。
+
+### 视觉理解和规划的大小模型
+
+视觉也可大小模型理解，然后规划？就像人眼可以快速扫动，盯住 (contact) 一个地方才能思考。
+
+VLM 做分析 (analyse) 和指导 (instruct)。指导小模型找到感兴趣区域，通过短命令 + CLIP-Text encoder。参考 ORION: A Holistic End-to-End Autonomous Driving Framework by Vision-Language Instructed Action Generation
 
 ## Agent 设计
 

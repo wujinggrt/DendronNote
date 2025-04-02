@@ -1421,7 +1421,8 @@
     "todohighlight.isCaseSensitive": false,
     "diffEditor.wordWrap": "on",
     // 每行最多显示字符数量，多余的自动换行
-    "editor.wordWrapColumn": 80,
+    "editor.wordWrap": "wordWrapColumn",
+    "editor.wordWrapColumn": 100,
     // 字符提示线
     "editor.rulers": [
         119

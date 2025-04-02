@@ -145,6 +145,14 @@ https://arxiv.org/pdf/2503.11240
 复现 DeepSeek-R1 小记 - 周星星的文章 - 知乎
 https://zhuanlan.zhihu.com/p/32485048223
 
+Open-Reasoner-Zero：基于基础模型的强化学习扩展开源方法 - 无影寺的文章 - 知乎
+https://zhuanlan.zhihu.com/p/28504120030
+> 数据更重要，不要过分追求复杂的方法，而要关注基础要素的规模效应。真正重要的是训练数据、模型规模和训练次数的规模，而不是设计的复杂度
+
+https://github.com/zwq2018/embodied_reasoner
+
+https://arxiv.org/abs/2503.21696
+
 ### World Model
 
 【强化学习教程 20】世界模型（World Models） - tomsheep的文章 - 知乎
