@@ -1122,10 +1122,16 @@
             "bindings": [
                 // m 右侧显示整个code的小map条
                 {
-                    "command": "editor.action.toggleMinimap",
                     "key": "m",
                     "name": "minimap",
+                    "command": "editor.action.toggleMinimap",
                     "type": "command"
+                },
+                {
+                    "key": "M",
+                    "name": "Makrdown preview",
+                    "command": "markdown-preview-enhanced.openPreviewToTheSide",
+                    "when": "editorLangId == 'markdown'"
                 },
             ]
         },
