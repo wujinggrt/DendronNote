@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1743398378939
+updated: 1743952845243
 created: 1738165674608
 ---
 
@@ -91,6 +91,10 @@ https://zhuanlan.zhihu.com/p/22754193110
 具身智能VLA方向模型fine-tune（单臂）（24.12.26已完结）
 https://blog.csdn.net/iamjackjin/article/details/144534904?fromshare=blogdetail&sharetype=blogdetail&sharerId=144534904&sharerefer=PC&sharesource=qq_39422041&sharefrom=from_link
 > 作者采集了 150 条数据，每个任务 10-30 条，
+
+https://wildlma.github.io/
+> 移动操作机器人
+
 ## RL
 在线强化学习改进VLA模型 - 黄浴的文章 - 知乎
 https://zhuanlan.zhihu.com/p/23993973779
@@ -152,6 +156,10 @@ https://zhuanlan.zhihu.com/p/28504120030
 https://github.com/zwq2018/embodied_reasoner
 
 https://arxiv.org/abs/2503.21696
+
+大模型Reward Model做不上去怎么办必读论文 - xhchen的文章 - 知乎
+https://zhuanlan.zhihu.com/p/14681365893
+> reward model 的论文
 
 ### World Model
 

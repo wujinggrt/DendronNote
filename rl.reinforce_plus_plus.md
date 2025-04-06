@@ -2,7 +2,7 @@
 id: ylw0hme4i9wsnb5l5uuwun8
 title: Reinforce_plus_plus
 desc: ''
-updated: 1743628719607
+updated: 1743916633073
 created: 1743621094410
 ---
 
@@ -32,6 +32,94 @@ $$
 既然我们想删掉critic model，那么自然可以从GAE退化到完全用2来估计价值，就变为累积折扣奖励，也就是reinforce用的估计价值的方法。但是呢，PPO的一些非常重要的trick，重要性采样、clip、归一化等等仍得到了保留，因此效果仍会不错，就叫Reinforce++。（openrlhf中，默认 λ\lambda\lambda 就是0.95，TD误差参与的其实很少。在语言模型中，critic模型很难训练得特别好，因此它在GAE中也不应发挥过多作用，删掉训练的不怎么样的critic，reinforce++效果也还可以。）
 
 reinforce++ 是直接调的 ppo trainer。但是在计算 return 和 advantage 的时候走了不同的分支，别的都一样
+
+## REINFORCE 算法
+
+### 算法
+
+REINFORCE 算法是基础的策略梯度方法，通过梯度上升优化目标策略。有以下操作流程：
+- 轨迹采样：Agent 与环境交互，收集轨迹，包含状态，动作和奖励。
+- 回报计算：计算各时间步的折扣累积奖励：$G_t = \Sigma^T_{k=t+1}\gamma^{k-t}r_k$。
+- 策略梯度估计：使用蒙特卡洛方法，计算回报的期望中，对其参数求梯度，使用 $\nabla\theta J(\theta) = \mathbb{E}_\pi [G_t \nabla_\theta log \pi_\theta (A_t \mid S_t)]$
+- 策略更新：策略参数通过梯度上升更新：$\theta \leftarrow \theta + \alpha \nabla_\theta J(\theta)$, $\alpha$ 是学习率。
+
+尽管这些方法简单，但是 REINFORCE 算法有高方差的缺点。
+
+### 在 RLHF 的挑战
+
+- 计算开销大：方法类似 PPO，需要 critic 网络，增加显存负担和计算需求。
+- 训练不稳定：策略和 critic 网络有收敛的问题。
+- 扩展性：
+
+## REINFORCE++ 改进
+
+### Token-Level KL Penalty
+
+提出了 token 级的 KL 惩罚。在序列生成任务中的正则化技术，控制生成的文本与训练数据之间的差异，避免模型生成过于偏离训练分布的输出。此惩罚被放入了奖励函数中，具体如下：
+
+$$
+r(s_t,a_t) = \bold{I}(s_t=[EOS])r(x,y) - \beta KL(t) \\
+$$
+
+$$
+KL(t) = log(\frac{\pi^{RL}_{\theta_{old}} (a_t \mid s_t)}{\pi^{SFT} (a_t \mid s_t)})
+$$
+
+- x 代表输入的 prompt
+- y 代表生成的 response
+- $\bold{I}(s_t=[EOS])$ 是一个二值函数，指出第 t 个 token，即最后一个 token 是否为 EOS。​功能：仅在生成完整序列（遇到 EOS 标记）时，才赋予来自奖励模型的总奖励 r(x,y)；否则仅计算KL惩罚项。于是，奖励集中到了末尾，简化优化目标。
+​目的：避免对中间token分配不合理的奖励，确保奖励仅与完整输出相关。
+- β 是惩罚系数
+
+这种 token 级别的 KL 惩罚无缝兼容 PRM。
+
+在遇到 EOS token 前，每个 token 都只会得到 KL 惩罚项的奖励，在遇到生成结束标志 EOS 才会得到完整的奖励。
+
+### Mini-batch Updates
+
+这是一种常用的优化方法，提高训练效率和稳定性。主要思想如下：
+- Batch Processing: 数据按照小批量，可管理的 chunk 来处理。
+- Multiple Update: 每个 mini-batch 允许多次参数更新，增加收敛速率。
+- 随机性引入 (Stochastic Optimization)：小批量更新引入了随机性，助力避免局部最优解，提高泛化性。
+
+### Reward Normalization and Clipping
+
+提出了全面的奖励处理过程，提高稳定。
+- 奖励归一化：对奖励标准化，使用 z-score 归一化减轻 outliers。
+- 奖励裁剪：限制奖励边界，防止极端奖励的影响，有助于保持学习过程的稳定，避免梯度爆炸。
+- scaling：恰当的缩放参数保证更新的稳定。
+
+### Advantage Normalization
+
+处理优势函数估计方差的方法。优势函数定义如下：
+
+$$
+A_t(s_t,a_t) = r(x,y) - \beta \cdot \Sigma^T_{i=t} \text{KL}(i)
+$$
+
+使用 z-score 归一化优势函数:
+
+$$
+A_{normalized} = \frac{A - \mu_A}{\sigma_A}
+$$
+
+$\mu_A$ 和 $\sigma_A$ 代表批次的 mean 和标准差。归一化保证了梯度稳定。
+
+总奖励 $r(x,y)$ 没有经过 KL 惩罚的原始奖励。优势函数需要减去当前 token 到序列结束的所有 KL 惩罚之和。
+
+### PPO-Clip Integration
+
+采用 PPO 的裁剪机制，约束策略更新：
+
+$$
+L^{CLIP}(\theta) = \mathbb{E}_t [\text{min}(r_t(\theta) \hat{A_t}, \text{clip}(r_t(\theta), 1 - \epsilon, 1 + 1 + \epsilon) \hat{A_t})]
+$$
+
+$r_t(\theta)=\frac{\pi_\theta (a_t \mid s_t)}{\pi_{\theta_{old} (a_t \mid s_t)}}$ 代表新旧策略输出的比例。
+
+### 对比 token-level 的奖励与优势函数的奖励
+
+既然优势函数用不上 token-level 的奖励 $r(a_t,s_t)$，那么每个 token 的即时奖励有什么用处？
 
 ---
 
@@ -163,6 +251,8 @@ class ReinforcePlusPlus:
 - 对样本效率要求较高的在线学习任务。
 
 ## Ref and Tag
+
+10.48550/arXiv.2501.03262
 
 https://verl.readthedocs.io/en/latest/examples/config.html#algorithm
 
