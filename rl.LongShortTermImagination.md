@@ -2,40 +2,14 @@
 id: qon8owvfwcckh0l0fl9e8ee
 title: LongShortTermImagination
 desc: ''
-updated: 1743958670926
+updated: 1743966614277
 created: 1739694710359
 ---
 
 
 ICLR oral: Open-World Reinforcement Learning over Long Short-Term Imagination. https://qiwang067.github.io/ls-imagine, https://arxiv.org/pdf/2410.03618
 
-insights: 做 US 时候，潜意识里人是能够估计人体的 affordance 图，知道大致范围。是否可以弄个 WorldModel？LLM 只能生成下一个 token，当做 short，嵌入另一个小模型来做 long term imagination。
-
 训练 visual RL agent 时，model-based methods 通常是 short-sighted。作者提出 LS-Imagine，根据有限数量的状态转移步，扩展了 imagination horizon,，使得 agent 去探索行为，以到可能的长期反馈 (long-term feedback)。核心在于建立长短期世界模型 (long short-term world model)。作者模拟了以目标为条件的 jumpy 状态转移，并通过放大单张图像的具体区域来计算对应的 affordance map。
-
-RL 中，instant state transitions（瞬时状态转移） 和 jumpy state transitions（跳跃状态转移） 是描述环境动态特性的两种现象。
-* Instant State Transitions。智能体执行动作后，环境状态立即发生变化，且这种变化在时间上是**离散的**或**瞬间完成**的。无中间过程和中间状态。这是大多数强化学习问题的默认假设。比如棋类游戏，做出动作立刻更新棋盘。
-* Jumpy State Transitions。状态变化在时间或空间上表现出不连续性或突变性。这种转移可能是由于环境动态的复杂性、传感器噪声或数据采样率不足引起的。不连续性：状态转移可能跳过某些中间状态，导致智能体观察到“跳跃”现象。时间或空间突变：状态可能在短时间内发生剧烈变化。挑战性：增加了智能体学习环境动态的难度。
-
-最开始，需要一些成功的数据启动来学习 (是否需要模仿学习一部分，然后再强化学习探索式的学习增强泛化)，提供一些好的例子。就像 OS 的 Boostrap，需要嵌入一个启动 OS 的引导程序，再来启动 OS 以控制硬件。这也和 DeepSeek R1，基于强大的模型 V3 才能成功。就像鸡生蛋蛋生鸡问题，先加入一组数据，驱动这个循环启动就可以。
-
-具体做法：先从一张图片，不断 Zoom in 得到一系列图片，作为成功的例子。
-
-### 3.1 Overview
-#### 3.2 AFFORDANCE MAP AND INTRINSIC REWARD
-根据视觉观察和文本任务定义，引导 agent 的注意力**聚焦**于任务相关的区域。Affordance map 突出了区域与任务的关联性。
-
-Affordance map computation via virtual exploration. 使用滑动边框扫描各个图片，不断在边框内放大，取出这些图片作为伪视频帧，以此对应长距离状态转移。根据文本描述的具体任务的目标，使用 MineCLIP 的奖励模型，评估视频切片与任务的相关性，生成 affordance map，用作探索的先验知识。
-
-![fig2](assets/images/rl.LongShortTermImagination/fig2.png)
-
-如 Fig 2(a)，模拟和评估探索，不依赖成功的轨迹。使用缩小了 15% 的宽和高的滑动边框，从左至右、从上至下的遍历当前观察的图像，覆盖了可能的区域。滑动边框朝着水平和垂直方向移动 9 步。对每个位置，不断放大感兴趣区域，得到 16 个如此图片，它们是边框标注的，经过调整尺寸到原来图像大小后，用来模拟 agent 向着目的位置移动的视觉转移，
-
-首先，采用一个随机的 agent 与任务相关的环境交互，进一步收集数据。在观察的时间步 $t$ 得到的观察 $o_t$。使用一个滑动边框，其维度为观察图像的 15% 的宽和高，从左至右，从上至下地遍历整个观察图像。滑动边框水平和垂直地移动 9 步，在每个维度都覆盖每个潜在区域 (potential region)。作者每个观察 $o_t$ 的滑动边框中都囊括的位置，裁剪出 16 张图像。这些图像缩小了视场角，聚焦了区域，随后对这些图像重新调整到与观察图像大小的维度。如图 Fig 2(a) 上面部分，16 个 frames 模拟了探索。这 16 张有序的图像，用来模拟 agent 向着滑动边框确定的目的位置移动的视觉转移。重新调整的图像记为 $x_t^k (0 <= k < 16)$。使用 MineCLIP 模型计算这些图片集合 (视频帧) 与任务文本描述的相关性。随后量化了边框的 affordance value，最后得到潜在探索的感兴趣区域。Affordance value 根据感兴趣区域的边框数量求出。
-
-#### 3.3 Long Short-Term World Model
-
-定义世界模型为 long-term and short-term state transitions
 
 ## Reading
 
@@ -183,24 +157,64 @@ $$
 - ​**功能**：  
   不依赖动作 $a_{t-1}$，直接预测跳跃后的状态 $(h_t', z_t')$，模拟智能体接近目标后的未来状态。
 
-#### 关键机制
-**跳跃标志**（Jumping Flag）
-- ​**计算方式**：  
-  - ​**相对峰度**：衡量affordance map中高响应区域的集中程度  
-    $$K_r = \frac{1}{WH}\sum \left(\frac{\mathcal{M}_{o,I}(w,h) - \mu}{\sigma}\right)^4$$  
-  - ​**绝对峰度**：衡量目标区域的置信度  
-    $$K_a = \max(\mathcal{M}_{o,I}) - \mu$$  
-  - ​**跳跃概率**：  
-    $$P_{\text{jump}} = \text{sigmoid}(K_r) \times K_a$$  
-- ​**触发条件**：动态阈值 $P_{\text{thresh}} = \mathbb{E}[P_{\text{jump}}] + \sigma$，若 $P_{\text{jump}} > P_{\text{thresh}}$ 则置 $j_t=1$。
+#### 具体模型组成
 
-**跳跃状态预测**
-- ​**间隔预测器**​（Interval Predictor）：  
-  预测从当前状态到跳跃状态所需的真实环境步数 $\Delta_t$。  
-  - 通过匹配后续交互中affordance map的响应值确定真实间隔。  
-- ​**累积奖励预测器**​（Reward Predictor）：  
-  预测跳跃期间的累积奖励 $G_t = \sum_{i=1}^{\Delta_t} \gamma^{i-1} r_{t+i}$。
+$$
+\begin{aligned}
+& \text{Short-term transition model:} & h_t &= f_\phi(h_{t-1}, z_{t-1}, a_{t-1}) \\
+& \text{Long-term transition model:} & h'_t &= f_\phi(h_{t-1}, z_{t-1}) \\
+& \text{Encoder:} & z_t &\sim q_\phi(z_t \mid h_t, o_t, \mathcal{M}_t) \\
+& \text{Dynamics predictor:} & \hat{z}_t &\sim p_\phi(\hat{z}_t \mid h_t) \\
+& \text{Reward predictor:} & \hat{r}_t, \hat{c}_t &\sim p_\phi(\hat{r}_t, \hat{c}_t \mid h_t, z_t) \\
+& \text{Decoder:} & \hat{o}_t, \hat{\mathcal{M}}_t &\sim p_\phi(\hat{o}_t, \hat{\mathcal{M}}_t \mid h_t, z_t) \\
+& \text{Jump predictor:} & \hat{j}_t &\sim p_\phi(\hat{j}_t \mid h_t, z_t) \\
+& \text{Interval predictor:} & \hat{\Delta}'_t, \hat{G}'_t &\sim p_\phi(\hat{\Delta}'_t, \hat{G}'_t \mid h_{t-1}, z_{t-1}, h'_t, z'_t)
+\end{aligned}
+$$
 
+可以看到，短期和长期转移模型参数都是一致的。只是传入的参数有无 $a_{t-1}$。输入和输出，参考上述模型即可。比如，Encoder 模型接收 recurrent state $h_{t}$，还有观察和 Affordance map $o_t, \mathcal{M}_t$，输出后验状态 $z_t$。
+
+作者设计了多个预测器，方便想象。比如，Interval predictor 预测交互的步数 $\hat{\Delta}'_t$，和期望累积奖励 $\hat{G}'_t$。
+
+训练时，收集根据当前策略与环境交互得到的短期元组 $\mathcal{D}_t=(o_t,a_t,\mathcal{M}_t,r_t,c_t,j_t,\Delta_t,G_t)$。$c_t$ 决定是否继续与环境持续交互，即是否终止。当 $j_t=1$，额外构建长期元组 $\mathcal{D}'_{t+1}=(o'_{t+1},a'_{t+1},\mathcal{M}'_{t+1},r'_{t+1},c'_{t+1},j'_{t+1},\Delta'_{t+1},G'_{t+1})$。 
+
+在表征学习过程中，从 replay buffer $\mathcal{B}$，采样短期元组 $\{\mathcal{D}_t\}^T_{t=1}$，和其紧随着的长期元组对应的跳跃转移 $\{\mathcal{D}'_{t+1}\}^T_{t\in\mathcal{T}}$，$\mathcal{T}$ 代表需要长期状态转移的时间步集合。
+
+疑问：一个模型如何能够预测两个分支？比如短期/长期转移模型根据参数不同预测不同时期的模型，在实现时如何做到？使用一个特殊的 action 作为占位，标志着执行长期预测？
+
+### BEHAVIOR LEARNING OVER MIXED LONG SHORT-TERM IMAGINATIONS
+
+如图 (b) 部分，采用了 Actor-Critic 算法：
+- ​**Actor**：策略网络 $\pi_\theta(\hat{a}_t \mid \hat{s}_t)$ 生成动作 $\hat{a}_t$，优化目标为最大化折扣累积奖励 $R_t$。
+- ​**Critic**：价值网络根据当前状态 $\hat{s}_t \doteq \{h_t,\hat{z}_t\}$，$v_\psi(\hat{R}_t \mid \hat{s}_t)$ 预测状态价值 $\hat{R}_t^\lambda$，用于评估策略效果。
+
+从采样的观察 $o_1$ 和 affordance map $\mathcal{M}_1$ 编码后的初始状态 $z_1$ 出发，根据跳跃预测器预测的跳跃标志 $\hat{j}_1$，动态地选择长期或短期状态转换模型。对于想像范围为 L 的序列，预测 $\hat{r}_t,\hat{c}_t,\hat{\Delta}_t,\hat{G}_t$ 等信息。
+
+注意，t 不代表具体时间步，仅代表顺序。比如，对于跳跃状态转移，需要的步数为 $\hat{\Delta}'_t$，对应从 $\hat{s}'_{t-1}$ 到 $\hat{s}'_t$ 所需的步数。可能的折扣累积奖励 $\hat{G}'_t$ 对应步数 $\hat{\Delta}'_t$。对于短期想象，执行单步转移，设置 $\hat{\Delta}_t=1$ 和 $\hat{G}_t=\hat{r}_t$，此时保持了符号一致。最终，对于一条 episode，我们得到一系列步骤区间 $\hat{\Delta}_{2:L}$ 和预测的累积折扣奖励 $\hat{G}_{2:L}$，注意，奖励也要预测。
+
+![serie_imagination](assets/images/rl.LongShortTermImagination/serie_imagination.png)
+
+图 7：动态选择使用长期转移模型或短期转移模型预测长短期想象序列。
+
+使用改进的 boostrap λ-returns 结合长期和短期想象，计算每个状态的折扣累积奖励：
+
+$$
+\mathit{R_t^\lambda} \doteq 
+\begin{cases}
+\hat{c}_t \left\{ \hat{G}_{t+1} + \gamma^{\hat{\Delta}_{t+1}} \left[ (1 - \lambda) v_\psi(\hat{s}_{t+1}) + \lambda R_{t+1}^\lambda \right] \right\} & \text{if } t < L \\
+v_\psi(\hat{s}_L) & \text{if } t = L
+\end{cases}.
+$$
+
+### 实验
+
+在 图 10 中展示了基于长短期想象状态序列重建的观测图像和功用性图的可视化结果。其中第一行显示了跳跃式状态转换前后的潜在状态，并将其解码回像素空间，以直观呈现状态变化；第二行可视化了由潜在状态重建的功用性图，以更清晰地理解功用性图如何促进跳跃式状态转换，以及它们是否能够提供有效的目标导向指导；最后一行通过透明叠加的方式将功用性图覆盖在重建的观测图像上，从而更直观的凸显出智能体关注的区域。
+
+![fig10.gif](assets/images/rl.LongShortTermImagination/fig10.png)
+
+解码与编码，也许可以考虑扩散的策略。
+
+---
 
 Buffer 中的每条轨迹包含相邻相邻时间步和长距离间隔时间步的状态。
 
@@ -208,10 +222,6 @@ Buffer 中的每条轨迹包含相邻相邻时间步和长距离间隔时间步�
 - **双分支架构**：  
   - **短期分支**：单步状态转移（如 DreamerV3）。  
   - **长期分支**：预测跳转后的状态、步长间隔（Δₜ）和累积奖励（Gₜ）。  
-
-### 行为学习
-- **混合想象力序列**：交替使用长短期想象，通过改进的λ-return计算累积奖励（式9）。  
-- **策略优化**：仅对短期想象步骤（jₜ=0）更新策略，避免跳转状态的动作缺失问题。  
 
 ## insight
 
