@@ -2,7 +2,7 @@
 id: tz6m430sfzjehicuojbggws
 title: 代理设置
 desc: ''
-updated: 1742381153256
+updated: 1744041043409
 created: 1742381049066
 ---
 
@@ -49,6 +49,17 @@ sudo vim ~/.docker/config.json
 ```bash
 sudo systemctl daemon-reload #重载systemd管理守护进程配置文件
 sudo systemctl restart docker #重启 Docker 服务
+```
+
+## 注意
+
+上述设置，会影响容器的环境变量。容器会继续沿用 `http-proxy` 等环境变量，可能导致网络问题。此外，其他程序也可能会收到这两个配置文件的影响，特别是 ~/.docker/config.json 文件。可以在下载完镜像后，把这些配置都删除，避免影响。
+
+```bash
+sudo cp ~/.docker/config.json ~/.docker/config.json.bak
+sudo rm ~/.docker/config.json
+sudo cp /etc/docker/daemon.json /etc/docker/daemon.json.bak
+sudo rm /etc/docker/daemon.json
 ```
 
 ## Ref and Tag

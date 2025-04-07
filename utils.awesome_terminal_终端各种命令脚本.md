@@ -2,7 +2,7 @@
 id: ovto6hepvtttctxmnypiebq
 title: Awesome_terminal_终端各种命令脚本
 desc: ''
-updated: 1743492973019
+updated: 1744040734478
 created: 1742868524198
 ---
 
@@ -108,6 +108,14 @@ sudo ufw allow from 192.168.123.0/24
 sudo ufw status
 sudo ufw allow {{Port}}/tcp
 sudo ufw allow from 192.168.123.0/24 # 允许来自此网络的流量
+```
+
+## sudo 免密码
+
+需要在 root 用户下执行。
+
+```bash
+echo "`whoami` ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 ```
 
 ## Ref and Tag
