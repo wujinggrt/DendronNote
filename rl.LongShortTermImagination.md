@@ -2,7 +2,7 @@
 id: qon8owvfwcckh0l0fl9e8ee
 title: LongShortTermImagination
 desc: ''
-updated: 1743966614277
+updated: 1744017208310
 created: 1739694710359
 ---
 
@@ -222,6 +222,19 @@ Buffer 中的每条轨迹包含相邻相邻时间步和长距离间隔时间步�
 - **双分支架构**：  
   - **短期分支**：单步状态转移（如 DreamerV3）。  
   - **长期分支**：预测跳转后的状态、步长间隔（Δₜ）和累积奖励（Gₜ）。  
+
+## Code
+
+Short-term transition model 和 Long-term transition model 共享参数吗？
+
+​**​参数部分共享​**​：
+- ​**​共享参数​**​：状态转移的核心循环单元（GRU/Mamba）与编码器  
+- ​**​独立参数​**​：长时分支特有的跳跃步数预测头和累积奖励预测头  
+
+networks.py:class RSSM 是世界模型的核心组件。在强化学习中，RSSM 通常指 Recurrent State-Space Model，即递归状态空间模型。主要负责：
+- ​**​状态表征学习​**​：将原始观测（图像/传感器数据）编码为低维隐状态
+- ​**​动态预测​**​：建模状态转移规律 $p(s_{t+1}|s_t,a_t)$
+- ​**​长期依赖建模​**​：通过递归结构捕捉时序关系
 
 ## insight
 

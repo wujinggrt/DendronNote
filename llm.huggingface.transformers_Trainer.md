@@ -2,7 +2,7 @@
 id: 0da424ysmswufl4406wj1dt
 title: transformers_Trainer
 desc: ''
-updated: 1741071001582
+updated: 1744017235757
 created: 1740301523116
 ---
 
@@ -12,7 +12,7 @@ created: 1740301523116
 
 ### 构造函数
 
-构造函数的参数，参考文档或代码提出的文件。常用的如下：
+构造函数的参数，参考文档或代码提出的文件。关心的参数如下：
 
 ```py
 class Trainer:
@@ -60,18 +60,18 @@ class Trainer:
 ### 方法
 
 `Trainer` 包含基本训练循环。如果想要自定义训练，可以继承 `Trainer`，并覆盖如下方法：
-- `get_train_dataloader` — 创建训练 DataLoader。
-- `get_eval_dataloader` — 创建评估 DataLoader。
-- `get_test_dataloader` — 创建测试 DataLoader。
-- `log` — 记录观察训练的各种对象的信息。
-- `create_optimizer_and_scheduler` — 如果它们没有在初始化时传递，请设置优化器和学习率调度器。请注意，你还可以单独继承或覆盖 create_optimizer 和 create_scheduler 方法。
-- `create_optimizer` — 如果在初始化时没有传递，则设置优化器。
-- `create_scheduler` — 如果在初始化时没有传递，则设置学习率调度器。
-- `compute_loss` - 计算单批训练输入的损失。默认实现中，返回的元组中，第一个元素应当是 loss。如果在构造函数传入了 compute_loss_func 则使用它。但是，默认使用 outputs = model(**inputs) 的 outputs[0] 作为 loss。
-- `training_step` — 执行一步训练。
-- `prediction_step` — 执行一步评估/测试。
-- `evaluate` — 运行评估循环并返回指标。
-- `predict` — 返回在测试集上的预测（如果有标签，则包括指标）。
+- `get_train_dataloader()` — 创建训练 DataLoader。
+- `get_eval_dataloader()` — 创建评估 DataLoader。
+- `get_test_dataloader()` — 创建测试 DataLoader。
+- `log()` — 记录观察训练的各种对象的信息。
+- `create_optimizer_and_scheduler()` — 如果它们没有在初始化时传递，请设置优化器和学习率调度器。请注意，你还可以单独继承或覆盖 create_optimizer 和 create_scheduler 方法。
+- `create_optimizer()` — 如果在初始化时没有传递，则设置优化器。
+- `create_scheduler()` — 如果在初始化时没有传递，则设置学习率调度器。
+- `compute_loss()` - 计算单批训练输入的损失。默认实现中，返回的元组中，第一个元素应当是 loss。如果在构造函数传入了 compute_loss_func 则使用它。但是，默认使用 outputs = model(**inputs) 的 outputs[0] 作为 loss。
+- `training_step()` — 执行一步训练。
+- `prediction_step()` — 执行一步评估/测试。
+- `evaluate()` — 运行评估循环并返回指标。
+- `predict()` — 返回在测试集上的预测（如果有标签，则包括指标）。
 
 ## 示例
 
@@ -90,6 +90,29 @@ class CustomTrainer(Trainer):
         loss_fct = nn.CrossEntropyLoss(weight=torch.tensor([1.0, 2.0, 3.0], device=model.device))
         loss = loss_fct(logits.view(-1, self.model.config.num_labels), labels.view(-1))
         return (loss, outputs) if return_outputs else loss
+```
+
+### data_collator 参数
+
+data_collator 的输入参数 batch 的数据类型通常是 ​​由多个样本组成的列表（List）​​，其中每个样本是一个字典（dict），键值对表示模型需要的输入字段（如 input_ids、attention_mask、labels 等）。
+
+```py
+def custom_collator(batch):
+    # 假设每个样本包含文本和图像像素
+    texts = [item["text"] for item in batch]
+    images = [item["image"] for item in batch]
+    
+    # 文本动态填充
+    text_inputs = tokenizer(texts, padding=True, return_tensors="pt")
+    
+    # 图像转换为张量
+    image_inputs = tensor(images)
+    
+    return {
+        "input_ids": text_inputs["input_ids"],
+        "attention_mask": text_inputs["attention_mask"],
+        "pixel_values": image_inputs
+    }
 ```
 
 ## Trainer.add_callback()
@@ -164,6 +187,10 @@ python -m torch.distributed.launch trainer-program.py ...
 ```
 
 ## TrainingArguments
+
+### 常见属性和参数
+
+- output_dir='test_trainer'：指定模型checkpoint和最终结果的输出目录，目录不存在会自动创建。
 
 [transformers.TrainingArguments](https://huggingface.co/docs/transformers/v4.49.0/en/main_classes/trainer#transformers.TrainingArguments) 是一个 `@dataclass`，通常使用 `transformers.HfArgumentParser` 把此 class 转换为 [argparse](https://docs.python.org/3/library/argparse#module-argparse) 参数，从而可以在命令行中覆盖。
 
@@ -253,3 +280,6 @@ if __name__ == "__main__":
 [[llm.huggingface.DeepSpeed集成]]
 
 [Hugginface: Trainer](https://huggingface.co/docs/transformers/v4.49.0/zh/main_classes/trainer)
+
+LLM大模型之Trainer以及训练参数 - Glan格蓝的文章 - 知乎
+https://zhuanlan.zhihu.com/p/662619853

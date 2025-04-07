@@ -1502,25 +1502,5 @@
     "projectManager.sortList": "Saved",
     "security.workspace.trust.untrustedFiles": "open",
     "diffEditor.hideUnchangedRegions.enabled": true,
-    "editor.minimap.enabled": false,
-    "remote.SSH.remotePlatform": {
-        "192.168.123.78": "linux",
-        "desktop": "linux",
-        "192.168.196.53": "linux",
-        "desktop-via-zerotier": "linux",
-        "desktop-via-lan": "linux",
-        "js1.blockelite.cn": "linux",
-        "js2.blockelite.cn": "linux",
-        "192.168.196.52": "linux",
-        "192.168.196.57": "linux",
-        "204-server": "linux",
-        "192.168.1.221": "linux",
-        "wj-24-lan": "linux",
-        "204-server-zerotier": "linux",
-        "192.168.10.204": "linux",
-        "192.168.19.204": "linux",
-        "192.168.196.117": "linux",
-        "lxt-24-196": "linux",
-        "wj-24-196": "linux"
-    }
+    "editor.minimap.enabled": false
 }

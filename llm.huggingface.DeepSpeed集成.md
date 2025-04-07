@@ -2,7 +2,7 @@
 id: p6pfuzn9vki5iiiseciacrh
 title: DeepSpeed集成
 desc: ''
-updated: 1740371577012
+updated: 1744008678716
 created: 1740323635850
 ---
 
@@ -40,17 +40,28 @@ SW: Model with 2783M total params, 65M largest layer params.
 
 代表在没有 CPU offload 时，需要单个 80GB GPU，或者有一个约 60GB CPU 来 offload，那么需要 8GB GPU。我们需要在开销和速度之间考虑 tradeoff。GPU 内存如果足够，取消 CPU/NVM offload 会更快。
 
+## 加载 config 文件
+
+只需要加载 DeepSpeed 的配置文件，即可在 Trainer 中使用。
+
+```py
+TrainingArguments(
+    deepspeed="path/to/deepspeed_config.json",
+    ...,
+)
+```
+
 ## 选择一个 ZeRO 阶段
 
 在明确内存需求后，比如是否需要 offload 等，接下来要选择 ZeRO 阶段。
 
-|Fastest|Memory efficient|
-|---|---|
-|ZeRO-1|ZeRO-3 + offload|
-|ZeRO-2|ZeRO-3|
-|ZeRO-2 + offload|ZeRO-2 + offload|
-|ZeRO-3|ZeRO-2|
-|ZeRO-3 + offload|ZeRO-1|
+| Fastest          | Memory efficient |
+| ---------------- | ---------------- |
+| ZeRO-1           | ZeRO-3 + offload |
+| ZeRO-2           | ZeRO-3           |
+| ZeRO-2 + offload | ZeRO-2 + offload |
+| ZeRO-3           | ZeRO-2           |
+| ZeRO-3 + offload | ZeRO-1           |
 
 从上表可以看到速度与内存开销的 tradeoff。可以从最快的开始尝试，如果发现内存耗尽，那么选择下一阶段，速度降低但内存更高效。Best practice：
 1. 激活梯度 checkpointing
@@ -283,7 +294,7 @@ tensor([1.0], device="cuda:0", dtype=torch.float16, requires_grad=True)
 }
 ```
 
-## DeepSpeed 特性
+## 训练的特性
 
 还有更多的特性。
 
@@ -496,11 +507,94 @@ Transformers 和 DeepSpeed 提供两个相同的 schedulers：
 }
 ```
 
-### Save model weights
+## 部署
+
+可以使用本地的 launcher，torchrun 或 accelerate。
+
+可以在命令行指出 DeepSpeed 配置文件，例如 --deepspeed ds_config.json，Trainer 可以使用此参数开始训练。推荐使用 DeepSpeed 的配置工具来加载命令行参数，参考 [add_config_arguments](https://deepspeed.readthedocs.io/en/latest/initialize.html#argument-parsing)。
+
+```py
+parser = argparse.ArgumentParser(description='My training script.')
+parser.add_argument('--local_rank', type=int, default=-1,
+                    help='local rank passed from distributed launcher')
+# Include DeepSpeed configuration arguments
+parser = deepspeed.add_config_arguments(parser)
+cmd_args = parser.parse_args()
+```
+
+### 多 GPU 部署
+
+在多卡上训练，指定 --num_gpus 参数即可指定使用卡数。如果想要使用所有可见的 GPU，不指定 --num_gpus 即可默认使用所有的 GPUs。
+
+```bash
+deepspeed --num_gpus=2 examples/pytorch/translation/run_translation.py \
+--deepspeed tests/deepspeed/ds_config_zero3.json \
+--model_name_or_path google-t5/t5-small --per_device_train_batch_size 1 \
+--output_dir output_dir --overwrite_output_dir --fp16 \
+--do_train --max_train_samples 500 --num_train_epochs 1 \
+--dataset_name wmt16 --dataset_config "ro-en" \
+--source_lang en --target_lang ro
+```
+
+#### 多节点（多机）
+
+需要修改 DeepSpeed 的配置文件，引入 checkpoint，比如：
+
+```json
+{
+  ...
+  "checkpoint": {
+    "use_node_local_storage": true
+  }
+}
+```
+
+例子：两台主机，每台主机包含 8 卡。要求两个主机节点能够使用 ssh 通信，并且不需要密码（即公钥访问）。以 DeepSpeed launcher 为例，指出两台主机的名字（IP 或别名，具体参考 SSH 的配置文件 ~/.ssh/config），以 hostname1 和 hostname2 为例：
+
+```hostfile
+hostname1 slots=8
+hostname2 slots=8
+```
+
+在两个节点，都分别执行：
+
+```bash
+deepspeed --num_gpus 8 --num_nodes 2 --hostfile hostfile --master_addr hostname1 --master_port=9901 \
+your_program.py <normal cl args> --deepspeed ds_config.json
+```
+
+### 集群管理工具 Slurm
+
+以脚本 launch.slurm 为例：
+
+```bash
+#SBATCH --job-name=test-nodes        # name
+#SBATCH --nodes=2                    # nodes
+#SBATCH --ntasks-per-node=1          # crucial - only 1 task per dist per node!
+#SBATCH --cpus-per-task=10           # number of cores per tasks
+#SBATCH --gres=gpu:8                 # number of gpus
+#SBATCH --time 20:00:00              # maximum execution time (HH:MM:SS)
+#SBATCH --output=%x-%j.out           # output file name
+
+export GPUS_PER_NODE=8
+export MASTER_ADDR=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)
+export MASTER_PORT=9901
+
+srun --jobid $SLURM_JOBID bash -c 'python -m torch.distributed.run \
+ --nproc_per_node $GPUS_PER_NODE --nnodes $SLURM_NNODES --node_rank $SLURM_PROCID \
+ --master_addr $MASTER_ADDR --master_port $MASTER_PORT \
+your_program.py <normal cl args> --deepspeed ds_config.json'
+```
+
+```bash
+sbatch launch.slurm
+```
+
+## Save model weights
 
 保存主要的全精度 fp32 权重到自定义的检查点优化器文件，模式通常为 `global_step*/*optim_states.pt`，保存与普通检查点。
 
-#### fp16
+### fp16
 
 ZeRO-2 训练的模型以 fp16 保存了 pytorch_model.bin 权重。为了以权重为 fp16 保存 ZeRO-3 训练的模型，需要设置 `"stage3_gather_16bit_weights_on_model_save":true`，因为模型权重被 partitioned 到多张 GPUs。此外，`Trainer` 不会保存权重为 fp16，不会创建 pytorch_model.bin 文件。因为 DeepSpeed 的 state_dict 包含了 placeholder，而非真实的权重，所以不会加载它们。
 
@@ -512,7 +606,7 @@ ZeRO-2 训练的模型以 fp16 保存了 pytorch_model.bin 权重。为了以权
 }
 ```
 
-#### fp32
+### fp32
 
 训练时，一般不该保存，因为太消耗内存。通常在训练完成后保存 fp32 权重。如果有空余的 CPU 内存，也可保存。
 
