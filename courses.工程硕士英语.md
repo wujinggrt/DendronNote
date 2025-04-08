@@ -2,7 +2,7 @@
 id: rjexswayh0yvitkaf9qez5n
 title: 工程硕士英语
 desc: ''
-updated: 1743473516341
+updated: 1744079331180
 created: 1740448957635
 ---
 
@@ -88,5 +88,11 @@ Induction：归纳。reasoning from specific cases to more general, but uncertai
 人身攻击：Ad Ham... 攻击他人的背景，不算逻辑谬误，而是人身攻击。
 
 错误二分法/虚假两难：非黑即白。
+
+## 2025年4月8日
+
+Critical thinking，是审慎思考，主要是证据。
+
+Inductive 论证是概率性的推广，Specific -> General。Deductive 论证，要有大前提，目标是 Certainty，不是概率性的。
 
 ## Ref and Tag
