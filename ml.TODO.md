@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1743952845243
+updated: 1744213365373
 created: 1738165674608
 ---
 
@@ -197,3 +197,9 @@ https://www.zhihu.com/question/1888903744047011293/answer/1888905234241258191
 ## 灵巧手和 affordance
 
 ManiTrans 和 AffordDP
+
+## Cpp 和开发
+
+> 各种项目，比如 dperf。LevelDB 和 RocksDB，网络编程 libuv，协议处理 kcp，异步编程 Asio（先看完 p2444r0）和 c++26 的 Sender/Receiver，数值计算 Eigen，模板看微软的 proxy，日志库 nanolog 和 spdlog，Actor 模式和 thread per core 思想参考 seastar (质量极高)，Json parser 看 simdjson，lock free 看 xenium (slab 思想可以优化 nanolog)，编译器编译参考 fmtlib
+你读过的最好的 C++ 开源代码是什么？ - George的回答 - 知乎
+https://www.zhihu.com/question/21376384/answer/50289239106

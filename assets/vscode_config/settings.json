@@ -1395,7 +1395,10 @@
         "statusBar.noFolderBackground": "#B48EAD",
         "statusBar.debuggingBackground": "#B48EAD",
         "statusBar.foreground": "#000",
-        "statusBar.debuggingForeground": "#000"
+        "statusBar.debuggingForeground": "#000",
+        // Blockman 的背景
+        "editor.lineHighlightBackground": "#1073cf2d",
+        "editor.lineHighlightBorder": "#9fced11f"
     },
     // 高亮全角字符，避免中英文出错
     "editor.unicodeHighlight.allowedCharacters": {
@@ -1453,31 +1456,34 @@
     // 集成终端右击时选择光标下方的字词，并打开上下文菜单
     "terminal.integrated.rightClickBehavior": "copyPaste",
     "todohighlight.isCaseSensitive": false,
-    "diffEditor.wordWrap": "on",
-    // 每行最多显示字符数量，多余的自动换行
-    "editor.wordWrap": "wordWrapColumn",
-    "editor.wordWrapColumn": 100,
-    // 字符提示线
-    "editor.rulers": [
-        100
-    ],
     "editor.fontFamily": "CodeNewRoman Nerd Font Mono",
     "editor.fontSize": 14,
     // 启用连字体
     "editor.fontLigatures": true,
     // 行高：使用 0 根据字号自动计算行高
     "editor.lineHeight": 0,
-    // 启用括号指导线
-    "editor.guides.bracketPairs": true,
+    "diffEditor.wordWrap": "off",
+    "diffEditor.hideUnchangedRegions.enabled": true,
+    // 每行最多显示字符数量，多余的自动换行
+    "editor.wordWrap": "on",
+    "editor.wordWrapColumn": 100,
+    // 字符提示线
+    "editor.rulers": [
+        100
+    ],
+    // 禁用括号指导线，有 Blockman 插件后不再需要
+    "editor.guides.bracketPairs": false,
     // 启用水平括号指导线
     "editor.guides.bracketPairsHorizontal": "active",
     // 禁用高亮选中的缩进指导线
     "editor.guides.highlightActiveIndentation": true,
     // 禁用缩进指导线
     "editor.guides.indentation": false,
+    "editor.inlayHints.enabled": "off",
     "editor.semanticHighlighting.enabled": true,
     // 资源管理器不采用紧凑模式
     "explorer.compactFolders": false,
+    "blockman.n04ColorComboPreset": "Classic Light (Gradients)",
     "workbench.iconTheme": "material-icon-theme",
     // 显示视图头部的操作项
     "workbench.view.alwaysShowHeaderActions": true,
@@ -1552,5 +1558,4 @@
         // If this value is negative, it means don't align the trailing comment.
         "comment": 2
     },
-    "diffEditor.hideUnchangedRegions.enabled": true
 }

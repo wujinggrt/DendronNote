@@ -2,7 +2,7 @@
 id: qon8owvfwcckh0l0fl9e8ee
 title: LongShortTermImagination
 desc: ''
-updated: 1744207292875
+updated: 1744220371863
 created: 1739694710359
 ---
 
@@ -259,6 +259,27 @@ succ = dynamics.img_step(state, new_action)  # 执行跳跃转移
 ```
 
 动态模型的条件处理：动态模型根据输入动作的最后一维是否为 1，内部选择不同的转移逻辑（如调整状态预测的步长或目标）。
+
+### 独立的预测头（Heads）
+
+短时转移预测头：预测单步的奖励（reward）、终止标志（end）等。
+
+```python
+# models.py - WorldModel 类
+self.heads["reward"] = networks.MLP(...)  # 单步奖励预测
+self.heads["end"] = networks.MLP(...)     # 终止标志预测
+```
+
+长时转移预测头：预测跳跃步数（jumping_steps）、累积奖励（accumulated_reward）和跳跃标志（jump）。
+
+```python
+# 跳跃标志预测
+self.heads["jump"] = networks.MLP(...)
+# 跳跃步数 Δ_t 预测
+self.heads["jumping_steps"] = networks.MLP(...)
+# 累积奖励 G_t 预测
+self.heads["accumulated_reward"] = networks.MLP(...)
+```
 
 ## insight
 
