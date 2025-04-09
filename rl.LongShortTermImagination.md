@@ -2,7 +2,7 @@
 id: qon8owvfwcckh0l0fl9e8ee
 title: LongShortTermImagination
 desc: ''
-updated: 1744017208310
+updated: 1744207292875
 created: 1739694710359
 ---
 
@@ -235,6 +235,30 @@ networks.py:class RSSM 是世界模型的核心组件。在强化学习中，RSS
 - ​**​状态表征学习​**​：将原始观测（图像/传感器数据）编码为低维隐状态
 - ​**​动态预测​**​：建模状态转移规律 $p(s_{t+1}|s_t,a_t)$
 - ​**​长期依赖建模​**​：通过递归结构捕捉时序关系
+
+训练代码在 expr.py 文件。
+
+Short-term transition model（短时转移模型） 和 Long-term transition model（长时转移模型） 并不完全共享同一模型，而是通过 同一动态模型的不同分支 实现不同模式的转移。
+
+###  动态模型的基础结构（RSSM 类）
+
+- 代码位置：models.py 中的 WorldModel 类初始化部分。
+- 核心模块：self.dynamics = networks.RSSM(...) 定义了基础的递归状态空间模型。
+
+共享参数：基础动态模型（如 LSTM 或 GRU 单元）的参数是共享的，用于处理状态的历史信息。
+
+###  转移分支的区分逻辑
+
+动作标记区分转移模式：在长时转移中，动作的最后一维被设为 1（如 new_action[:, -1] = 1），触发跳跃式转移逻辑。
+
+```python
+# models.py - _jumpy 函数
+new_action = torch.zeros(...)
+new_action[:, -1] = 1  # 标记为跳跃动作
+succ = dynamics.img_step(state, new_action)  # 执行跳跃转移
+```
+
+动态模型的条件处理：动态模型根据输入动作的最后一维是否为 1，内部选择不同的转移逻辑（如调整状态预测的步长或目标）。
 
 ## insight
 

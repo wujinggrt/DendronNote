@@ -2,7 +2,7 @@
 id: oyt05lfqh26c699x2kvokbw
 title: Pathlib_操作目录和文件
 desc: ''
-updated: 1741059008020
+updated: 1744167817902
 created: 1741030522182
 ---
 
@@ -10,38 +10,39 @@ created: 1741030522182
 
 操作通常由 Path 类完成。常用内容如下：
 
-    descriptor:
-        parts: 每一层路径
-        parent: 父目录
-        parents: 所有父目录
-        stem: 不带后缀的文件名
-        name: 文件名或目录名
-        suffix: 文件名后缀
-        suffixes: 文件名后缀列表
+Path 对象字段和属性，即 descriptor:
+- parts   : 目录的每一层路径，比如 /home/wj-24/.zshrc 会得到 ('/', 'home', 'wj-24', '.zshrc')
+- parent  : 父目录
+- parents : 所有父目录
+- stem    : 不带后缀的文件名
+- name    : 文件名或目录名
+- suffix  : 文件名后缀
+- suffixes: 文件名后缀列表
 
-    function:
-        is_absolute: 是否为绝对路径
-        joinpath: 组合路径
-        cwd: 当前工作目录
-        home: 根目录
-        rename: 重命名
-        replace: 覆盖
-        touch: 新建文件
-        exists: 是否存在路径
-        expanduser: 返回带~和~user的路径
-        glob: 列出匹配的文件或目录
-        rglob: 递归列出匹配的文件或目录
-        is_dir: 是否为目录
-        is_file: 是否为文件
-        iterdir: 列出路径下的文件和目录
-        mkdir: 新建目录
-        open: 打开文件
-        resolve: 转成绝对路径
-        rmdir: 删除目录
-        ...
+方法:
+- is_absolute(): 是否为绝对路径
+- joinpath()   : 组合路径
+- cwd()        : 当前工作目录
+- home()       : 根目录
+- rename()     : 重命名
+- replace()    : 覆盖
+- touch()      : 新建文件
+- exists()     : 是否存在路径
+- expanduser() : 返回带 ~ 和 ~user 的路径
+- glob()       : 返回生成器。列出匹配的文件或目录，仅当前目录。
+- rglob()      : 返回生成器。递归列出匹配的文件或目录，包括所有子目录。使用 .rglob("*") 会递归地获取所有文件和目录。
+- iterdir()    : 返回生成器。列出当前路径下的文件和目录。不包含 . 和 ..，不展开子目录。
+- is_dir()     : 是否为目录
+- is_file()    : 是否为文件
+- mkdir()      : 新建目录
+- open()       : 打开文件
+- resolve()    : 获取对应绝对路径的 Path 实例
+- rmdir()      : 删除目录
+- ...
+
+如果想要获取字符串的路径，使用 `str(p)` 类型转换即可。
 
 创建
-
 ```py
 manage_path = Path("manage.py").resolve()  # 绝对路径
 base_dir = manage_path.parent  # 父目录
