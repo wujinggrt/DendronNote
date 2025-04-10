@@ -2,7 +2,7 @@
 id: 0da424ysmswufl4406wj1dt
 title: transformers_Trainer
 desc: ''
-updated: 1744277744085
+updated: 1744305857745
 created: 1740301523116
 ---
 
@@ -19,7 +19,6 @@ class Trainer:
     """
     Args:
         model ([`PreTrainedModel`] or `torch.nn.Module`, *optional*):
-            The model to train, evaluate or use for predictions.
         args ([`TrainingArguments`], *optional*):
             The arguments to tweak for training. 比如 lora configs，fp16/bf16 settings 等。
             如果不提供，则使用默认的 TrainingArguments。
@@ -28,7 +27,6 @@ class Trainer:
         train_dataset (Union[`torch.utils.data.Dataset`, `torch.utils.data.IterableDataset`, `datasets.Dataset`], *optional*):
             The dataset to use for training. If it is a [`~datasets.Dataset`]
         eval_dataset (Union[`torch.utils.data.Dataset`, Dict[str, `torch.utils.data.Dataset`, `datasets.Dataset`]), *optional*):
-            The dataset to use for evaluation. If it is a [`~datasets.Dataset`]
         processing_class (`PreTrainedTokenizerBase` or `BaseImageProcessor` or `FeatureExtractionMixin` or `ProcessorMixin`, *optional*):
             Processing class used to process the data. If provided, will be used to automatically process the inputs
             for the model, and it will be saved along the model to make it easier to rerun an interrupted training or
@@ -59,7 +57,15 @@ class Trainer:
 
 #### train_dataset 和 eval_dataset
 
-Dataset 的每个 item 应当使用格式为：
+Dataset 的 `__getitem__` 中，每个样本格式要求通常由训练的模型决定。通常是一个字典，包含 input_ids, labels 等字段：
+
+```py
+{
+    "input_ids": List[int],      # 输入文本的 token ID
+    "decoder_input_ids": List[int], # 解码器输入（可选，部分模型需要）
+    "labels": List[int]          # 目标文本的 token ID
+}
+```
 
 #### 参数 data_collator
 

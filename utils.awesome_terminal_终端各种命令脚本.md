@@ -2,9 +2,22 @@
 id: ovto6hepvtttctxmnypiebq
 title: Awesome_terminal_终端各种命令脚本
 desc: ''
-updated: 1744040734478
+updated: 1744302414864
 created: 1742868524198
 ---
+
+## 函数
+
+### 局部变量
+
+```bash
+myfunc() {
+  local local_var="仅在函数内可见"
+  echo $local_var  # 正常输出
+}
+myfunc
+echo $local_var    # 无输出（变量已销毁）
+```
 
 ## ip 工具
 ### 网桥

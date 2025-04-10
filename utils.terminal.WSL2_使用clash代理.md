@@ -2,7 +2,7 @@
 id: jhyuc715xjusi152pfx0ydf
 title: WSL2_使用clash代理
 desc: ''
-updated: 1744040560778
+updated: 1744303797781
 created: 1744038579155
 ---
 
@@ -43,6 +43,44 @@ firewall=true
 访问 %UserProfile% 目录，在 PowerShell 中使用 cd ~ 即可访问主目录（通常是用户配置文件 `C:\Users\<UserName>`），或者可以打开 Windows 文件资源管理器并在地址栏中输入 %UserProfile%。 该目录路径应类似于：`C:\Users\<UserName>\.wslconfig`
 
 默认情况下，.wslconfig 文件不存在。
+
+### 设置代理相关环境变量
+
+查看 Clash 客户端开放的端口，大多数情况是 7890，有时候可能会被修改为其他值，比如开启随机设置端口。如图，应该用 14379。
+
+![port](assets/images/utils.terminal.WSL2_使用clash代理/port.png)
+
+设置为 7890，兼容大多数情况。
+
+```bash
+# 开启系统代理
+function proxy_on() {
+        local port=7890
+        if [[ $# -eq 1 && $1 =~ ^[0-9]+$ ]]; then
+                port=$1
+        fi
+        export http_proxy=http://127.0.0.1:$port
+        export https_proxy=http://127.0.0.1:$port
+        export no_proxy=127.0.0.1,localhost
+        export HTTP_PROXY=http://127.0.0.1:$port
+        export HTTPS_PROXY=http://127.0.0.1:$port
+        export NO_PROXY=127.0.0.1,localhost
+        echo -e "\033[32m[√] 已开启代理，端口 $port\033[0m"
+}
+
+# 关闭系统代理
+function proxy_off(){
+        unset http_proxy
+        unset https_proxy
+        unset no_proxy
+        unset HTTP_PROXY
+        unset HTTPS_PROXY
+        unset NO_PROXY
+        echo -e "\033[31m[×] 已关闭代理\033[0m"
+}
+```
+
+随后执行 proxy_on {{port_num}} 即可。如果 Clash 客户端需要使用随机端口，修改 7890 为对应的即可。
 
 ## 方案 2：传统环境变量配置（不推荐）
 

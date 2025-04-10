@@ -1,4 +1,5 @@
 export PATH=$PATH:/usr/local/lib
+
 alias tnew='tmux new -s'
 alias perlio='perl -wln'
 alias perlioe='perl -wlne'
@@ -37,27 +38,30 @@ export WIN_HOME=/mnt/c/Users/10945
 export DOCUMENTS=/mnt/c/Users/10945/Documents
 export DOWNLOADS=/mnt/c/Users/10945/Downloads
 export THU_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
-# clash for windows
-hostip=$(cat /etc/resolv.conf | grep nameserver | awk '{ print $2 }')
-wslip=$(hostname -I | awk '{print $1}')
-PROXY_HTTP="http://127.0.0.1:7890"
-proxy_on() {
-    export http_proxy="${PROXY_HTTP}"
-    export HTTP_PROXY="${PROXY_HTTP}"
-    export https_proxy="${PROXY_HTTP}"
-    export HTTPS_poxy="${PROXY_HTTP}"
-    git config --global http.proxy "${PROXY_HTTP}"
-    git config --global https.proxy "${PROXY_HTTP}"
-    echo "http proxy success"
+# 开启系统代理
+function proxy_on() {
+        local port=7890
+        if [[ $# -eq 1 && $1 =~ ^[0-9]+$ ]]; then
+                port=$1
+        fi
+        export http_proxy=http://127.0.0.1:$port
+        export https_proxy=http://127.0.0.1:$port
+        export no_proxy=127.0.0.1,localhost
+        export HTTP_PROXY=http://127.0.0.1:$port
+        export HTTPS_PROXY=http://127.0.0.1:$port
+        export NO_PROXY=127.0.0.1,localhost
+        echo -e "\033[32m[√] 已开启代理，端口 $port\033[0m"
 }
-proxy_off() {
-    unset http_proxy
-    unset HTTP_PROXY
-    unset https_proxy
-    unset HTTPS_proxy
-    git config --global --unset http.proxy
-    git config --global --unset https.proxy
-    echo "disabled proxy"
+
+# 关闭系统代理
+function proxy_off(){
+        unset http_proxy
+        unset https_proxy
+        unset no_proxy
+        unset HTTP_PROXY
+        unset HTTPS_PROXY
+        unset NO_PROXY
+        echo -e "\033[31m[×] 已关闭代理\033[0m"
 }
 test_setting(){
         echo "Host ip:" ${hostip}
