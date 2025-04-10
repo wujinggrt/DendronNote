@@ -18,7 +18,7 @@
     */
     // 避免debug的控制程序step into等控制条遮挡菜单和tab
     "debug.toolBarLocation": "docked",
-    /* Vim and WhichKey >>>>>>>>>>>>>>>>>>>>>>>>>>
+    /* Vim >>>>>>>>>>>>>>>>>>>>>>>>>>
     * normal mode:
     * e easymotion       : 使用了 <leader><leader>e，忽略大小写。
     * E|R                : 移动右,  左标签
@@ -26,9 +26,9 @@
     * H|L                : 行首行尾
     * <space>            : 打开which key
     * <leader>q <leader>Q: quit, quit all
-    * <leader><w|e|b> CamelCaseMotion移动，驼峰命名或snake命名移动
-    * <leader>W save, save all
-    * <leader>f format code
+    * <leader><w|e|b>    : CamelCaseMotion移动，驼峰命名或snake命名移动
+    * <leader>W          : save, save all
+    * <leader>f          : format code
     * <leader>k, <leader>K highlight
     * sf, sF, show reference, find refernce
     * gd 显示光标所在函数/方法/类型/宏的信息,go to definition
@@ -69,6 +69,9 @@
     * <space> 打开which key show
     * <leader>s 相当于VS Code原生的ctrl+d，选中下一个匹配的单词，方便批量替换变量名
     * <leader>ca quickFix，修改意见。
+    */
+    /* Which Key
+    * 参考空格提示后的各个选项。
     */
     "vim.leader": ",",
     "vim.sneak": true,
@@ -1134,7 +1137,7 @@
         // u 小工具，utils
         {
             "key": "u",
-            "name": "dendron...",
+            "name": "Utils...",
             "type": "bindings",
             "bindings": [
                 {
@@ -1144,16 +1147,30 @@
                     "type": "command",
                     "when": "editorTextFocus",
                 },
+                {
+                    "key": "f",
+                    "name": "Format entire document",
+                    "command": "editor.action.formatDocument",
+                    "type": "command",
+                    "when": "editorHasDocumentFormattingProvider && editorTextFocus && !editorReadonly && !inCompositeEditor"
+                },
+                {
+                    "key": "F",
+                    "name": "Format selection (including cells)",
+                    "command": "editor.action.formatSelection",
+                    "when": "editorHasDocumentSelectionFormattingProvider && editorTextFocus && !editorReadonly",
+                    "type": "command",
+                },
                 // m 右侧显示整个code的小map条
                 {
                     "key": "m",
-                    "name": "minimap",
+                    "name": "Minimap toggle",
                     "command": "editor.action.toggleMinimap",
                     "type": "command"
                 },
                 {
                     "key": "M",
-                    "name": "Makrdown preview",
+                    "name": "Makrdown preview showing",
                     "command": "markdown-preview-enhanced.openPreviewToTheSide",
                     "when": "editorLangId == 'markdown'"
                 },
@@ -1162,7 +1179,7 @@
         // n DendronNote
         {
             "key": "n",
-            "name": "dendron...",
+            "name": "Dendron...",
             "type": "bindings",
             "bindings": [
                 {
@@ -1391,12 +1408,11 @@
     "workbench.colorCustomizations": {
         "titleBar.activeBackground": "#54a3ff",
         "titleBar.activeForeground": "#ffffff",
-        "statusBar.background": "#B48EAD",
-        "statusBar.noFolderBackground": "#B48EAD",
-        "statusBar.debuggingBackground": "#B48EAD",
+        "statusBar.background": "#8FBCBB",
+        "statusBar.noFolderBackground": "#8FBCBB",
+        "statusBar.debuggingBackground": "#8FBCBB",
         "statusBar.foreground": "#000",
         "statusBar.debuggingForeground": "#000",
-        // Blockman 的背景
         "editor.lineHighlightBackground": "#1073cf2d",
         "editor.lineHighlightBorder": "#9fced11f"
     },

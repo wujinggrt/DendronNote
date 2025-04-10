@@ -2,7 +2,7 @@
 id: 0da424ysmswufl4406wj1dt
 title: transformers_Trainer
 desc: ''
-updated: 1744017235757
+updated: 1744277744085
 created: 1740301523116
 ---
 
@@ -24,7 +24,7 @@ class Trainer:
             The arguments to tweak for training. 比如 lora configs，fp16/bf16 settings 等。
             如果不提供，则使用默认的 TrainingArguments。
         data_collator (`DataCollator`, *optional*):
-            The function to use to form a batch from a list of elements of `train_dataset` or `eval_dataset`. 类似与传给 DataLoader 的 collate_fn，重新组织为 batch。
+            The function to use to form a batch from a list of elements of `train_dataset` or `eval_dataset`. 
         train_dataset (Union[`torch.utils.data.Dataset`, `torch.utils.data.IterableDataset`, `datasets.Dataset`], *optional*):
             The dataset to use for training. If it is a [`~datasets.Dataset`]
         eval_dataset (Union[`torch.utils.data.Dataset`, Dict[str, `torch.utils.data.Dataset`, `datasets.Dataset`]), *optional*):
@@ -56,6 +56,19 @@ class Trainer:
 ```
 
 到有些项目传入 tokenizer，在源码已经有装饰器标注为 deprecate，推荐使用 processing_class。
+
+#### train_dataset 和 eval_dataset
+
+Dataset 的每个 item 应当使用格式为：
+
+#### 参数 data_collator
+
+类似 DataLoader 的 collate_fn，将 list 重新组织为 batch。不指定则默认使用 transformers.data.data_collator.default_data_collator()，最后路由到
+
+```py
+def torch_default_data_collator(features: List[InputDataClass]) -> Dict[str, Any]:
+    ...
+```
 
 ### 方法
 
@@ -190,7 +203,20 @@ python -m torch.distributed.launch trainer-program.py ...
 
 ### 常见属性和参数
 
-- output_dir='test_trainer'：指定模型checkpoint和最终结果的输出目录，目录不存在会自动创建。
+| A   | B   |
+| --- | --- |
+| A   | B   |
+| C   | D   |
+| E   | F   |
+
+- `output_dir`：必选，指定模型checkpoint和最终结果的输出目录，目录不存在会自动创建。模型保存
+- `learning_rate`: float, 学习率
+- `per_device_train_batch_size=8`: 训练批次大小
+- `per_device_eval_batch_size=8`: 评估批次大小
+- `lr_scheduler_type`: str, 默认 linear，可选 linear, cosine, constant, polynomial, piecewise, exponential
+- `warmup_ratio`: float, 默认 0.0，warmup 比例
+- `warmup_steps`: int, 默认 0，会覆盖 warmup_ration
+- `bf16`: bool，默认 False，指定是否使用 bf16 训练
 
 [transformers.TrainingArguments](https://huggingface.co/docs/transformers/v4.49.0/en/main_classes/trainer#transformers.TrainingArguments) 是一个 `@dataclass`，通常使用 `transformers.HfArgumentParser` 把此 class 转换为 [argparse](https://docs.python.org/3/library/argparse#module-argparse) 参数，从而可以在命令行中覆盖。
 
@@ -274,6 +300,8 @@ if __name__ == "__main__":
 ```
 
 ## 使用 Huggingface 的工具微调和训练
+
+TODO: 使用 Trainer 和 Accelerate 来实验。
 
 ## Ref and Tag
 [[llm.huggingface.Transformers库用法]]

@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1744213365373
+updated: 1744268486071
 created: 1738165674608
 ---
 
@@ -203,3 +203,41 @@ ManiTrans 和 AffordDP
 > 各种项目，比如 dperf。LevelDB 和 RocksDB，网络编程 libuv，协议处理 kcp，异步编程 Asio（先看完 p2444r0）和 c++26 的 Sender/Receiver，数值计算 Eigen，模板看微软的 proxy，日志库 nanolog 和 spdlog，Actor 模式和 thread per core 思想参考 seastar (质量极高)，Json parser 看 simdjson，lock free 看 xenium (slab 思想可以优化 nanolog)，编译器编译参考 fmtlib
 你读过的最好的 C++ 开源代码是什么？ - George的回答 - 知乎
 https://www.zhihu.com/question/21376384/answer/50289239106
+
+## 简历制作
+
+突出自我学习能力。从以下几个点展开：
+
+### 增强专业能力
+
+任务完成的过程中，速度快，质量高。
+
+解决问题，独立想办法设计方案并解决。不能解决的，能够准确问到点子上，定位能力强。
+
+学习新知识能力强，擅长总结规律，一点就通，举一反三。
+
+### 增强工作能力
+
+态度端正，主动积极。空闲时候，主动学习和融入业务，持续学习专业知识，杜绝躺平摆烂心态。
+
+及时反馈问题，不逃避，主动寻求解决办法。主动找人学习公司的开发工具，熟系开发流程和业务逻辑等知识。
+
+善于总结反思。在问题上，要总结经验吸取教训，不能出现再犯的情况。
+
+### Resume
+
+参考开源大佬 [ice1000](https://ice1000.org/resume.html)。他的实习经历十分丰富，比如：
+
+**JetBrains Research**, RemoteJan, 2020 – Dec, 2020
+HoTT and Dependent Types, Interactive Theorem Prover Development
+- Used features like gradle composite build and buildSrc to reduce build time and improve automation.  - Improved the language/IDE, such as sections, hygiene macros, Fin type with elaborative subtyping, semantic highlighting, etc.
+- Created an extensible REPL engine, provided implementations in CLI (with contextual completion using jline3) and in IntelliJ IDEA (interacts with the opened project, supports completion, highlighting and goto definition).
+- Designed and implemented an expression type-checking debugger that supports step-into and displays local context and expressions as stack frames.
+
+**Sourcebrella Inc.**, Shenzhen, ChinaFeb, 2018 – Jul, 2018
+Static Analysis, Compiler Frontend, IDE Plugin Development
+- Created IntelliJ/CLion/Eclipse plugin for the Pinpoint analyzer. Co-worked on the SonarQube plugin.
+- Created a multi-threading cross Java/Kotlin source code indexer which can index Hadoop within 4 minutes.
+- Learned a lot about Linux programming and the Clang/LLVM codebase.
+
+实习经历中，突出二到四个有亮点的点。体现使用什么工具做了什么，或是从中学到什么。突出了自己会的技能。
