@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1744268486071
+updated: 1744387602463
 created: 1738165674608
 ---
 
@@ -205,18 +205,6 @@ ManiTrans 和 AffordDP
 https://www.zhihu.com/question/21376384/answer/50289239106
 
 ## 画图工具
-
-```mermaid
-flowchart LR
-D[renderer] <--> A[Dev Server] <--ws--> B[service]
-B <--mcp--> m(MCP Server)
-```
-
-```mermaid
-flowchart LR
-D[renderer] <--> A[extention.ts] <--> B[service]
-B <--mcp--> m(MCP Server)
-```
 
 ## 简历制作
 
