@@ -2,7 +2,7 @@
 id: ovto6hepvtttctxmnypiebq
 title: Awesome_terminal_终端各种命令脚本
 desc: ''
-updated: 1744302414864
+updated: 1744351238246
 created: 1742868524198
 ---
 
@@ -20,6 +20,32 @@ echo $local_var    # 无输出（变量已销毁）
 ```
 
 ## ip 工具
+
+### 静态 ip 地址
+
+如果使用了 networkd 管理网络，配置 /etc/netplan/01-netcfg.yaml。如果使用了 NetworkManager 管理网络，配置 /etc/netplan/01-network-manager-all.yaml。具体查看 /etc/netplan 目录即可。重点在于设置 dhcp4 为 no，addresses 为具体静态 ip。
+
+```yaml
+network:
+  version: 2
+  # renderer: NetworkManager # 根据本机要求来选择 NetworkManager 或 networkd
+  renderer: networkd
+  ethernets:
+    ens33:
+      # dhcp4: no # 静态 IP
+      addresses: [192.168.19.204/24]
+      # gateway4: 192.168.19.254 # 网关设置
+      routes:
+        - to: 192.168.123.0/24
+          via: 192.168.19.57
+      nameservers:
+        addresses: [8.8.8.8]
+```
+
+```bash
+sudo netplan apply
+```
+
 ### 网桥
 
 ```bash
@@ -82,15 +108,18 @@ sudo ip route add 192.168.123.0/24 via 192.168.19.57
 sudo ip route dev 192.168.123.0/24 dev {{网卡}}
 ```
 
-上述指令临时生效。可以修改路由配置，开机启动即生效。配置 /etc/netplan/01-netcfg.yaml
+上述指令临时生效。可以修改路由配置，开机启动即生效。配置 /etc/netplan/01-netcfg.yaml 或 /etc/netplan/01-network-manager-all.yaml，具体根据网络管理工具。
 
 ```yaml
 network:
   version: 2
+  # renderer: NetworkManager # 根据本机要求来选择 NetworkManager 或 networkd
   renderer: networkd
   ethernets:
     ens33:
+      # dhcp4: no # 静态 IP
       addresses: [192.168.19.204/24]
+      # gateway4: 192.168.19.254 # 网关设置
       routes:
         - to: 192.168.123.0/24
           via: 192.168.19.57

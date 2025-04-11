@@ -204,6 +204,20 @@ ManiTrans 和 AffordDP
 你读过的最好的 C++ 开源代码是什么？ - George的回答 - 知乎
 https://www.zhihu.com/question/21376384/answer/50289239106
 
+## 画图工具
+
+```mermaid
+flowchart LR
+D[renderer] <--> A[Dev Server] <--ws--> B[service]
+B <--mcp--> m(MCP Server)
+```
+
+```mermaid
+flowchart LR
+D[renderer] <--> A[extention.ts] <--> B[service]
+B <--mcp--> m(MCP Server)
+```
+
 ## 简历制作
 
 突出自我学习能力。从以下几个点展开：
