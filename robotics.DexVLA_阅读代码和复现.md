@@ -2,13 +2,14 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA_阅读代码和复现
 desc: ''
-updated: 1741141583392
+updated: 1744398464334
 created: 1740053039805
 ---
 
 
-
 ## 训练 Overview
+
+目标：学习如何魔改 VLA，如何写 Trainer 子类。
 
 训练 VLA 的文件参考 train_vla.py，阶段 2 和阶段 3 的训练都用到它。
 
@@ -242,15 +243,15 @@ root
 - substep_reasonings (100,) —— 子步骤推理，每个时间步对应每个子步骤描述。
 
 
-| 字段               | 形状            | 描述                                 |
-| ------------------ | --------------- | ------------------------------------ |
-| action             | (100,10)        | 100 表示时间步数，10 表示动作维度。  |
+| 字段               | 形状            | 描述                                   |
+| ------------------ | --------------- | -------------------------------------- |
+| action             | (100,10)        | 100 表示时间步数，10 表示动作维度。    |
 | substep_reasonings | (100,)          | 每个时间步对应一个子步骤推理。         |
-| observations       |                 | 表示时间步数，其他维度表示观测数据。 |
-| - images           |                 | 表示时间步数，其他维度表示图像数据。 |
-| -- left           | (100,480,640,3) | 表示时间步数，480x640 表示图像分辨率。 |
-| -- right          | (100,480,640,3) | 表示时间步数，480x640 表示图像分辨率。 |
-| -- wrist          | (100,480,640,3) | 表示时间步数，480x640 表示图像分辨率。 |
+| observations       |                 | 表示时间步数，其他维度表示观测数据。   |
+| - images           |                 | 表示时间步数，其他维度表示图像数据。   |
+| -- left            | (100,480,640,3) | 表示时间步数，480x640 表示图像分辨率。 |
+| -- right           | (100,480,640,3) | 表示时间步数，480x640 表示图像分辨率。 |
+| -- wrist           | (100,480,640,3) | 表示时间步数，480x640 表示图像分辨率。 |
 | - joint_positions  | (100,7)         | 表示时间步数，7 表示关节位置维度。     |
 | - qpos             | (100,7)         | 表示时间步数，7 表示关节位置维度。     |
 | - qvel             | (100,7)         | 表示时间步数，7 表示关节速度维度。     |
@@ -804,6 +805,37 @@ VLA 的输入中，修改了 forward() 的 API，删去了最后一个参数，c
 ## 训练器：Qwen2VLATrainer
 
 调用它是，传入参数有 model=model, tokenizer=tokenizer, args=config["training_args"], sampler_params=sampler_params, **data_module。
+
+### get_train_dataloader
+
+以 DexVLA 为例，如果需要配合 Accelerate 使用，可以在最末尾部分，返回使用准备后的版本：
+
+```py
+    def get_train_dataloader(self) -> DataLoader:
+        if self.train_dataset is None:
+            raise ValueError("Trainer: training requires a train_dataset.")
+
+        train_dataset = self.train_dataset
+        data_collator = self.data_collator
+
+        data_collator = self._get_collator_with_removed_columns(data_collator, description="training")
+
+        dataloader_params = {
+            "batch_size": self._train_batch_size,
+            "collate_fn": data_collator,
+            "num_workers": self.args.dataloader_num_workers,
+            "pin_memory": self.args.dataloader_pin_memory,
+            "persistent_workers": self.args.dataloader_persistent_workers,
+        }
+        from transformers.trainer_utils import seed_worker
+        if not isinstance(train_dataset, torch.utils.data.IterableDataset):
+            # dataloader_params["sampler"] = CustomBatchSampler(**self.sampler_params['train'], eval=False)
+            dataloader_params["drop_last"] = self.args.dataloader_drop_last
+            dataloader_params["worker_init_fn"] = seed_worker
+            dataloader_params["shuffle"] = True
+            # dataloader_params['prefetch_factor'] = self.prefetch_factor
+        return self.accelerator.prepare(DataLoader(train_dataset, **dataloader_params))
+```
 
 ### 优化器
 

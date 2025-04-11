@@ -2,7 +2,7 @@
 id: 0da424ysmswufl4406wj1dt
 title: transformers_Trainer
 desc: ''
-updated: 1744305857745
+updated: 1744398458184
 created: 1740301523116
 ---
 
@@ -83,7 +83,7 @@ def torch_default_data_collator(features: List[InputDataClass]) -> Dict[str, Any
 - `get_eval_dataloader()` — 创建评估 DataLoader。
 - `get_test_dataloader()` — 创建测试 DataLoader。
 - `log()` — 记录观察训练的各种对象的信息。
-- `create_optimizer_and_scheduler()` — 如果它们没有在初始化时传递，请设置优化器和学习率调度器。请注意，你还可以单独继承或覆盖 create_optimizer 和 create_scheduler 方法。
+- `create_optimizer_and_scheduler()` — 如果它们没有在初始化时传递，请设置优化器和学习率调度器。请注意，还可以单独继承或覆盖 create_optimizer 和 create_scheduler 方法。
 - `create_optimizer()` — 如果在初始化时没有传递，则设置优化器。
 - `create_scheduler()` — 如果在初始化时没有传递，则设置学习率调度器。
 - `compute_loss()` - 计算单批训练输入的损失。默认实现中，返回的元组中，第一个元素应当是 loss。如果在构造函数传入了 compute_loss_func 则使用它。但是，默认使用 outputs = model(**inputs) 的 outputs[0] 作为 loss。
@@ -91,6 +91,64 @@ def torch_default_data_collator(features: List[InputDataClass]) -> Dict[str, Any
 - `prediction_step()` — 执行一步评估/测试。
 - `evaluate()` — 运行评估循环并返回指标。
 - `predict()` — 返回在测试集上的预测（如果有标签，则包括指标）。
+
+## 以 DexVLA 的 Qwen2VLATrainer 为例
+
+```mermaid
+classDiagram
+    class QWen2VLATrainer {
+        +sampler_params: dict
+        +prefetch_factor: int
+        +lora_module: str
+        +lang_type: str
+        +using_ema: bool
+        +local_rank: int
+        +resume_from_checkpoint: bool
+        +ema: EMAModel
+
+        +__init__(sampler_params, prefetch_factor, *args, **kwargs)
+        +get_train_dataloader() -> DataLoader
+        +get_eval_dataloader(eval_dataset: Optional[Dataset]) -> DataLoader
+        +_get_train_sampler() -> Optional[Sampler]
+        +create_optimizer()
+        +training_step(model: nn.Module, inputs: dict) -> torch.Tensor
+        +_inner_training_loop(batch_size, args, resume_from_checkpoint, trial, ignore_keys_for_eval)
+        +_maybe_log_save_evaluate(tr_loss, model, trial, epoch, ignore_keys_for_eval, all_loss=None)
+        +_save_checkpoint(model, trial, metrics=None, using_ema=False)
+        +_save(output_dir: Optional[str] = None, state_dict=None)
+        +_load_from_checkpoint(resume_from_checkpoint, model=None)
+    }
+
+    class Trainer {
+        <<Abstract>>
+        #model: nn.Module
+        #args: TrainingArguments
+        #optimizer: torch.optim.Optimizer
+        #lr_scheduler: torch.optim.lr_scheduler
+        #state: TrainerState
+        
+        +train()
+        +evaluate()
+        +predict()
+        +save_model()
+        +_prepare_inputs()
+        +compute_loss()
+    }
+
+    QWen2VLATrainer --|> Trainer : Inheritance
+
+    class EMAModel {
+        +averaged_model: nn.Module
+        +step(model: nn.Module)
+        +__init__(model, power)
+    }
+
+    QWen2VLATrainer --> EMAModel : Composition
+```
+
+
+
+更多参考 [[训练器：Qwen2VLATrainer|robotics.DexVLA_阅读代码和复现#训练器qwen2vlatrainer]]。
 
 ## 示例
 
