@@ -2,7 +2,7 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA_阅读代码和复现
 desc: ''
-updated: 1744398464334
+updated: 1744444109996
 created: 1740053039805
 ---
 
@@ -827,13 +827,7 @@ VLA 的输入中，修改了 forward() 的 API，删去了最后一个参数，c
             "pin_memory": self.args.dataloader_pin_memory,
             "persistent_workers": self.args.dataloader_persistent_workers,
         }
-        from transformers.trainer_utils import seed_worker
-        if not isinstance(train_dataset, torch.utils.data.IterableDataset):
-            # dataloader_params["sampler"] = CustomBatchSampler(**self.sampler_params['train'], eval=False)
-            dataloader_params["drop_last"] = self.args.dataloader_drop_last
-            dataloader_params["worker_init_fn"] = seed_worker
-            dataloader_params["shuffle"] = True
-            # dataloader_params['prefetch_factor'] = self.prefetch_factor
+        ...
         return self.accelerator.prepare(DataLoader(train_dataset, **dataloader_params))
 ```
 

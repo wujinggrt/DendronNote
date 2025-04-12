@@ -2,7 +2,7 @@
 id: 0da424ysmswufl4406wj1dt
 title: transformers_Trainer
 desc: ''
-updated: 1744398458184
+updated: 1744444192502
 created: 1740301523116
 ---
 
@@ -266,12 +266,6 @@ python -m torch.distributed.launch trainer-program.py ...
 ## TrainingArguments
 
 ### 常见属性和参数
-
-| A   | B   |
-| --- | --- |
-| A   | B   |
-| C   | D   |
-| E   | F   |
 
 - `output_dir`：必选，指定模型checkpoint和最终结果的输出目录，目录不存在会自动创建。模型保存
 - `learning_rate`: float, 学习率
