@@ -1590,4 +1590,3 @@
         // If this value is negative, it means don't align the trailing comment.
         "comment": 2
     },
-}
