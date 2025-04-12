@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1744387602463
+updated: 1744458815861
 created: 1738165674608
 ---
 
@@ -161,6 +161,9 @@ https://arxiv.org/abs/2503.21696
 https://zhuanlan.zhihu.com/p/14681365893
 > reward model 的论文
 
+Kimi K1.5: Long Context RL 的成功实践 - Chayenne Zhao的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1894282607325344277
+
 ### World Model
 
 【强化学习教程 20】世界模型（World Models） - tomsheep的文章 - 知乎
@@ -203,8 +206,6 @@ ManiTrans 和 AffordDP
 > 各种项目，比如 dperf。LevelDB 和 RocksDB，网络编程 libuv，协议处理 kcp，异步编程 Asio（先看完 p2444r0）和 c++26 的 Sender/Receiver，数值计算 Eigen，模板看微软的 proxy，日志库 nanolog 和 spdlog，Actor 模式和 thread per core 思想参考 seastar (质量极高)，Json parser 看 simdjson，lock free 看 xenium (slab 思想可以优化 nanolog)，编译器编译参考 fmtlib
 你读过的最好的 C++ 开源代码是什么？ - George的回答 - 知乎
 https://www.zhihu.com/question/21376384/answer/50289239106
-
-## 画图工具
 
 ## 简历制作
 
