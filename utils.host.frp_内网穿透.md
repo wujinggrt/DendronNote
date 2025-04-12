@@ -23,17 +23,17 @@ tar -xvf frp_0.55.1_linux_amd64.tar.gz
 pub 用于转发网络请求实现内网穿透，所以它是服务端，使用 frps。loc 是被转发的对象，所以是客户端，使用 frpc. 本文所有技术的整体访问模型如下：
 
 ```mermaid
-flowchart TB
-    subgraph loc
-    CliSsh(./frpc -c ssh.toml)
-    CliHttp(./frpc -c http.toml)
+flowchart TD
+    subgraph 你的电脑
+    Term(终端)
+    Borwser(浏览器)
     end
     subgraph pub
     S[./frps -c frps.toml]
     end
-    subgraph 你的电脑
-    Term(终端)
-    Borwser(浏览器)
+    subgraph loc
+    CliSsh(./frpc -c ssh.toml)
+    CliHttp(./frpc -c http.toml)
     end
 
     CliSsh <--ssh--> S

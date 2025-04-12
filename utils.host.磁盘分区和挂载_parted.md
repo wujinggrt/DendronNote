@@ -6,7 +6,132 @@ updated: 1742260545457
 created: 1741940358214
 ---
 
-挂载和操作磁盘，需要在 root 用户环境下才能操作。以下操作都默认为 root 权限，或是 sudo 执行。parted 命令中，-l 显示磁盘信息，-h 帮助。
+挂载和操作磁盘，需要在 root 用户环境下才能操作。以下操作都默认为 root 权限，或是 sudo 执行。parted 命令中，-l 显示磁盘信息，-h 帮助。注意，操作设备都会需要 root 环境。
+
+## 逻辑卷管理（LVM）：物理卷，卷组和逻辑卷
+
+![lvm](assets/images/utils.磁盘分区和挂载_parted/lvm.png)
+
+- 物理卷（Physical Volume，PV）：就是真正的物理硬盘或分区。
+- 卷组（Volume Group，VG）：将多个物理卷合起来就组成了卷组。组成同一个卷组的物理卷可以是同一块硬盘的不同分区，也可以是不同硬盘上的不同分区。我们可以把卷组想象为一块逻辑硬盘。
+- 逻辑卷（Logical Volume，LV）：卷组是一块逻辑硬盘，硬盘必须分区之后才能使用，我们把这个分区称作逻辑卷。逻辑卷可以被格式化和写入数据。我们可以把逻辑卷想象为分区。
+- 物理扩展（Physical Extend，PE）：PE 是用来保存数据的最小单元，我们的数据实际上都是写入 PE 当中的。PE 的大小是可以配置的，默认是 4MB。
+
+建立 LVM 的时候，需要按照以下步骤来进行：
+- 把物理硬盘分成分区，当然也可以是整块物理硬盘；
+- 把物理分区建立为物理卷（PV），也可以直接把整块硬盘都建立为物理卷。
+- 把物理卷整合为卷组（VG）。卷组就已经可以动态地调整大小了，可以把物理分区加入卷组，也可以把物理分区从卷组中删除。
+- 把卷组再划分为逻辑卷（LV），当然逻辑卷也是可以直接调整大小的。我们说逻辑卷可以想象为分区，所以也需要格式化和挂载。
+
+```mermaid
+flowchart LR
+    A(创建物理卷) --> B(使用此物理卷来扩展卷组) --> C(100% 扩容逻辑卷) --> D(调整逻辑卷)
+```
+
+有了物理分区，可以建立逻辑卷。卷组（Volume Group）由一个或多个物理卷组成的存储池。通常使用 vgcreate, vgchange, vgscan, vgextend 等命令来操作。
+
+[参考 VG 卷组](https://c.biancheng.net/view/918.html)。[PV 物理卷](https://c.biancheng.net/view/914.html)。[LV 逻辑卷](https://c.biancheng.net/view/920.html)。
+
+### 物理卷管理
+
+使用 parted 或 fdisk 交互命令来创建物理分区。注意，操作分区后，使用命令 `partprobe` 重新读取分区表，或重启 OS。
+
+可以把整块硬盘建立为物理卷，也可以仅用某个分区建立物理卷。建立物理卷命令如下：
+
+```bash
+pvcreate /dev/sdb
+pvcreate /dev/sdb5 # 仅分区 sdb5
+```
+
+查询使用 `pvscan` 或者 `pvdisplay`。后者列出更详细的状态。
+
+删除：
+
+```bash
+pvremove /dev/sdb7
+```
+
+### 卷组管理
+
+```bash
+vgcreate [-s PE 大小] 卷组名 物理卷名
+vgcreate -s 8MB scvg /dev/sdb5 /dev/sdb6 # 加入两个物理卷
+```
+
+单位可以使 MB, GB, TB，不写则默认 4MB。
+
+激活：
+
+```bash
+vgchange -a y 卷组名 # 激活
+vgchange -a n 卷组名 # 停用
+```
+
+查看卷组使用 `vgscan` 或 `vgdisplay`。
+
+扩充/减少卷组容量：
+
+```bash
+vgextend 卷组名 物理卷
+vgextend scvg /dev/sdb7
+vgreduce 卷组名 物理卷
+vgreduce scvg /dev/sdb7
+```
+
+删除：
+
+```bash
+vgremove scvg
+```
+
+## 分区扩容例子
+
+查看磁盘使用情况：
+
+```bash
+df -hl
+```
+
+
+### 创建物理卷
+
+查看物理磁盘情况，使用命令 `lsblk -a`，找到没有挂载点的设备。比如：
+
+    ...
+    sdd                         8:48   0 931.5G  0 disk
+    ├─sdd1                      8:49   0     1G  0 part /boot/efi
+    ├─sdd2                      8:50   0     2G  0 part /boot
+    └─sdd3                      8:51   0 928.5G  0 part
+    └─ubuntu--vg-ubuntu--lv 253:0    0 928.5G  0 lvm  /
+    sde                         8:64   0 476.9G  0 disk
+
+注意，只有满足两个条件的设备，才能合并到卷组 `ubuntu-vg`:
+- 没有挂载点，也就是 MOUNTPOINTS 为空
+- 没有被进行分区，也就它没有子节点
+
+以新插入的硬盘 sde 为例，首先创建物理卷：
+
+```bash
+sudo pvcreate /dev/sde
+```
+
+扩充卷组 ubuntu-vg:
+
+```bash
+sudo vgextend ubuntu-vg /dev/sde
+```
+
+ubuntu-vg 得到扩充后，我们把 ubuntu-vg 内的 ubuntu-lv 逻辑卷直接 100% 扩充即可。把 ubuntu-vg 所有空间划分给 ubuntu-lv，扩展逻辑卷命令如下：
+
+```bash
+sudo lvextend -l +100%FREE /dev/ubuntu-vg/ubuntu-lv
+```
+
+调整逻辑卷。为了让根目录更大，需要调整逻辑卷：
+
+```bash
+sudo resize2fs /dev/mapper/ubuntu--vg-ubuntu--lv
+```
 
 ## 分区工具 parted
 
@@ -69,7 +194,12 @@ parted /dev/sdb
 在另一个终端，使用 lsblk 查看已经挂载的分区，找出未挂载的，进一步初始化。
 
 ```bash
-> lsblk
+lsblk
+```
+
+输出：
+
+```
 ...
 nvme0n1     259:0    0 953.9G  0 disk
 ├─nvme0n1p1 259:1    0   499M  0 part /boot/efi

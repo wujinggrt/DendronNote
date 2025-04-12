@@ -6,7 +6,7 @@ updated: 1744394007003
 created: 1744387527662
 ---
 
-## Graph, Flowchat
+## Graph
 
 ```mermaid
 graph TD
@@ -28,11 +28,22 @@ graph TD
 - 使用 style 指出，仅对单个节点起作用。
 - 定义为 class 后，使用 ::: 符号指定类型，可以复用颜色配置。
 
+## Flowchart
+
+[doc](https://mermaid.js.org/syntax/flowchart.html)。
+
 ```mermaid
 flowchart LR
 D[renderer] <--> A[Dev Server] <--ws--> B[service]
 B <--mcp--> m(MCP Server)
 ```
+
+布局方向：
+- TB - Top to bottom
+- TD - Top-down/ same as top to bottom
+- BT - Bottom to top
+- RL - Right to left
+- LR - Left to right
 
 ```mermaid
 flowchart TB
@@ -46,6 +57,18 @@ flowchart TB
     subgraph three
     c1-->c2
     end
+```
+
+使用 & 可以对齐：
+
+```mermaid
+flowchart LR
+   a --> b & c--> d
+```
+
+```mermaid
+flowchart TB
+    A & B--> C & D
 ```
 
 ## 时序图：Sequence diagram

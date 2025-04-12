@@ -29,22 +29,22 @@
     * <leader><w|e|b>    : CamelCaseMotion移动，驼峰命名或snake命名移动
     * <leader>W          : save, save all
     * <leader>f          : format code
-    * <leader>k, <leader>K highlight
-    * sf, sF, show reference, find refernce
-    * gd 显示光标所在函数/方法/类型/宏的信息,go to definition
-    * gD 显示光标所在函数/方法/类型/宏的信息，在上方水平分屏显示
-    *    一般垂直划分窗口。当右侧窗口有打开文件时，在垂直的右侧窗口
-    *    查看定义可能会污染打开的标签卡，或者打开了相同文件，光标会跳转，
-    *    所以上方水平通常能保证临时打开没有标签卡的窗口，不会污染。
-    *    再结合 <leader>m，可以最大化，方便查看。
-    * gi 在右侧的新视图打开函数/方法/宏的实现（竖直分屏）
-    * gt 在右侧的新视图打开类型定义（竖直分屏）
-    * gh hover
-
-    * sd 浮窗查看定义，show definition,peekDefinition
-    * st 浮窗查看类型定义，editor.action.peekTypeDefinition
-    * sh 查看 call hierarchy
-    * ysw<Space>, ysW<Space 在当前单词两侧添加空格。用于笔记场景，给英文两侧添加空格，与中文分开，阅读美观。比如:
+    * <leader>k <leader>K: highlight
+    * <leader>m          : 最大化当前编辑窗口
+    * sf sF: show reference, find refernce
+    * gd: 显示光标所在函数/方法/类型/宏的信息,go to definition
+    * gD: 显示光标所在函数/方法/类型/宏的信息，在上方水平分屏显示
+    *     一般垂直划分窗口。当右侧窗口有打开文件时，在垂直的右侧窗口
+    *     查看定义可能会污染打开的标签卡，或者打开了相同文件，光标会跳转，
+    *     所以上方水平通常能保证临时打开没有标签卡的窗口，不会污染。
+    *     再结合 <leader>m，可以最大化，方便查看。
+    * gi: 在右侧的新视图打开函数/方法/宏的实现（竖直分屏）
+    * gt: 在右侧的新视图打开类型定义（竖直分屏）
+    * gh: hover
+    * sd: 浮窗查看定义，show definition,peekDefinition
+    * st: 浮窗查看类型定义，editor.action.peekTypeDefinition
+    * sh: 查看 call hierarchy
+    * y<Space> Y<Space>: 在当前单词两侧添加空格。用于笔记场景，给英文两侧添加空格，与中文分开，阅读美观。比如:
     * 基础的 DP 方法并不能降低每个设备 (GPU) 上的内存占用。
     * rn rename
     * [d, ]d 查看error的地方
@@ -55,11 +55,11 @@
     *
     * insert mode:
     * jk<h|j|k|l> 编辑模式，上下左右移动
-    * <leader>w save
-    * <leader>e <Esc>后e再a，相当于编辑模式下的前移光标
-    * <leader>L <Esc>后L再a，移动光标到末尾
-    * <leader>h 相当于光标停在当前位置，用于提示api接口
-    * <leader>m 最大化当前编辑窗口
+    * <leader>w: save
+    * <leader>e: <Esc>后e再a，相当于编辑模式下的前移光标
+    * <leader>L: <Esc>后L再a，移动光标到末尾
+    * <leader>h: 相当于光标停在当前位置，用于提示api接口
+    * <leader>`: 在编辑 Markdown 场景有用，快速插入代码块。快速构建 ``` 包围的部分。
     * {; 用于C++中，花括号后还带有;的场景，用于方便输入
     * <leader>; 快速在末尾添加;并插入新行;
     * <leader>: 快速在末尾添加分号，不添加新行
@@ -283,6 +283,15 @@
                 "highlight.clearWords"
             ]
         },
+        {
+            "before": [
+                "<leader>",
+                "m"
+            ],
+            "commands": [
+                "workbench.action.toggleMaximizeEditorGroup"
+            ]
+        },
         // 查看引用
         {
             "before": [
@@ -392,15 +401,6 @@
                 "editor.action.rename"
             ]
         },
-        {
-            "before": [
-                "<leader>",
-                "m"
-            ],
-            "commands": [
-                "workbench.action.toggleMaximizeEditorGroup"
-            ]
-        },
         // 跳转到代码提示错误地方，并弹出错误提示。
         // 与ctrl+]跳到定义处相契合。
         {
@@ -432,12 +432,8 @@
             ]
         },
         {
-            // ysw<Space>, ysW<Space 在当前单词两侧添加空格。用于笔记场景，给英文两侧添加空格，与中文分开，阅读美观。比如:
-            // 基础的 DP 方法并不能降低每个设备 (GPU) 上的内存占用。
             "before": [
                 "y",
-                "s",
-                "w",
                 "<Space>"
             ],
             "after": [
@@ -456,9 +452,7 @@
         },
         {
             "before": [
-                "y",
-                "s",
-                "W",
+                "Y",
                 "<Space>"
             ],
             "after": [
@@ -610,6 +604,28 @@
             ],
             "commands": [
                 "editor.action.showHover"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "`"
+            ],
+            "after": [
+                "`",
+                "`",
+                "`",
+                "`",
+                "`",
+                "`",
+                "<Esc>",
+                "<Left>",
+                "<Left>",
+                "i",
+                "<Enter>",
+                "<Esc>",
+                "<Up>",
+                "A"
             ]
         },
         {
