@@ -2,7 +2,7 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA_阅读代码和复现
 desc: ''
-updated: 1744469210041
+updated: 1744557926227
 created: 1740053039805
 ---
 
@@ -216,6 +216,106 @@ pickle 是标准库内容其一，用于序列化和反序列化 Python 对象�
 
 ModelArguments, DataArguments 和 ActionHeadArguments 是普通的标注了 `@dataclass` 的数据类，只有 TrainingArguments 除了标注 `@dataclass` ，还继承了 transformers.TrainingArguments。transformers.TrainingArguments 也是普通的类，标注 `@dataclass`。
 
+### 任务参数和模型配置加载
+
+加载任务参数和配置参考 parse_param()。在 main() 中根据参数来执行训练。训练的模型参数参考 all_config 和 model_config。例如，配置数据加载的参数 all_config["data_args"] 由 train_vla.py:class DataArguments 定义，由 transformers.HfArgumentParser() 解析，且命令行参数可以覆盖。以 data_args 为例：
+
+```py
+@dataclass
+class DataArguments:
+    ...
+    task_name: str = field(
+        default="stack_cube_2024_6_2"
+    )  # task name corresponding to aloha_scripts/constants.py
+    ...
+
+def parse_param():
+    ...
+    parser = transformers.HfArgumentParser(
+        (ModelArguments, DataArguments, TrainingArguments, ActionHeadArguments)
+    )
+    model_args, data_args, training_args, action_head_args = (
+        parser.parse_args_into_dataclasses()
+    )
+    ...
+
+if __name__ == "__main__":
+    (
+        model_args,
+        data_args,
+        training_args,
+        action_head_args,
+        model_config,
+        bnb_model_from_pretrained_args,
+    ) = parse_param()
+    config = {
+        "model_args": model_args,
+        "data_args": data_args,
+        "training_args": training_args,
+        "action_head_args": action_head_args,
+        "bnb_model_from_pretrained_args": bnb_model_from_pretrained_args,
+    }
+    ...
+    main(all_config=config, model_config=model_config)
+```
+
+config["data_args"].task_name 可以获得 DataArguments.task_name，或者命令行参数覆盖的名字。
+
+任务名 task_name 要求至少对应 constant.py:TASK_CONFIGS 字典中的一个 key。字典的每个 key 会再对应一个字典，其字典包含 `dataset_dir: list[str]`。dataset_dir 是列表，包含一个或多个目录。每个目录下，可能有多个 episodes 的 HDF5。训练时，选取其中一个任务训练，即一个 task，而 dataset_dir 便是一个 list。
+
+```py
+TASK_CONFIGS = {
+    'example_tasks': { # for local debug
+        'dataset_dir': [
+            "/media/rl/HDD/data/data/aloha_data/4_cameras_aloha/folding_shirt"
+        ],
+        'episode_len': 1000,  
+        'camera_names': ['cam_high', 'cam_left_wrist', 'cam_right_wrist'] # replacing with your real keys in h5py formatted data
+    }
+}
+```
+
+比如，dataset_dir 的列表可以包含如下目录，"data/dexvla_example_data"，下面有一个或多个 hdf5 文件。
+
+```
+data/dexvla_example_data
+├── episode_47.hdf5
+├── episode_48.hdf5
+├── gitattributes
+└── README.md
+```
+
+可以看到，任务字典中还有其他 key，比如 "episode_len" 和 "camera_names"。其中，任务配置字典必须要包含 key 为 "dataset_dir", "episode_len", "camera_names"。其余的参数，比如 stats_dir, name_filter 在解析时可以指定默认值。
+
+### 根据任务名加载配置
+
+在 train_vla.py:main() 中，根据 task_name 加载 TASK_CONFIGS[task_name] 的配置：
+
+```py
+def main(all_config=None, model_config=None):
+    """
+    Args:
+        all_config (dict): Configuration dictionary containing:
+        model_config (AutoConfig): Model configuration object for the Qwen2VLA model
+    """
+    task_config = TASK_CONFIGS[all_config["data_args"].task_name]
+    dataset_dir = task_config["dataset_dir"]
+    episode_len = task_config["episode_len"]
+    camera_names = task_config["camera_names"]
+    stats_dir = task_config.get("stats_dir", None)
+    sample_weights = task_config.get("sample_weights", None)
+    train_ratio = task_config.get("train_ratio", 0.999)
+    name_filter = task_config.get("name_filter", lambda n: True)
+    
+    all_config["camera_names"] = camera_names
+    all_config["episode_len"] = episode_len
+    ...
+```
+
+all_config 由 ModelArguments, DataArguments, TrainingArguments, ActionHeadArguments 和命令行参数指定，model_config 由下载的预训练模型的配置文件加载，随后根据修改的 action head 来做出修改。
+
+这些配置，会用来加载数据，加载模型。
+
 ## 数据加载
 
 ### 数据组织：使用 HDF5
@@ -289,109 +389,81 @@ action                  (14,)         'float64'
 
 ### Dataset 和 DataLoader
 
-### 任务配置加载
+### 加载数据集：load_data()
 
-**任务配置**
-
-加载任务参数和配置参考 parse_param()。在 main() 中根据参数来执行训练。训练的模型参数参考 all_config 和 model_config。例如，配置数据加载的参数 all_config["data_args"] 由 train_vla.py:class DataArguments 定义，由 transformers.HfArgumentParser() 解析，且命令行参数可以覆盖。以 data_args 为例：
+加载数据参考 data_utils/utils.py:load_data()。签名如下：
 
 ```py
-@dataclass
-class DataArguments:
+def load_data(
+    dataset_dir_l,
+    name_filter,
+    camera_names,
+    batch_size_train,
+    batch_size_val,
+    chunk_size,
+    config,
+    rank0_print=print,
+    skip_mirrored_data=False,
+    policy_class=None,
+    stats_dir_l=None,
+    sample_weights=None,
+    train_ratio=0.99,
+    llava_pythia_process=None,
+):
     ...
-    task_name: str = field(
-        default="stack_cube_2024_6_2"
-    )  # task name corresponding to aloha_scripts/constants.py
-    ...
-
-def parse_param():
-    ...
-    parser = transformers.HfArgumentParser(
-        (ModelArguments, DataArguments, TrainingArguments, ActionHeadArguments)
-    )
-    model_args, data_args, training_args, action_head_args = (
-        parser.parse_args_into_dataclasses()
-    )
-    ...
-
-if __name__ == "__main__":
-    (
-        model_args,
-        data_args,
-        training_args,
-        action_head_args,
-        model_config,
-        bnb_model_from_pretrained_args,
-    ) = parse_param()
-    config = {
-        "model_args": model_args,
-        "data_args": data_args,
-        "training_args": training_args,
-        "action_head_args": action_head_args,
-        "bnb_model_from_pretrained_args": bnb_model_from_pretrained_args,
-    }
-    ...
-    main(all_config=config, model_config=model_config)
 ```
 
-config["data_args"].task_name 可以获得 DataArguments.task_name，或者命令行参数覆盖的名字。
-
-任务名 task_name 要求至少对应 constant.py:TASK_CONFIGS 字典中的一个 key。字典的每个 key 会再对应一个字典，其字典包含 `dataset_dir: list[str]`。dataset_dir 是列表，包含一个或多个目录。每个目录下，可能有多个 episodes 的 HDF5。训练时，选取其中一个任务训练，即一个 task，而 dataset_dir 便是一个 list。
-
-```py
-TASK_CONFIGS = {
-    'example_tasks': { # for local debug
-        'dataset_dir': [
-            "/media/rl/HDD/data/data/aloha_data/4_cameras_aloha/folding_shirt"
-        ],
-        'episode_len': 1000,  
-        'camera_names': ['cam_high', 'cam_left_wrist', 'cam_right_wrist'] # replacing with your real keys in h5py formatted data
-    }
-}
-```
-
-比如，dataset_dir 的列表可以包含如下目录，"data/dexvla_example_data"，下面有一个或多个 hdf5 文件。
-
-```
-data/dexvla_example_data
-├── episode_47.hdf5
-├── episode_48.hdf5
-├── gitattributes
-└── README.md
-```
-
-可以看到，任务字典中还有其他 key，比如 "episode_len" 和 "camera_names"。其中，任务配置字典必须要包含 key 为 "dataset_dir", "episode_len", "camera_names"。其余的参数，比如 stats_dir, name_filter 在解析时可以指定默认值。
-
-**根据任务名加载配置**
-
-在 train_vla.py:main() 中，根据 task_name 加载 TASK_CONFIGS[task_name] 的配置：
+调用 load_data() 函数，传入数据集目录、相机名称、批次大小、数据块大小、配置等参数。
 
 ```py
 def main(all_config=None, model_config=None):
-    """
-    Args:
-        all_config (dict): Configuration dictionary containing:
-        model_config (AutoConfig): Model configuration object for the Qwen2VLA model
-    """
-    task_config = TASK_CONFIGS[all_config["data_args"].task_name]
-    dataset_dir = task_config["dataset_dir"]
-    episode_len = task_config["episode_len"]
-    camera_names = task_config["camera_names"]
-    stats_dir = task_config.get("stats_dir", None)
-    sample_weights = task_config.get("sample_weights", None)
-    train_ratio = task_config.get("train_ratio", 0.999)
-    name_filter = task_config.get("name_filter", lambda n: True)
-    
-    all_config["camera_names"] = camera_names
-    all_config["episode_len"] = episode_len
+    ...
+    # load qwen2_vl tokenizer
+    tokenizer = transformers.AutoTokenizer.from_pretrained(
+        all_config["model_args"].model_name_or_path,
+    )
+    # load qwen2_vl input processor
+    multimodal_processor = AutoProcessor.from_pretrained(
+        all_config["model_args"].model_name_or_path
+    )
+    # load dexvla model
+    model, data_args = ml_utils.load_model(
+        config=all_config,
+        qwen2_vla_config=model_config,
+        rank0_print=rank0_print,
+        tokenizer=tokenizer,
+    )
+
+    rank0_print(f"{RED} Using Qwen2VLA as VLA backbone {RESET}")
+    # load qwen2_vla processor
+    vla_process = Qwen2VLAProcess(
+        tokenizer=tokenizer,
+        multimodal_processor=multimodal_processor,
+        data_args=all_config["data_args"],
+        camera_names=camera_names,
+    )
+
+    # load dataset
+    train_dataset, val_dataset, stats, sampler_params = load_data(
+        dataset_dir,
+        name_filter,
+        camera_names,
+        all_config["training_args"].per_device_train_batch_size,
+        all_config["training_args"].per_device_eval_batch_size,
+        all_config["data_args"].chunk_size,
+        skip_mirrored_data=all_config["data_args"].skip_mirrored_data,
+        config=all_config,
+        stats_dir_l=stats_dir,
+        rank0_print=rank0_print,
+        policy_class=all_config["action_head_args"].policy_head_type,
+        sample_weights=sample_weights,
+        train_ratio=train_ratio,
+        llava_pythia_process=vla_process,
+    )
     ...
 ```
 
-all_config 由 ModelArguments, DataArguments, TrainingArguments, ActionHeadArguments 和命令行参数指定，model_config 由下载的预训练模型的配置文件加载，随后根据修改的 action head 来做出修改。
-
-### 加载数据集：load_data()
-
-加载数据参考 data_utils/utils.py:load_data()。
+接下来是各个参数的解读。
 
 #### dataset_dir_l: 数据集目录
 
@@ -412,15 +484,67 @@ all_config 由 ModelArguments, DataArguments, TrainingArguments, ActionHeadArgum
 - norm_states 提供将动作、关节状态的全局统计信息，用于归一化到如 [-1, 1]，确保稳定性和可比性。一般包括各参数的 mean, std, min, ma,。
 - sampler_params 定义训练和验证数据加载的配置参数，指导数据采样器，为生成批次准备。
 
-## EpisodicDataset
+## EpisodicDatase
 
 研究方式：从存储方式、获取数据（`__getitem__()`）的格式入手。
+
+### 存储方式和采样数据
+
+数据存储在 HDF5 文件中，使用 h5py 库加载。每次需要 getitem 时，都会从 HDF5 文件中读取数据，而不是保存一个 buffer 
 
 如果使用基于 Transformer 的 diffusion policy，需要增强图像。
 
 _locate_transition() 返回索引的 episode 中的一条时间步对应的数据。首先找到 index 对应的内容。
 
-self.llava_pythia_process 使用了 Qweb2VLAProcess() 对象。
+self.llava_pythia_process 使用了 Qwen2VLAProcess() 对象。
+
+### getitem() 数据组织流程
+
+1.  **定位与加载原始数据**:
+    * 根据请求的全局索引 (`index`)，通过 `_locate_transition` 找到对应的 HDF5 文件 (`episode_id`) 和该文件内的起始时间步 (`start_ts`)。
+    * 调用 `load_from_h5` 从 HDF5 文件加载以下原始数据：
+        * `start_ts` 时刻的机器人状态 (`qpos`, `qvel`)。
+        * `start_ts` 时刻的所有摄像头图像 (`image_dict`)，并进行初步 resize。
+        * 该 episode 的完整动作序列 (`action`)。
+        * 原始语言指令 (`raw_lang`)。
+        * 如果需要，加载子步骤推理文本 (`reasoning`)。
+
+2.  **初步处理与打包**:
+    * **动作处理**:
+        * 截取 `start_ts` 之后的相关动作序列。
+        * 将动作序列填充或截断至固定长度 (`chunk_size`)。
+        * 生成 `is_pad` 掩码，标记填充部分。
+        * (可选) 如果 `delta_control` 为 True，将动作转换为差分形式 (`action[t] - action[t-1]`)。
+    * **图像处理**: 将各摄像头图像堆叠 (`np.stack`)。
+    * **Tensor 转换**: 将处理后的图像、状态 (`qpos`)、动作、掩码转换为 PyTorch Tensors。
+    * **图像增强**: 如果 `self.augment_images` 为 True (通常用于 Diffusion Policy)，应用随机裁剪、旋转、颜色抖动等变换。
+    * **数据标准化/归一化**:
+        * 使用 `norm_stats` 对 `qpos_data` 进行 Z-score 标准化。
+        * 使用 `norm_stats` 对 `action_data` 进行 Min-Max 归一化到 `[-1, 1]` 区间。
+    * **创建中间 `sample` 字典**: 包含初步处理后的 `image`, `state` (qpos), `action`, `is_pad`, `raw_lang`, `reasoning`。
+
+3.  **调用 `Qwen2VLAProcess.forward_process` 进行最终处理**:
+    * 将上一步得到的 `sample` 字典传递给 `forward_process`。
+    * **图像最终处理**:
+        * 对 `sample['image']` 中的每个视角图像张量，调用 `qwen2_image_preprocess` 进行 Qwen2-VL 特定的预处理（包括转换回 PIL Image，根据相机类型 resize，应用 `Workspace_image` 处理）。
+        * 收集处理后的图像列表 `images_list`。
+    * **文本与消息格式化**:
+        * 调用 `datastruct_droid2llava` 将 `sample` 中的图像占位符和 `raw_lang` 格式化为 Qwen2-VL 对话模板所需的 `messages` 结构。
+        * 使用 `multimodal_processor.apply_chat_template` 生成模型所需的文本提示部分 (`text`)。
+    * **构建多模态输入**:
+        * 使用 `multimodal_processor` 将格式化的 `text` 和处理后的 `images_list` 整合为最终的模型输入 `model_inputs` (包含 `input_ids`, `attention_mask`, `pixel_values` 等)。
+    * **生成 LMM 训练标签 (`labels`)**:
+        * 构建期望的回答文本 `answer`，可能包含 `reasoning` 和固定的 "Next action:<|im_end|>"。
+        * 将 `answer` 分词。
+        * 将 `model_inputs` 中的 `input_ids` 和 `attention_mask` 与 `answer` 的分词结果拼接。
+        * 创建 `labels`：将 `-100` (忽略损失计算的 token) 组成的序列与 `answer` 的 `input_ids` 拼接。
+    * **构建最终输出字典 (`data_dict`)**:
+        * 从输入的 `sample` 复制 `state`, `action`, `is_pad`。
+        * 添加生成的 `labels`。
+        * 将 `model_inputs` 字典中的所有内容 (如 `input_ids`, `attention_mask`, `pixel_values`) 添加到 `data_dict` 中。
+    * 返回包含模型所需全部输入的 `data_dict`。
+
+这个 `data_dict` 就是最终喂给 Qwen2VLA 模型进行训练的单一样本数据。
 
 ### 从 h5 加载数据
 
