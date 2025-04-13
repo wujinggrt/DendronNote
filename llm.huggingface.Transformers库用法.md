@@ -2,7 +2,7 @@
 id: 17qvnqry352fhhwxcp3imco
 title: Transformers库用法
 desc: ''
-updated: 1741334316742
+updated: 1744568353467
 created: 1740205377695
 ---
 
@@ -183,7 +183,30 @@ print(output_text)
 
 #### 聊天模板
 
-聊天场景由一条或多条消息组成的对话组成，每条消息都有一个“用户”或“助手”等 角色，还包括消息文本。聊天模板是Tokenizer的一部分。用来把问答的对话内容转换为模型的输入prompt。
+聊天场景由一条或多条消息组成的对话组成，每条消息都有一个“用户”或“助手”等 角色，包括消息文本。聊天模板是 Tokenizer 或 Processor 的一部分，将结构化的对话历史（通常是一个包含角色和内容的列表）转换为符合特定聊天模型预训练或微调时使用的格式化字符串或 token ID 列表。不同模型的模板有差异。一般来说，模板定义了：
+- 角色标识: 如何区分用户（user）、助手（assistant）和系统（system）的消息。
+- 特殊标记 (Special Tokens): 使用哪些特定的控制 token 来标记对话的开始、结束，以及不同轮次（turn）之间的分隔。例如 `<s>, </s>, [INST], [/INST], <|im_start|>, <|im_end|>, <|user|>, <|assistant|>` 等。
+- 结构: 消息如何排列，是否包含特定的换行符或空格。
+
+直接将原始的用户输入和历史消息拼接起来喂给模型，模型可能无法正确理解对话的结构和上下文，因为**它期望的是训练时见过的特定格式**。手动为每个模型构建这种格式化字符串既繁琐又容易出错。apply_chat_template 就是为了解决这个问题而设计的。
+
+**工作原理**：
+- **加载模板**: 当你加载一个支持聊天的模型的 Tokenizer 时（例如 `from_pretrained("meta-llama/Llama-2-7b-chat-hf")`），它通常会附带一个预定义的聊天模板（Chat Template）。这个模板通常是一个 Jinja2 格式的字符串，存储在 `tokenizer.chat_template` 属性中。如果 `tokenizer.chat_template` 为空，库会尝试根据模型类型推断一个默认模板。
+- **处理输入**: 你提供一个对话历史列表，通常是如下格式：
+    ```py
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Hello!"},
+        {"role": "assistant", "content": "Hi there! How can I help you today?"},
+        {"role": "user", "content": "Tell me a joke."}
+    ]
+    ```
+- **应用模板**: `apply_chat_template` 方法会使用 Jinja2 引擎，根据 `tokenizer.chat_template` 中定义的规则，遍历 messages 列表，并插入所有必要的特殊标记和格式，生成最终的输入。
+
+如果使用了 Processor，在使用 apply_chat_template 方法时，需要传入 `tokenize=False`，因为 Processor 会自动处理分词。最终再调用 processor() 方法，传入应用聊天模板和图像等内容，进行分词和张量转换。
+
+
+调用 apply_chat_template() 方法后，会返回一个字符串，包含了所有的消息。
 
 比如，上面代码中：
 
@@ -197,6 +220,75 @@ You are a helpful assistant.<|im_end|>
 <|im_start|>user
 <|vision_start|><|image_pad|><|vision_end|>Describe this image.<|im_end|>
 <|im_start|>assistant
+```
+
+```py
+# Qwen2.5VL
+messages = [
+    {
+        "role": "user",
+        "content": [
+            {
+                "type": "image",
+                "image": "https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-VL/assets/demo.jpeg",
+            },
+            {"type": "text", "text": "Describe this image."},
+        ],
+    }
+]
+
+# Preparation for inference
+text = processor.apply_chat_template(
+    messages, tokenize=False, add_generation_prompt=True
+)
+image_inputs, video_inputs = process_vision_info(messages)
+inputs = processor(
+    text=[text],
+    images=image_inputs,
+    videos=video_inputs,
+    padding=True,
+    return_tensors="pt",
+)
+inputs = inputs.to(model.device)
+
+# Inference: Generation of the output
+generated_ids = model.generate(**inputs, max_new_tokens=128)
+```
+
+如图聊天中，出现多张图像，那么使用多张图像传入 processor 即可。注意，Qwen2.5VL 支持本地图像，base64 编码的图像，和 URL 图像。process_vision_info() 函数在图像方面，返回 list[PIL.Image]。每个 PIL.Image 对象实例都调用了 convert("RGB") 来转为 RGB 图像。即使是 base64 图像，也会先用 PIL.Image 对象统一表示。模板如下：
+
+```py
+# You can directly insert a local file path, a URL, or a base64-encoded image into the position where you want in the text.
+## Local file path
+messages = [
+    {
+        "role": "user",
+        "content": [
+            {"type": "image", "image": "file:///path/to/your/image.jpg"},
+            {"type": "text", "text": "Describe this image."},
+        ],
+    }
+]
+## Image URL
+messages = [
+    {
+        "role": "user",
+        "content": [
+            {"type": "image", "image": "http://path/to/your/image.jpg"},
+            {"type": "text", "text": "Describe this image."},
+        ],
+    }
+]
+## Base64 encoded image
+messages = [
+    {
+        "role": "user",
+        "content": [
+            {"type": "image", "image": "data:image;base64,/9j/..."},
+            {"type": "text", "text": "Describe this image."},
+        ],
+    }
+]
 ```
 
 参考 [聊天模型的模板](https://huggingface.co/docs/transformers/main/zh/chat_templating#%E8%81%8A%E5%A4%A9%E6%A8%A1%E5%9E%8B%E7%9A%84%E6%A8%A1%E6%9D%BF)。

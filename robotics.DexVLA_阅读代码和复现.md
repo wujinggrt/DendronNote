@@ -2,7 +2,7 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA_阅读代码和复现
 desc: ''
-updated: 1744557926227
+updated: 1744566307382
 created: 1740053039805
 ---
 
@@ -486,6 +486,9 @@ def main(all_config=None, model_config=None):
 
 ## EpisodicDatase
 
+构造函数传入的参数，重点关注：
+- episode_len: list[int] 决定了每个 episode 的长度。
+
 研究方式：从存储方式、获取数据（`__getitem__()`）的格式入手。
 
 ### 存储方式和采样数据
@@ -523,7 +526,7 @@ self.llava_pythia_process 使用了 Qwen2VLAProcess() 对象。
         * 使用 `norm_stats` 对 `action_data` 进行 Min-Max 归一化到 `[-1, 1]` 区间。
     * **创建中间 `sample` 字典**: 包含初步处理后的 `image`, `state` (qpos), `action`, `is_pad`, `raw_lang`, `reasoning`。
 
-3.  **调用 `Qwen2VLAProcess.forward_process` 进行最终处理**:
+3.  **调用 `Qwen2VLAProcess.forward_process()` 进行最终处理**:
     * 将上一步得到的 `sample` 字典传递给 `forward_process`。
     * **图像最终处理**:
         * 对 `sample['image']` 中的每个视角图像张量，调用 `qwen2_image_preprocess` 进行 Qwen2-VL 特定的预处理（包括转换回 PIL Image，根据相机类型 resize，应用 `Workspace_image` 处理）。
@@ -544,46 +547,54 @@ self.llava_pythia_process 使用了 Qwen2VLAProcess() 对象。
         * 将 `model_inputs` 字典中的所有内容 (如 `input_ids`, `attention_mask`, `pixel_values`) 添加到 `data_dict` 中。
     * 返回包含模型所需全部输入的 `data_dict`。
 
-这个 `data_dict` 就是最终喂给 Qwen2VLA 模型进行训练的单一样本数据。
+这个 `data_dict` 就是最终输入 Qwen2VLA 模型进行训练的单一样本数据。具体格式参考如下，假设 DataLoader 组合为批次大小 B：
+* **`input_ids`**:
+    * **作用**: 模型的文本和图像位置编码输入序列。包含了格式化后的自然语言指令、图像占位符 token，以及用于监督学习的期望回答（推理文本 + "Next action:<|im_end|>") 的 token ID。
+    * **Shape**: `(B, sequence_length)`
+    * **数据类型**: `torch.int64`
+    * **说明**: `sequence_length` 是整个输入序列（文本+图像标记+回答）的总长度，通常会被填充 (pad) 到模型的最大长度 (`model_max_length`, 默认 2048)。
 
-### 从 h5 加载数据
+* **`attention_mask`**:
+    * **作用**: 指示模型在计算注意力时应该关注哪些 `input_ids` 中的 token (1 表示关注, 0 表示忽略，通常用于标记填充部分)。
+    * **Shape**: `(B, sequence_length)`
+    * **数据类型**: `torch.int64` (或 `torch.float32`, 取决于具体实现)
+    * **说明**: 长度与 `input_ids` 相同。
 
-load_from_h5() 方法中，可以看到加载了 qpos 和 qvel。在 getitem 方法中，可以发现，只用到了 qpos，没用到 qvel。它们的变化是微分和积分关系。两者其实等价。
+* **`pixel_values`**:
+    * **作用**: 经过预处理（缩放、归一化等）后的图像数据，作为视觉部分的输入。
+    * **Shape**: `(B, num_cameras, num_channels, height, width)`
+    * **数据类型**: `torch.float32`
+    * **说明**:
+        * `num_cameras` 是使用的摄像头数量 (由 `camera_names` 列表长度决定, 示例中为 3)。
+        * `num_channels` 通常是 3 (RGB)。
+        * `height` 和 `width` 是 Qwen2-VL 模型 Vision Tower 所期望的输入图像分辨率 (例如 448x448，具体值取决于 `qwen2_image_preprocess` 和 Qwen2-VL processor 的内部实现)。
 
-### 返回样本格式
+* **`labels`**:
+    * **作用**: 用于计算语言模型损失的目标标签。对于输入提示部分，标签通常设为 -100 (忽略计算损失)；对于期望的回答部分（推理文本 + "Next action:<|im_end|>"），标签是对应的 token ID。
+    * **Shape**: `(B, sequence_length)`
+    * **数据类型**: `torch.int64`
+    * **说明**: 长度与 `input_ids` 相同。
 
-```mermaid
-graph TD
-    Sample["单个样本 (Dict)"]
-    Sample --> Image["image: Tensor"]
-    Sample --> State["state: Tensor"]
-    Sample --> Action["action: Tensor"]
-    Sample --> IsPad["is_pad: Tensor"]
-    Sample --> Language["raw_lang: str"]
-    Sample --> Reasoning["reasoning: str"]
-    
-    Image --> Shape["Shape: [K,C,H,W]"]
-    State --> Content["内容: 机器人关节状态 (qpos)"]
-    Action --> Content2["内容: 动作序列 (padded_action)"]
-    IsPad --> Mask["作用: 标识填充位置 (0=有效，1=填充)"]
-    
-    subgraph 图像数据
-        Image --> CameraNum["K = 摄像头数量"]
-        Image --> Channel["C = 通道数 (RGB=3)"]
-        Image --> Resolution["HxW = 图像分辨率"]
-    end
-    
-    subgraph 预处理流程
-        Norm["归一化处理"] --> ActionNorm["动作: (action - min)/(max - min)*2-1"]
-        Norm --> StateNorm["状态: (qpos - mean)/std"]
-        Aug["数据增强"] --> RandomCrop["随机裁剪"]
-        Aug --> Resize["缩放回原尺寸"]
-        Aug --> Rotation["随机旋转 (±5°)"]
-        Aug --> ColorJitter["颜色抖动 (亮度/对比度/饱和度)"]
-    end
-```
+* **`state`**:
+    * **作用**: 归一化后的机器人状态（关节位置 `qpos`），作为 Diffusion Expert (动作头) 的条件输入之一。
+    * **Shape**: `(B, state_dim)`
+    * **数据类型**: `torch.float32`
+    * **说明**: `state_dim` 在 `ActionHeadArguments` 中定义 (默认 7)。
 
-#### Qwen2VLProcess
+* **`action`**:
+    * **作用**: 归一化后的目标动作序列 (或动作差分序列)，用于计算 Diffusion Policy 的损失。
+    * **Shape**: `(B, chunk_size, action_dim)`
+    * **数据类型**: `torch.float32`
+    * **说明**:
+        * `chunk_size` 是预测的动作序列长度 (来自 `DataArguments`, 默认 16)。
+        * `action_dim` 是动作空间的维度 (来自 `ActionHeadArguments`, 默认 10)。
+
+* **`is_pad`**:
+    * **作用**: 标记 `action` 序列中的哪些时间步是填充的 (因为原始 episode 可能比 `chunk_size` 短)。
+    * **Shape**: `(B, chunk_size)`
+    * **数据类型**: `torch.bool`
+
+### Qwen2VLProcess
 
 最后获取字典 sample，并传递给 qwen2_vla/utils/processing_qwen2_vla.py:class Qwen2VLProcessor.forward_process()。处理多模态输入，方便送入模型的训练。
 
@@ -618,6 +629,40 @@ Qwen2VLProcessor 构造时接受参数:
         data_args=all_config["data_args"],
         camera_names=camera_names,
     )    
+```
+
+Qwen2VLAProcess 通过 datastruct_droid2llava() 方法组织多模态的 prompt。
+
+```py
+class Qwen2VLAProcess:
+    ...
+    def forward_process(self, sample, use_reasoning=True):
+        ...
+        text = self.multimodal_processor.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+
+        model_inputs = self.multimodal_processor(
+            text=text,
+            images=image_data,
+            videos=video_inputs,
+            padding=True,
+            return_tensors="pt",
+        )
+        ...
+```
+
+其中，self.multimodal_processor 是 transformers.AutoProcessor.from_pretrained() 加载的。对应 Qwen2-VL 模型的预处理器。sample 是数据集返回的字典，包含了图像、状态、动作等信息。具体如下：
+
+```py
+        sample = {
+            "image": image_data,
+            "state": qpos_data,
+            "action": action_data,
+            "is_pad": is_pad,
+            "raw_lang": raw_lang,
+            "reasoning": reasoning,
+        }
 ```
 
 ## 扩散专家：ScaleDP
