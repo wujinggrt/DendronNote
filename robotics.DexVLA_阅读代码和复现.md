@@ -2,7 +2,7 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA_阅读代码和复现
 desc: ''
-updated: 1744566307382
+updated: 1744640922859
 created: 1740053039805
 ---
 
@@ -1151,6 +1151,8 @@ VLA 的输入中，修改了 forward() 的 API，删去了最后一个参数，c
 
 调用它是，传入参数有 model=model, tokenizer=tokenizer, args=config["training_args"], sampler_params=sampler_params, **data_module。包含了传入的 train_dataset 等。
 
+可以从 get_train_dataloader() 方法看出，大部分是复制 Trainer 的源代码，修改部分来适配当前任务。
+
 ### dataset 设置流程
 
 ```mermaid
@@ -1169,7 +1171,7 @@ sequenceDiagram
 
 在初始化 Qwen2VLATrainer 时，将 train_dataset 传入并设置。
 
-### get_train_dataloader
+### get_train_dataloader()
 
 以 DexVLA 为例，如果需要配合 Accelerate 使用，可以在最末尾部分，返回使用准备后的版本：
 
@@ -1190,11 +1192,27 @@ sequenceDiagram
             "pin_memory": self.args.dataloader_pin_memory,
             "persistent_workers": self.args.dataloader_persistent_workers,
         }
-        ...
+        from transformers.trainer_utils import seed_worker
+        # 如果不是 IterableDataset，那么设置 shuffle，worker_init_fn，drop_last
+        # 因为 IterableDataset 会正向遍历来生成结果，不适合 shuffle 等设置
+        if not isinstance(train_dataset, torch.utils.data.IterableDataset):
+            # dataloader_params["sampler"] = CustomBatchSampler(**self.sampler_params['train'], eval=False)
+            # 处理最后一个不完整的批次(batch)，避免影响训练效果。在 TrainingArguments 中定义，默认 False
+            dataloader_params["drop_last"] = self.args.dataloader_drop_last
+            # 确保多进程数据加载时，每个进程的随机种子不同，避免数据重复。
+            dataloader_params["worker_init_fn"] = seed_worker
+            dataloader_params["shuffle"] = True
+            # dataloader_params['prefetch_factor'] = self.prefetch_factor
         return self.accelerator.prepare(DataLoader(train_dataset, **dataloader_params))
 ```
 
-### 优化器
+self._get_collator_with_removed_columns() 方法来自父类 Trainer，移除不必要的列，减少显存消耗。Trainer 通过 inspect.signature(model.forward) 检查 model 的 forward() 方法签名，得到 signature_columns。如果数据的列不在签名中，将其移除。通常，signature_columns 包含 label 和 label_ids。另外，ignore_columns 中额外指出不必要的列，也会删除。
+
+### create_optimizer()
+
+`__init__()` 构造函数接受 optimizers，即一个 tuple，包含了 Optimizer 和学习率调度器，LambdaLR。默认 (None, None)。
+
+Qwen2VLATrainer 实例化时，参数中没有指定优化器和调度器。
 
 self.create_optimizer() 中，使用 self.args 创建优化器。self.args=args，args 是数据类的 TrainingArguments，训练参数。在 train_vla.py 指定了 DataArguments 的 optim 为默认值 "adamw_torch"。learning_rate， weight_decay 等使用 TrainingArguments 默认的，没有修改。而其他则指出设置：
 

@@ -2,18 +2,18 @@
 id: blk1s4zbfhd016wg0ppuatd
 title: Asyncio_异步
 desc: ''
-updated: 1742838989794
+updated: 1744621283613
 created: 1742836619998
 ---
 
 asyncio 往往是构建 IO 密集型和高层级 结构化 网络代码的最佳选择。在 LLM 纪元，生成 tokens 需要耗时，可能也是一个优解。注意，一旦引入 async，整个代码都会大量引入 async。
 
 高级层 API 提供：
-- 并发地 运行 Python 协程 并对其执行过程实现完全控制;
-- 执行 网络 IO 和 IPC;
-- 控制 子进程;
-- 通过 队列 实现分布式任务;
-- 同步 并发代码;
+- **并发地**运行 Python 协程 并对其执行过程实现完全控制;
+- **执行**网络 IO 和 IPC;
+- **控制**子进程;
+- **通过**队列 实现分布式任务;
+- **同步**并发代码;
 
 低层级 API 以支持 库和框架的开发者 实现:
 - 创建和管理 事件循环，它提供用于 连接网络, 运行 子进程, 处理 OS 信号 等功能的异步 API；
@@ -49,9 +49,11 @@ world
 finished at 17:13:55
 ```
 
-async asyncio.sleep(delay, result=None) 阻塞 delay 指定的秒数。如果指定 result，则返回给调用者。将 delay 设为 0 将提供一个经优化的路径以允许其他任务运行。 这可供长期间运行的函数使用以避免在函数调用的全过程中阻塞事件循环。
+async asyncio.sleep(delay, result=None) 阻塞 delay 指定的秒数。如果指定 result，则返回给调用者。将 delay 设为 0 将提供一个经优化的路径以允许其他任务运行，类似 schedule() 调用。这可供长期间运行的函数使用以避免在函数调用的全过程中阻塞事件循环。
 
-不能简单调用 main()，只会得到协程对象。需要 asyncio.run() 执行。上述代码可以看到，没有并发地调度，甚至是串行的。但是调用 async 的 say_after() 函数时，使用了 await。使用 asyncio.gather() 时，可以并发地加入计划任务，在 await 处调度。
+不能简单调用 main()，只会得到协程对象。需要 asyncio.run() 执行。上述代码可以看到，**没有并发地调度**，甚至是串行的。但是调用 async 的 say_after() 函数时，使用了 await。使用 asyncio.gather() 时，可以并发地加入计划任务，在 await 处调度。
+
+### 并发地运行需要使用任务来完成
 
 并发地运行 asyncio 任务的多协程：
 
@@ -93,6 +95,26 @@ async def main():
     print(f"finished at {time.strftime('%X')}")
 ```
 
+会在末尾先运行 print(f"started ...")，随后在 TaskGroup() 中，退出 with 时调用 `__aexit__` 汇总，开始对每个任务执行。
+
+### 概念：等待细节
+
+对于 await 的语句，什么时候重新调度回来？条件满足的时候，就像在阻塞完成后，线程回到就绪态后，等待调度便可继续执行吗？
+
+对比线程/进程，await 语句会等待操作，完成时被调度回来执行。
+
+核心概念：事件循环（Event Loop）管理任务（Tasks），负责运行、暂停任务（await 时）、等待操作完成后回复任务。asyncio.run() 封装了如此的事件循环。
+
+`await`：暂停和让出控制权。类比线程/进程的阻塞操作，把控制权切换到下一个可运行的线程/进程。异步的方式更加轻量级，在编程时更容易。await 不会阻塞整个线程，而是任务，告诉事件循环需要等待，可以调度其他任务。当前任务暂停后，控制权交换 EL。
+
+调度回来的时机：“条件”满足。线程/进程中，阻塞等待的事件发生时（比如资源准备完成），OS 将其标记为就绪状态，在合适时候调度会 CPU 运行。而 `await` 的恢复中，EL 的角色类似 OS：
+- 监听所有 await 提交的异步操作（例如网络 IO、Timer、异步任务的完成）。
+- 等待的事件/资源完成（网络数据收到、文件读完、另一个 await 任务返回结果），EL 会收到此事。
+- EL 将暂停的任务标记为“就绪”。
+- 下一次选择要执行的任务时（通常是当前运行的任务遇到 `await` 来让出控制权，或者当前任务执行结束），会选择就绪的任务。
+- 调度到此任务时，继续执行。
+
+
 ### 可等待对象
 
 协程是可等待的对象，可以在其他协程等待：
@@ -123,7 +145,7 @@ asyncio.run(main())
 
 asyncio.create_task(coro, *, name=None, context=None) 封装协程为 Task，并调度其执行。返回 Task 对象。
 
-### 并发运行任务
+### 并发运行任务: asyncio.gather()
 
 awaitable asyncio.gather(*aws, return_exceptions=False)
 
@@ -245,10 +267,12 @@ async def main():
         print('timeout!')
 
 asyncio.run(main())
+```
 
-# 预期的输出：
-#
-#     timeout!
+预期的输出：
+
+```
+    timeout!
 ```
 
 ### 在线程中运行
@@ -274,13 +298,15 @@ async def main():
 
 
 asyncio.run(main())
+```
 
-# 预期的输出：
-#
-# started main at 19:50:53
-# start blocking_io at 19:50:53
-# blocking_io complete at 19:50:54
-# finished main at 19:50:54
+预期的输出：
+
+```
+started main at 19:50:53
+start blocking_io at 19:50:53
+blocking_io complete at 19:50:54
+finished main at 19:50:54
 ```
 
 ## Ref and Tag

@@ -2,7 +2,7 @@
 id: g5vpcscpcl45znbcla1wk3w
 title: mobaXterm_终端色彩配置_tmux等工具
 desc: ''
-updated: 1742368682596
+updated: 1744623732737
 created: 1741928376401
 ---
 
@@ -23,3 +23,7 @@ created: 1741928376401
 可以进一步修改，比如，发现左侧状态栏的第二条箭头，其 RGB 的值对应 Terminal colors selection 的 Terminal colors 中第三个。修改它可以得到想要的颜色。比如，修改为原本的颜色，比如 FF00AF，即粉色，可以看到结果如下：
 
 ![terminal_colors](assets/images/utils.终端色彩配置_tmux等工具/terminal_colors.png)
+
+最终设置：
+
+![theme_colors](assets/images/utils.mobaXterm_终端色彩配置_tmux等工具/theme_colors.png)

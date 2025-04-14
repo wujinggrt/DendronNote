@@ -6,6 +6,7 @@ updated: 1743095851119
 created: 1742897914437
 ---
 
+
 兼容 OpenAI 的 API 请求，首先需要指定 OPENAI_API_KEY 和 BASE_URL，首先需要构建 request 请求体：
 
 ```bash
@@ -296,3 +297,8 @@ https://platform.openai.com/docs/api-reference/introduction
 
 OpenAI API格式详解-Chat Completions - 啤酒泡泡的文章 - 知乎
 https://zhuanlan.zhihu.com/p/692336625
+
+def show_box(box, ax):
+    x0, y0 = box[0], box[1]
+    w, h = box[2] - box[0], box[3] - box[1]
+    ax.add_patch(plt.Rectangle((x0, y0), w, h, edgecolor='green', facecolor=(0, 0, 0, 0), lw=2))

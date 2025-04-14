@@ -2,7 +2,7 @@
 id: 0da424ysmswufl4406wj1dt
 title: transformers_Trainer
 desc: ''
-updated: 1744444192502
+updated: 1744633465764
 created: 1740301523116
 ---
 
@@ -87,7 +87,7 @@ def torch_default_data_collator(features: List[InputDataClass]) -> Dict[str, Any
 - `create_optimizer()` — 如果在初始化时没有传递，则设置优化器。
 - `create_scheduler()` — 如果在初始化时没有传递，则设置学习率调度器。
 - `compute_loss()` - 计算单批训练输入的损失。默认实现中，返回的元组中，第一个元素应当是 loss。如果在构造函数传入了 compute_loss_func 则使用它。但是，默认使用 outputs = model(**inputs) 的 outputs[0] 作为 loss。
-- `training_step()` — 执行一步训练。
+- `training_step()` — 执行一步训练。返回 loss
 - `prediction_step()` — 执行一步评估/测试。
 - `evaluate()` — 运行评估循环并返回指标。
 - `predict()` — 返回在测试集上的预测（如果有标签，则包括指标）。
