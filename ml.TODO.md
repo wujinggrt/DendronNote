@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1744458815861
+updated: 1744656968151
 created: 1738165674608
 ---
 
@@ -94,6 +94,9 @@ https://blog.csdn.net/iamjackjin/article/details/144534904?fromshare=blogdetail&
 
 https://wildlma.github.io/
 > 移动操作机器人
+
+近几年VLA方案调研（截止25.03.14） - 张云聪的文章 - 知乎
+https://zhuanlan.zhihu.com/p/30182000493
 
 ## RL
 在线强化学习改进VLA模型 - 黄浴的文章 - 知乎
@@ -206,6 +209,9 @@ ManiTrans 和 AffordDP
 > 各种项目，比如 dperf。LevelDB 和 RocksDB，网络编程 libuv，协议处理 kcp，异步编程 Asio（先看完 p2444r0）和 c++26 的 Sender/Receiver，数值计算 Eigen，模板看微软的 proxy，日志库 nanolog 和 spdlog，Actor 模式和 thread per core 思想参考 seastar (质量极高)，Json parser 看 simdjson，lock free 看 xenium (slab 思想可以优化 nanolog)，编译器编译参考 fmtlib
 你读过的最好的 C++ 开源代码是什么？ - George的回答 - 知乎
 https://www.zhihu.com/question/21376384/answer/50289239106
+
+sender + io_uring
+https://cor3ntin.github.io/posts/iouring/
 
 ## 简历制作
 

@@ -2,7 +2,7 @@
 id: edll7o8gebsag50rvjmls0i
 title: 保存和加载模型_save_load
 desc: ''
-updated: 1743147194388
+updated: 1744653116957
 created: 1742751626701
 ---
 
@@ -162,7 +162,7 @@ True
 
 ### nn.Module 及其子类的直接字段中，并没有 state_dict 和 load_state_dict 属性
 
-nn.Module 类有 state_dict() 和 load_state_dict() 方法。对于 nn.Module 及其子类，state_dict() 和 load_state_dict() 会保存和加载 _modules 中各个子模块的参数部分（nn.Parameter）。比如，"l" 对应 nn.Linear，state_dict() 返回的字典包含 "l.weight" 和 "l.bias" 两个 torch.Tensor 对象。
+nn.Module 类有 state_dict() 和 load_state_dict() 方法。对于 nn.Module 及其子类，state_dict() 和 load_state_dict() 会保存和加载 _modules 中各个子模块的参数部分（nn.Parameter）。比如，如果有字段 `l = nn.Linear(...)`，state_dict() 返回的字典包含 "l.weight" 和 "l.bias" 两个 torch.Tensor 对象。注意，也可以通过 register_buffer() 注册到 state_dict() 中。
 
 保存模型参数时，通常遍历 `__dict__` 属性，查看对应的字段是否有 state_dict() 和 load_state_dict() 方法，若有则保存，作为训练的参数。
 

@@ -2,7 +2,7 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA_阅读代码和复现
 desc: ''
-updated: 1744640922859
+updated: 1744656650226
 created: 1740053039805
 ---
 
@@ -796,10 +796,6 @@ ScaleDP 配置默认 n_obs_steps 为 2，时间步为 T_cond = 1，obs_as_cond �
 
 - prediction_horizon (int)：预测范围，默认 16。传入的 actions 小于时，需要 padding。大于则截断。
 
-## 训练器 QWen2VLATrainer
-
-参考 qwen2_vla/train/qwen2_vla_trainer.py。
-
 ## VLM: Qwen2-VL
 
 使用 [Qwen2-2B-VL](https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct) 作为主干网络。也许可以尝试 [Qwen/Qwen2.5-VL-3B-Instruct](https://huggingface.co/Qwen/Qwen2.5-VL-3B-Instruct)。
@@ -1212,16 +1208,163 @@ self._get_collator_with_removed_columns() 方法来自父类 Trainer，移除不
 
 `__init__()` 构造函数接受 optimizers，即一个 tuple，包含了 Optimizer 和学习率调度器，LambdaLR。默认 (None, None)。
 
-Qwen2VLATrainer 实例化时，参数中没有指定优化器和调度器。
-
-self.create_optimizer() 中，使用 self.args 创建优化器。self.args=args，args 是数据类的 TrainingArguments，训练参数。在 train_vla.py 指定了 DataArguments 的 optim 为默认值 "adamw_torch"。learning_rate， weight_decay 等使用 TrainingArguments 默认的，没有修改。而其他则指出设置：
+Qwen2VLATrainer 实例化时，参数中没有指定优化器和调度器。在自定义的 TrainingArguments 中，指定如下：
 
 ```py
+@dataclass
+class TrainingArguments(transformers.TrainingArguments):
+    ...
     optim: str = field(default="adamw_torch")
     adam_beta1: float = field(default=0.9)
     adam_beta2: float = field(default=0.98)
     adam_epsilon: float = field(default=1e-7)
-    remove_unused_columns: bool = field(default=False)
+    ...
+```
+
+self.create_optimizer() 中，使用 self.args 创建优化器。self.args=args，args 是数据类的 TrainingArguments，训练参数。在 train_vla.py 指定了 DataArguments 的 optim 为默认值 "adamw_torch"。learning_rate， weight_decay 等使用 TrainingArguments 默认的，没有修改。而其他则指出设置：
+
+```py
+    def create_optimizer(self):
+        if is_sagemaker_mp_enabled():
+            return super().create_optimizer()
+
+        opt_model = self.model
+
+        if self.optimizer is None:
+            ...
+
+        return self.optimizer
+```
+
+is_sagemaker_mp_enabled() 是用于检测当前是否启用了 ​​AWS SageMaker 的模型并行（Model Parallelism）​​ 功能的工具函数。我们通常不用 AWS SageMaker。一般返回 False。
+
+如果传入 Trainer 的 `__init__()` 参数有 optimizers，那么 create_optimizer() 会直接返回此优化器。不进行额外设置。
+
+如果没有传入 optimizers 参数，默认为 (None, None)，那么在 create_optimizer_and_scheduler() 方法调用 create_optimizer() 创建优化器。
+
+**构造参数组**
+
+首先构造优化器需要的参数 `optimizer_grouped_parameters`。参数从训练的模型，self.model 取出。定义一组不进行 LoRA 微调的模块名称，non_lora_modules。
+
+```py
+if self.optimizer is None:
+    non_lora_modules = [
+        "vision_resampler",
+        "merger",
+        "lm_head",
+        "proj_to_action",
+        "text_hidden_fcs",
+        "external_vit",
+        "input_action_proj",
+        "gt_action_proj",
+        "gt_film",
+        "reasoning_action_proj",
+        "reasoning_film",
+        "channel_proj",
+        "xattn",
+    ]
+    if "di_head" not in self.lora_module:
+        non_lora_modules.append("policy_head")
+    else:
+        non_lora_modules.append("x_embedder")
+        non_lora_modules.append("cond_obs_emb")
+        non_lora_modules.append("norm_after_pool")
+...
+```
+
+定义衰减参数：
+
+```py
+decay_parameters = get_parameter_names(opt_model, ALL_LAYERNORM_LAYERS)
+decay_parameters = [name for name in decay_parameters if "bias" not in name]
+```
+
+get_parameter_names(opt_model, ALL_LAYERNORM_LAYERS)：获取所有与层归一化层（Layer Normalization Layers）相关的参数名称。
+
+[name for name in decay_parameters if "bias" not in name]：从这些参数中排除偏置（bias）参数，因为通常不会对偏置参数应用权重衰减。
+
+其他参数被视为非衰减参数。
+
+如果 TrainingArguments 中设置了 non_lora_lr，默认为 None。仅在使用 Diffusionion-VLA 方式训练时使用。鉴于逻辑复杂，暂时不研究。直接查看 non_lora_lr 逻辑：
+
+```py
+optimizer_grouped_parameters = [
+    {
+        "params": [
+            p
+            for n, p in opt_model.named_parameters()
+            if (n in decay_parameters and p.requires_grad)
+        ],
+        "weight_decay": self.args.weight_decay,
+    },
+    {
+        "params": [
+            p
+            for n, p in opt_model.named_parameters()
+            if (n not in decay_parameters and p.requires_grad)
+        ],
+        "weight_decay": 0.0,
+    },
+]
+```
+
+
+**构造优化器实例**
+
+传入了 optimizer_cls_and_kwargs，那么会使用 optimizer_cls_and_kwargs 中的参数创建优化器。
+- 如果 optimizer_cls_and_kwargs 是 None，调用静态方法 get_optimizer_cls_and_kwargs() 获取优化器的类和参数。通常参数是 TrainingArguments 和训练的模型。根据 TrainingArguments.optim 参数，返回优化器的类，默认通常是 AdamW。返回参数部分是字典。包含如下关键字:
+    - lr：学习率，根据 TrainingArguments.learning_rate
+    - betas：动量参数，(TrainingArguments.adam_beta1, TrainingArguments.adam_beta2)
+    - eps：数值稳定性参数，TrainingArguments.adam_epsilon
+
+```py
+optimizer_cls, optimizer_kwargs = Trainer.get_optimizer_cls_and_kwargs(
+    self.args
+)
+
+self.optimizer = optimizer_cls(
+    optimizer_grouped_parameters, **optimizer_kwargs
+)
+```
+
+### training_step()
+
+负责训练步骤，在 `_inner_training_loop()` 中调用。大部分复制与 Trainer 的 training_step() 方法，做了一些改动。主要完成如下工作：
+- 将模型模式设置为训练模式。self.model.train()。
+- 准备输入数据。使用父类的 Trainer._prepare_inputs(inputs) 方法。
+- 计算 loss，使用父类的 compute_loss() 方法。
+- 由 accelerator 反向传播后，处理梯度累积，最终返回 loss。
+
+### _inner_training_loop(): 训练的核心
+
+Trainer 的 train() 方法会调用 _inner_training_loop() 方法。大部分从 Trainer._inner_training_loop() 复制过来，做了一些修改。这个方法是训练的核心，负责处理训练循环的每个步骤。负责组织和执行整个训练流程：
+- 准备 dataloader
+- 创建优化器
+- 模型包装，调用 _wrap_model()，以便使用 DDP、FSDP 或其他加速工具。
+- 检查点恢复。如果指定了 resume_from_checkpoint，则从指定的检查点恢复模型、优化器和调度器的状态。如果存在已保存的 TRAINER_STATE_NAME 文件，加载训练状态并跳过已完成的训练步骤。
+- 开始训练主循环：
+    - 外层循环遍历每个 epoch。
+    - 内层循环遍历每个 batch，执行以下操作：
+        - 调用 training_step() 计算损失并反向传播。
+        - 执行梯度累积、梯度裁剪和优化器更新。
+        - 更新 EMA（如果启用了 EMA）。
+        - 调用回调函数记录日志、保存检查点或执行评估。
+- 日志记录和检查点保存。
+
+```py
+    def _inner_training_loop(
+        self,
+        batch_size=None,
+        args=None,
+        resume_from_checkpoint=None,
+        trial=None,
+        ignore_keys_for_eval=None,
+    ):
+        self.accelerator.free_memory()
+        self._train_batch_size = batch_size
+        ...
+        train_dataloader = self.get_train_dataloader()
+        ...
 ```
 
 ### 计算 loss
