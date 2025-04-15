@@ -1,10 +1,39 @@
 ---
 id: tz6m430sfzjehicuojbggws
-title: 代理_科学上网
+title: 端口映射_代理_科学上网
 desc: ''
-updated: 1744302891620
+updated: 1744710310517
 created: 1742381049066
 ---
+
+## 端口映射
+
+把容器的 80 端口映射到主机的 8080 端口。
+
+```bash
+docker run ... -p 8080:80 ...
+```
+
+参数格式 `-p [宿主机IP:]宿主机端口:容器端口[/协议]` 如下：
+
+```
+-p, --publish ip:[hostPort]:containerPort | [hostPort:]containerPort
+    Publish a container's port, or range of ports, to the host.
+```
+
+```bash
+docker run -d -p 8080:80 nginx  # 将容器的80端口映射到宿主机的8080端口（TCP）
+```
+
+- ​​容器内​​：Nginx 默认监听 80 端口。
+- ​​宿主机​​：所有发往宿主机 8080 端口的请求会被自动转发到容器的 80 端口。
+​​访问方式​​：
+
+在浏览器输入 http://宿主机IP:8080 → 实际访问的是容器的 80 端口服务（Nginx）。
+
+注意，如果制定 `--net=host`，映射会失效。
+
+## 使用代理
 
 目标是需要让 docker pull 命令享受到 clash 等代理。
 

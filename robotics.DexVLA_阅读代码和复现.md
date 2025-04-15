@@ -2,7 +2,7 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA_阅读代码和复现
 desc: ''
-updated: 1744656650226
+updated: 1744687338959
 created: 1740053039805
 ---
 
@@ -1365,7 +1365,46 @@ Trainer 的 train() 方法会调用 _inner_training_loop() 方法。大部分从
         ...
         train_dataloader = self.get_train_dataloader()
         ...
+        # DataLoader 有 __len__ 方法，几乎总会返回 True
+        if has_length(train_dataloader):
+            len_dataloader = len(train_dataloader)
+            num_update_steps_per_epoch = (
+                len_dataloader // args.gradient_accumulation_steps
+            )
+            num_update_steps_per_epoch = max(num_update_steps_per_epoch, 1)
+            num_examples = self.num_examples(train_dataloader)
+            if args.max_steps > 0:
+                max_steps = args.max_steps
+                num_train_epochs = args.max_steps // num_update_steps_per_epoch + int(
+                    args.max_steps % num_update_steps_per_epoch > 0
+                )
+                # May be slightly incorrect if the last batch in the training dataloader has a smaller size but it's
+                # the best we can do.
+                num_train_samples = args.max_steps * total_train_batch_size
+                if args.include_tokens_per_second:
+                    num_train_tokens = (
+                        self.num_tokens(train_dataloader, args.max_steps)
+                        * args.gradient_accumulation_steps
+                    )
+            else:
+                max_steps = math.ceil(
+                    args.num_train_epochs * num_update_steps_per_epoch
+                )
+                num_train_epochs = math.ceil(args.num_train_epochs)
+                num_train_samples = (
+                    self.num_examples(train_dataloader) * args.num_train_epochs
+                )
+                if args.include_tokens_per_second:
+                    num_train_tokens = (
+                        self.num_tokens(train_dataloader) * args.num_train_epochs
+                    )
+            elif ... else ... # 不需要
 ```
+
+但是，在具体的项目中，设计不应该考虑那么多的扩展性了。Trainer 框架需要扩展性，所以牺牲了可读性，写得复杂。项目明确使用 EpisodicDataset，get_train_dataload() 返回 DataLoader 有 `__len__` 方法，所以 if has_length() 分支会被执行。
+
+分支计算梯度更新的信息：
+- len_dataloader: 长度
 
 ### 计算 loss
 

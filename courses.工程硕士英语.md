@@ -2,7 +2,7 @@
 id: rjexswayh0yvitkaf9qez5n
 title: 工程硕士英语
 desc: ''
-updated: 1744079331180
+updated: 1744688701408
 created: 1740448957635
 ---
 
@@ -94,5 +94,19 @@ Induction：归纳。reasoning from specific cases to more general, but uncertai
 Critical thinking，是审慎思考，主要是证据。
 
 Inductive 论证是概率性的推广，Specific -> General。Deductive 论证，要有大前提，目标是 Certainty，不是概率性的。
+
+## 2025年4月15日
+
+写论文的常见错误：
+Common mistakes:
+1. Give too many citations for one point
+    - Before: Many studies have found a significant association between x and y [4-15].
+    - Adjusted: A significant association has been found between x and y inmen[4-7l, women[8-11] and children [12-15].
+1. Explain the significance in a general way
+    - Before: The development of new materials is important for theautomotive industry.
+    - Adjusted: The development of new materials is necessary forautomotive industry to produce stronger lighter vehicles whichwill improve safety and fuel economy.
+2. Bury your readers in detail
+    - Before: A previous study conducted in 2014 found that 10% fewerindividuals were diagnosed with age-related diseases, suchas arthritis, in areas with such healthcare policies in place.
+    - Adjusted: A previous study found that fewer individuals werediagnosed with age-related diseases in areas with suchhealth care policies.
 
 ## Ref and Tag

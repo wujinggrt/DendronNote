@@ -2,9 +2,10 @@
 id: 2exktpevaxn28xkkqlgb22y
 title: Ssh_用法和配置
 desc: ''
-updated: 1744010584333
+updated: 1744697707811
 created: 1744008822884
 ---
+
 
 ## 安装 ssh
 
@@ -30,7 +31,7 @@ ssh-keygen -t rsa -f ~/.ssh/id_rsa -N ""
 
 ### 别名
 
-在 ~/.ssh/config 文件中，可以指出别名配置。没有此文件创建即可。端口默认 22，可选。
+在 `~/.ssh/config` 文件中，可以指出别名配置。没有此文件创建即可。端口默认 22，可选。
 
 ```config
 Host 别名
@@ -51,11 +52,12 @@ ssh 别名 # enter
 
 ### 公钥登录（免密码）
 
-将公钥拷贝到远程主机，保存到 /root/.ssh/authorized_keys 或 ~/.ssh/authorized_keys 文件中。
+将公钥拷贝到远程主机，会添加到 /root/.ssh/authorized_keys 或 ~/.ssh/authorized_keys (优先) 文件中。
 
 使用工具 ssh-copy-id 自动拷贝公钥到远程主机的 authorized_keys。
 
 ```bash
+# 拷贝 ~/.ssh/id_rsa.pub
 ssh-copy-id {{别名或 username@remote_host}}
 # 指定公钥
 ssh-copy-id -i {{path/to/certificate}} {{别名或 username@remote_host}}
@@ -76,3 +78,5 @@ sudo systemctl restart ssh
 ```
 
 ## Ref and Tag
+
+wget -c https://github.com/fatedier/frp/releases/download/v0.55.1/frp_0.55.1_linux_amd64.tar.gz

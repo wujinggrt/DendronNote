@@ -2,11 +2,13 @@
 id: 7gk7py1tpsw1r4w8kms09q5
 title: Frp_内网穿透
 desc: ''
-updated: 1744447446006
+updated: 1744697521075
 created: 1744446321714
 ---
 
+
 下载：
+
 
 ```bash
 wget -c https://github.com/fatedier/frp/releases/download/v0.55.1/frp_0.55.1_linux_amd64.tar.gz
@@ -125,6 +127,17 @@ customDomains = ["kirigaya.cn"]
 localPort 是具体本地服务器需要的端口号。customDomains 可以绑定公网域名。
 
 这样就可以通过 http://pub的公网IP:7002 来访问 loc 上的 http 服务了。在浏览器输入 `http://<customDomains[0]>:<vhostHTTPPort>` 即可。
+
+## 部署命令和脚本
+
+服务器端，pub 端：
+
+```bash
+wget -c https://github.com/fatedier/frp/releases/download/v0.55.1/frp_0.55.1_linux_amd64.tar.gz
+tar -xvf frp_0.55.1_linux_amd64.tar.gz
+rm frp_0.55.1_linux_amd64.tar.gz
+cd frp_0.55.1_linux_amd64
+```
 
 ## Ref and Tag
 

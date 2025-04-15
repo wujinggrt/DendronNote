@@ -2,9 +2,29 @@
 id: ovto6hepvtttctxmnypiebq
 title: Awesome_terminal_终端各种命令脚本
 desc: ''
-updated: 1744351238246
+updated: 1744708915967
 created: 1742868524198
 ---
+
+## 工作 job 管理
+
+```py
+{{any_command}} &             # 在后台运行某命令，也可用 CTRL+Z 将当前进程挂到后台
+jobs                      # 查看所有后台进程（jobs）
+bg                        # 查看后台进程，并切换过去
+fg                        # 切换后台进程到前台
+fg {job}                  # 切换特定后台进程到前台
+```
+
+bash 终端通过 () & 语法就能开启一个线程，所以对于上面的例子，可以归并到如下一个脚本中：
+
+```bash
+(cd renderer && npm run serve | while read -r line; do echo -e "[renderer] $line"; done) &
+
+(cd service && npm run serve | while read -r line; do echo -e "[service] $line"; done) &
+
+wait # 等待所有当前 shell 启动的进程结束
+```
 
 ## 函数
 
@@ -147,9 +167,13 @@ sudo ufw allow from 192.168.123.0/24
 有时需要打开对应端口，其他主机才能访问。
 
 ```bash
+sudo ufw enable # 打开防火墙
 sudo ufw status
-sudo ufw allow {{Port}}/tcp
+sudo ufw allow {{Port}}
+sudo ufw allow {{Port}}/tcp comment "{{Comment msg}}"
 sudo ufw allow from 192.168.123.0/24 # 允许来自此网络的流量
+sudo ufw deny {{port}}
+sudo ufw delete {{rule_number}} # 删除规则
 ```
 
 ## sudo 免密码
