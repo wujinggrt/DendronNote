@@ -2,7 +2,7 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA_阅读代码和复现
 desc: ''
-updated: 1744687338959
+updated: 1744718357895
 created: 1740053039805
 ---
 
@@ -1308,14 +1308,15 @@ optimizer_grouped_parameters = [
 ]
 ```
 
+不同通过参数使用不同的 weight_decay。通常，bias 和 nn.LayerNorm 层不使用 weight_decay，而 matmuls + embeddings 的权重通常 decay。但是，在最后，传入的参数 weight_decay 也是 0. 通常可以选 1e-4。
 
 **构造优化器实例**
 
 传入了 optimizer_cls_and_kwargs，那么会使用 optimizer_cls_and_kwargs 中的参数创建优化器。
 - 如果 optimizer_cls_and_kwargs 是 None，调用静态方法 get_optimizer_cls_and_kwargs() 获取优化器的类和参数。通常参数是 TrainingArguments 和训练的模型。根据 TrainingArguments.optim 参数，返回优化器的类，默认通常是 AdamW。返回参数部分是字典。包含如下关键字:
-    - lr：学习率，根据 TrainingArguments.learning_rate
-    - betas：动量参数，(TrainingArguments.adam_beta1, TrainingArguments.adam_beta2)
-    - eps：数值稳定性参数，TrainingArguments.adam_epsilon
+    - lr：学习率，根据 `TrainingArguments.learning_rate`
+    - betas：动量参数，`(TrainingArguments.adam_beta1, TrainingArguments.adam_beta2)`
+    - eps：数值稳定性参数，`TrainingArguments.adam_epsilon`
 
 ```py
 optimizer_cls, optimizer_kwargs = Trainer.get_optimizer_cls_and_kwargs(
@@ -1405,6 +1406,9 @@ Trainer 的 train() 方法会调用 _inner_training_loop() 方法。大部分从
 
 分支计算梯度更新的信息：
 - len_dataloader: 长度
+- num_update_steps_per_epoch: 更新频次
+- num_examples: dataset 的长度
+- ...
 
 ### 计算 loss
 

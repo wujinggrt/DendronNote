@@ -2,7 +2,7 @@
 id: 587qg83fxdhz2ho0pfz85c8
 title: 轻量级NAS方案_filebrowser
 desc: ''
-updated: 1744711252672
+updated: 1744719957123
 created: 1744698789417
 ---
 
@@ -55,7 +55,7 @@ docker run \
 ### 普通方式
 
 ```bash
-mkdir -p package/filebrowser && cd package/filebrowser
+mkdir -p packages/filebrowser && cd packages/filebrowser
 wget -c https://github.com/filebrowser/filebrowser/releases/download/v2.30.0/linux-amd64-filebrowser.tar.gz
 tar -xvf linux-amd64-filebrowser.tar.gz && rm *.tar.gz
 ```

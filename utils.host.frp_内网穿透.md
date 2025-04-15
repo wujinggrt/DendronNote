@@ -2,7 +2,7 @@
 id: 7gk7py1tpsw1r4w8kms09q5
 title: Frp_内网穿透
 desc: ''
-updated: 1744697521075
+updated: 1744726212859
 created: 1744446321714
 ---
 
@@ -60,6 +60,8 @@ sudo ufw allow 7000
 sudo ufw allow 7001
 ./frps -c frps.toml
 ```
+
+**注意**，如果使用云服务器，需要在网页的控制台上设置防火墙来打开端口，仅仅在命令行中使用 ufw 打开端口是无效的。
 
 在 loc (需要被穿透的设备，比如 NAS 服务器) 上，创建 ssh.toml：
 
@@ -127,6 +129,9 @@ customDomains = ["kirigaya.cn"]
 localPort 是具体本地服务器需要的端口号。customDomains 可以绑定公网域名。
 
 这样就可以通过 http://pub的公网IP:7002 来访问 loc 上的 http 服务了。在浏览器输入 `http://<customDomains[0]>:<vhostHTTPPort>` 即可。
+
+## Multiple SSH services sharing the same port
+
 
 ## 部署命令和脚本
 
