@@ -1,4 +1,3 @@
-
 #!/usr/bin/bash or zsh
 # source ./zsh_setup.sh
 sudo apt update && sudo apt install -y zsh
@@ -19,6 +18,8 @@ git clone https://gitee.com/wangl-cc/fast-syntax-highlighting ${ZSH_CUSTOM:-$HOM
 # autocomplete 目前是高危插件，不建议
 perl -i.bak -wple 's/(ZSH_THEME=)(.*)$/$1"powerlevel10k\/powerlevel10k"/g;' ~/.zshrc
 perl -i.bak -wple 's/(plugins=)(.*)$/$1\(git zsh-autosuggestions z zsh-syntax-highlighting fast-syntax-highlighting\)/g;' ~/.zshrc
+
+# 设置
 cat >> ~/.zshrc <<- EOF
 if [[ -f ~/.local_profile ]]; then
         source ~/.local_profile
@@ -31,8 +32,4 @@ export LANG=en_US.UTF-8\nexport LANGUAGE=en_US:en
 EOF
 # PASSWORD= # required
 # echo "$PASSWORD" | chsh -s $(which zsh)
-# expect -c '
-# spawn chsh -s /usr/bin/zsh
-# expect eof
-# '
-# 下一次进终端便可配置 zsh
+# 下一次进终端便可配置 zsh 的 powerlevel10k 外观
