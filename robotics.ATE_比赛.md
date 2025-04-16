@@ -2,7 +2,7 @@
 id: yhruy5kv9yl6vkfo9a230rb
 title: ATE_比赛
 desc: ''
-updated: 1744684829118
+updated: 1744796538968
 created: 1744617033668
 ---
 
@@ -117,6 +117,34 @@ VLM 能够强制介入方向？强制左右转？
 #### 启发式地探索
 
 总结当前图像，首先，分析存在哪些可能得路径；其次，开始分析和想象，思考哪些路径最优可能达到目标场景。这可以总结为 prompt，可以强化学习，或者微调。
+
+## 样例程序运行
+
+需要设置环境变量 UnrealEnv，在 gym_rescue/example/rescue_demo.py 中与 dataset 目录下的 test_L{{number}}.jsonl 拼接，获取环境设置的文件：
+
+```bash
+export UnrealEnv=$(pwd)/dataset
+export PTHONPATH=./
+```
+
+```py
+# rescue_demo.py
+    UnrealEnv = os.environ.get('UnrealEnv')
+    TEST_JSONL = os.path.join(UnrealEnv, 'test_L1.jsonl')
+```
+
+运行样例程序：
+
+```bash
+python gym_rescue/example/rescue_demo.py -r -k
+```
+
+运行后发现缺乏一些包，比如 libgtk2.0-dev pkg-config, 安装即可：
+
+```
+...
+If you are on Ubuntu or Debian, install libgtk2.0-dev and pkg-config, then re-run cmake or configure script in function 'cvShowImage'
+```
 
 ## Ref and Tag
 

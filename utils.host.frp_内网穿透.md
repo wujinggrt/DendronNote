@@ -2,7 +2,7 @@
 id: 7gk7py1tpsw1r4w8kms09q5
 title: Frp_内网穿透
 desc: ''
-updated: 1744782274251
+updated: 1744795261194
 created: 1744446321714
 ---
 
@@ -116,7 +116,7 @@ serverPort = 7000
 name = "web"
 type = "http"
 localPort = 8080
-customDomains = ["kirigaya.cn"]
+customDomains = ["指向公网 frps 服务器的域名", "或者公网 IP"]
 ```
 
 然后，在后台启动 frpc ：
@@ -139,6 +139,36 @@ localPort 是具体本地服务器需要的端口号。customDomains 可以绑�
 网页提示错误：The page you requested was not found.
 
 分析，没有找到 `/` 请求的路由，可能是没有正确配置 customDomains。
+
+## 多 HTTP 内网穿透
+
+一个 frps 公网服务器和一个内网的本地服务器。本地服务器有多个 http 服务，需要映射到公网服务器不同端口。比如，运行了两个服务：
+
+```bash
+docker run --rm -p 8080:80 nginx
+docker run --rm -p 8081:80 nginx # 另一个 Shell
+```
+
+使用不同域名来区分。体现在 customDomains 的不同：
+
+```toml
+serverAddr = "x.x.x.x"
+serverPort = 7000
+
+[[proxies]]
+name = "web0"
+type = "http"
+localPort = 8080
+customDomains = ["指向公网 frps 服务器的域名0"]
+
+[[proxies]]
+name = "web1"
+type = "http"
+localPort = 8081
+customDomains = ["指向公网 frps 服务器的域名1"]
+```
+
+或者使用 locations 来指定。
 
 ## Multiple SSH services sharing the same port
 

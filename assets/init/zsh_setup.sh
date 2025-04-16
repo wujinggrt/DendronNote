@@ -23,10 +23,12 @@ cat >> ~/.zshrc <<- EOF
 if [[ -f ~/.local_profile ]]; then
         source ~/.local_profile
 fi
+bindkey '^U' backward-kill-line # ctrl+u clear cursor before
 bindkey '^]' autosuggest-accept
-EOF
 # 使用英文终端
-echo -e "export LANG=en_US.UTF-8\nexport LANGUAGE=en_US:en" >> ~/.zshrc
+export LANG=en_US.UTF-8\nexport LANGUAGE=en_US:en
+
+EOF
 # PASSWORD= # required
 # echo "$PASSWORD" | chsh -s $(which zsh)
 # expect -c '

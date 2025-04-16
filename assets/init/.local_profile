@@ -16,15 +16,16 @@ alias tls='tmux ls'
 alias tat='tmux attach -t'
 
 alias pe='perl -wlne'
+
 alias gS='git status'
 alias gs='git stage'
-
-export MESA_GL_VERSION_OVERRIDE=3.3
-unset LIBGL_ALWAYS_INDIRECT
 
 # docker
 alias drr='docker run -it --rm'
 alias de='docker exec -it'
+
+export MESA_GL_VERSION_OVERRIDE=3.3
+unset LIBGL_ALWAYS_INDIRECT
 
 # ROS2
 # if [[ -n "$ZSH_NAME" ]]; then
@@ -33,7 +34,10 @@ alias de='docker exec -it'
 #     #source /opt/ros/rolling/setup.zsh
 #     #source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.zsh
 # elif [[ -n "$BASH_NAME" ]]; then
-#     source ~/ros2_rolling/install/local_setup.bash
+#     source ~/ros2_rolling/install/local_setup.bas
+
+
+h
 #     #source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash
 # else
 #     echo "Can not setup ros2 rolling"
