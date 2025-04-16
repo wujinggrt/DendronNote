@@ -2,7 +2,7 @@
 id: 7d8vhioct7wag76b0fqz8me
 title: Systemd_服务配置和启动等设置
 desc: ''
-updated: 1744561767846
+updated: 1744736860062
 created: 1744559529402
 ---
 
@@ -25,7 +25,7 @@ created: 1744559529402
 Unit 文件通常在三个目录中：
 - `/etc/systemd/system/`：用户自定义的 unit 文件，优先级最高。
 - `/run/systemd/system/`：运行时生成的 unit 文件，优先级次之。
-- `/lib/systemd/system/`：系统默认的 unit 文件，优先级最低。
+- `/lib/systemd/system/`：系统默认的 unit 文件，优先级最低。有时会在 `/usr/lib/systemd/system` 目录。
 
 当 systemd 启动一个 unit 时，它会读取这些目录中的 unit 文件，并根据它们的配置启动相应的服务。根据优先级查找，查到优先级最高的执行便停止，优先级低的不会考虑。
 
@@ -45,6 +45,8 @@ Requires=dbus.socket
 ```
 
 可以看出，Requires 关键字指出了依赖 dbus.socket unit。告诉 systemd，启动此服务时，要创建一个本地 socket。
+
+#### 常见关键字
 
 依赖通过如下关键字表达：
 - `Requires=`: 如果依赖的 unit 启动失败，则当前 unit 也会失败。
@@ -68,6 +70,17 @@ ExecStart=/usr/sbin/lighttpd -f /etc/lighttpd/lighttpd.conf -D
 ExecReload=/bin/kill -HUP $MAINPID
 ```
 
+#### 常见关键字
+
+`Type={{Option}}`，默认有如下选择：
+- simple: 默认值，服务在启动时不会 fork 进程，直接执行 ExecStart 指令作为主进程，systemd 会等待服务进程结束。适用于无需后台化的前台进程。若退出则代表服务结束。
+- forking: 服务是一个守护进程（不指出代表在前台工作），ExecStart 指定了可执行文件的路径，通过 fork() 创建进程来执行。systemd 会追踪子进程作为服务的主进程。
+
+`ExecStart=/path/to/executable`，指定服务的可执行文件路径。可以有多个 ExecStart 指令，systemd 会依次执行。
+
+`Restart={{Option}}`，指定服务的重启策略。选项：on-failure、on-abort、on-success、on-watchdog。
+
+
 ### Targets
 
 target 是一组 unit 的集合，可以将多个 unit 组合在一起，以便在启动时同时启动它们。目标通常以 `.target` 结尾。以 `multi-user.target` 为例：
@@ -81,6 +94,10 @@ Conflicts=rescue.service rescue.target
 After=basic.target rescue.service rescue.target
 AllowIsolate=yes
 ```
+
+#### 常见关键字
+
+`WantedBy=`，指定当前 unit 的安装目标。表示在启动时自动启动此 unit。
 
 ### systemd 管理各个部分
 
@@ -96,7 +113,7 @@ systemctl get-default
 systemctl set-default multi-user.target
 ```
 
-如果是终端登录，那么启动的是 `multi-user.target`，如果是图形界面登录，则启动 `graphical.target`。
+如果是终端登录，那么启动的是 `multi-user.target`，如果是图形界面登录，则启动 `graphical.target`。注意，其中 graphical.target 依赖于 multi-user.target。
 
 查看所有服务：
 
@@ -127,8 +144,6 @@ WantedBy=multi-user.target
 ```
 
 [Unit] 部分使得 systemctl 可以列出此服务。
-
-[Service] 部分，Type=forking 表示服务是一个守护进程（不指出代表在前台工作），ExecStart 指定了可执行文件的路径。当失败时重启。还可以有其他选项：on-failure、on-abort、on-success、on-watchdog。
 
 [Install] 部分指定了服务的安装目标，表示在 multi-user.target 启动时自动启动此服务。WantedBy 关键字避免了在 multi-user.target 中写出 After 来启动此服务，如此更加灵活。
 
