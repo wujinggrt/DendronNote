@@ -2,13 +2,12 @@
 id: 7gk7py1tpsw1r4w8kms09q5
 title: Frp_内网穿透
 desc: ''
-updated: 1744726212859
+updated: 1744782274251
 created: 1744446321714
 ---
 
 
-下载：
-
+## 安装
 
 ```bash
 wget -c https://github.com/fatedier/frp/releases/download/v0.55.1/frp_0.55.1_linux_amd64.tar.gz
@@ -116,7 +115,7 @@ serverPort = 7000
 [[proxies]]
 name = "web"
 type = "http"
-localPort = 8001
+localPort = 8080
 customDomains = ["kirigaya.cn"]
 ```
 
@@ -130,7 +129,82 @@ localPort 是具体本地服务器需要的端口号。customDomains 可以绑�
 
 这样就可以通过 http://pub的公网IP:7002 来访问 loc 上的 http 服务了。在浏览器输入 `http://<customDomains[0]>:<vhostHTTPPort>` 即可。
 
+配置后，可能发现访问出现问题，pub 端 frps 报错：
+
+```
+2025-04-16 13:42:08.108 [W] [vhost/http.go:121] do http proxy request [host: 117.72.39.249:8080] error: no route found: 117.72.39.249 /
+...
+```
+
+网页提示错误：The page you requested was not found.
+
+分析，没有找到 `/` 请求的路由，可能是没有正确配置 customDomains。
+
 ## Multiple SSH services sharing the same port
+
+## 注册到 systemd 服务
+
+```ini
+[Unit]
+Description = frp server
+After = network.target syslog.target
+Wants = network.target
+
+[Service]
+Type = simple
+# 启动frps的命令，需修改为您的frps的安装路径
+ExecStart = /root/frp/frps -c /root/frp/frps.toml
+
+[Install]
+WantedBy = multi-user.target
+```
+
+管理：
+
+```bash
+# 启动frp
+sudo systemctl start frps
+# 停止frp
+sudo systemctl stop frps
+# 重启frp
+sudo systemctl restart frps
+# 查看frp状态
+sudo systemctl status frps
+#开机启动frp
+sudo systemctl enable frps
+```
+
+## 安全
+
+### 使用 auth.token
+
+在服务器端，编辑 frps.toml，添加 auth.token。客户端要提供一致的 token：
+
+```toml
+bindPort = 7000
+auth.token = "abc"
+```
+
+客户端 frpc.toml 等：
+
+```toml
+serverAddr = "x.x.x.x"
+serverPort = 7000
+auth.token = "abc"
+...
+```
+
+### 通过 stcp(secret tcp) 提升 frp 穿透的安全性
+
+ftcp 连接意味着目标主机和本机都要安装 frpc，服务器配置不变。客户端配置需增加 secretKey 参数，secretKey 一致的用户才能访问此服务。
+
+## 客户端使用 Docker 更方便
+
+
+## 实践
+
+### 结合 filebrowser
+
 
 
 ## 部署命令和脚本
@@ -147,3 +221,6 @@ cd frp_0.55.1_linux_amd64
 ## Ref and Tag
 
 https://github.com/fatedier/frp
+
+50元云服务器+FRP，实现内网穿透自由 - 略懂的大龙猫的文章 - 知乎
+https://zhuanlan.zhihu.com/p/695342265
