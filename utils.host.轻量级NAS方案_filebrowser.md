@@ -2,7 +2,7 @@
 id: 587qg83fxdhz2ho0pfz85c8
 title: 轻量级NAS方案_filebrowser
 desc: ''
-updated: 1744719957123
+updated: 1744801384991
 created: 1744698789417
 ---
 
@@ -71,6 +71,10 @@ tar -xvf linux-amd64-filebrowser.tar.gz && rm *.tar.gz
 ## 修改配置
 
 账号和密码都是 admin 太容易被黑了，所以启动完成后的第一件事情就是要先修改账号密码，点击左侧的 Settings，先把语言切换成 简体中文。然后点击 【用户管理】，点击第一个 admin 用户右侧的 修改符号。然后写入新的账号和密码，保存退出即可。
+
+## 配合 frp，实现网络穿透
+
+参考 [[utils.host.frp_内网穿透]]
 
 ## Ref and Tag
 
