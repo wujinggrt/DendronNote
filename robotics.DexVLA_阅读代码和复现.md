@@ -2,7 +2,7 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA_阅读代码和复现
 desc: ''
-updated: 1744718357895
+updated: 1744877957426
 created: 1740053039805
 ---
 
@@ -1366,6 +1366,14 @@ Trainer 的 train() 方法会调用 _inner_training_loop() 方法。大部分从
         ...
         train_dataloader = self.get_train_dataloader()
         ...
+        # 训练时的最终 batch 大小，由传入参数决定。
+        # self._train_batch_size 来自 TraningArguments.per_device_train_batch_size
+        # args.gradient_accumulation_steps 通常设置为 1
+        # args.world_size 代表训练的进程数（通常对应 GPU 核心数）。在多 GPU 时，有用
+        total_train_batch_size = (
+            self._train_batch_size * args.gradient_accumulation_steps * args.world_size
+        )
+        ...
         # DataLoader 有 __len__ 方法，几乎总会返回 True
         if has_length(train_dataloader):
             len_dataloader = len(train_dataloader)
@@ -1402,13 +1410,156 @@ Trainer 的 train() 方法会调用 _inner_training_loop() 方法。大部分从
             elif ... else ... # 不需要
 ```
 
-但是，在具体的项目中，设计不应该考虑那么多的扩展性了。Trainer 框架需要扩展性，所以牺牲了可读性，写得复杂。项目明确使用 EpisodicDataset，get_train_dataload() 返回 DataLoader 有 `__len__` 方法，所以 if has_length() 分支会被执行。
+但是，在具体的项目中，设计不应该考虑那么多的扩展性了。Trainer 框架需要扩展性，所以牺牲了可读性，写得复杂。项目明确使用 EpisodicDataset，get_train_dataload() 返回 DataLoader 有 `__len__` 方法，所以 if has_length() 分支总是会被执行。此段逻辑主要初始化 `num_train_epochs, num_update_steps_per_epoch, num_examples, num_train_samples, epoch_based, len_dataloader, max_steps` 等变量，控制后续控制训练过程。这段 if has_length() 的逻辑来自 set_initial_training_values()。
 
-分支计算梯度更新的信息：
-- len_dataloader: 长度
-- num_update_steps_per_epoch: 更新频次
-- num_examples: dataset 的长度
-- ...
+```py
+# Trainer._inner_training_loop()
+        (
+            num_train_epochs,
+            num_update_steps_per_epoch,
+            num_examples,
+            num_train_samples,
+            epoch_based,
+            len_dataloader,
+            max_steps,
+        ) = self.set_initial_training_values(args, train_dataloader, total_train_batch_size)
+```
+
+注意，训练时，传入的参数中，比如：
+- gradient_accumulation_steps: 都传入 1，梯度累积步数，在有限显存下模拟更大批次训练。显存受限通常调整为小批次，不需要设置为大的值。通常为 1 即可。
+- max_steps: 更新梯度次数。在 stage2 传入 100000， stage 3 传入 80000。
+
+直接参考 Training.set_initial_training_values() 方法会更直观，隐藏了此项目没有用到的分支，仅查看了 DataLoader 有 `__len__()` 方法的情况，传入了 max_steps 大于 0 的情况：
+
+```py
+class Trainer:
+    def set_initial_training_values(
+        self, args: TrainingArguments, dataloader: DataLoader, total_train_batch_size: int
+    ):
+        # Case 1: we rely on `args.max_steps` first。通常设置 80000, 100000
+        max_steps = args.max_steps
+        len_dataloader = len(dataloader) if has_length(dataloader) else None
+        # Case 2: We have a dataloader length and can extrapolate
+        if len_dataloader is not None:
+            # gradient_accumulation_steps 为 1，等于 len_dataloader
+            num_update_steps_per_epoch = max(len_dataloader // args.gradient_accumulation_steps, 1)
+            ... # 不执行的分支
+               # Now we figure out `num_examples`, `num_train_epochs`, and `train_samples`
+        if len_dataloader:
+            num_examples = self.num_examples(dataloader)
+            if args.max_steps > 0:
+                num_train_epochs = max_steps // num_update_steps_per_epoch + int(
+                    max_steps % num_update_steps_per_epoch > 0
+                )
+                # May be slightly incorrect if the last batch in the training dataloader has a smaller size but it's
+                # the best we can do.
+                num_train_samples = max_steps * total_train_batch_size 
+            ... # 不执行的分支
+        ...
+        return (
+            num_train_epochs,
+            num_update_steps_per_epoch,
+            num_examples,
+            num_train_samples,
+            epoch_based,
+            len_dataloader,
+            max_steps,
+        )
+```
+
+返回控制变量的作用：
+- num_train_epochs: 以每个 epoch 更新梯度的次数为参考，根据需要更新梯度的次数 max_steps，总结得出需要多少轮 epoch。最后余数整，多加一次 epoch。
+- num_update_steps_per_epoch: 每 epoch 更新次数，在梯度累积时侯有用。梯度累积大于 1，则小于批次数量。但此项目设置的梯度累计步数为 1，此值等于 dataloader 长度，即每个 epoch 中批次数量。
+- num_examples: dataloader 中，其 dataset 包含的数量
+- num_train_samples: max_steps * 总训练批次，代表总共训练的批次。在多卡训练时有参考意义
+- epoch_based: False，因为 max_steps 大于 0
+- len_dataloader: 批次数量，不丢弃最后一个不完整批次
+- max_steps: 更新梯度的次数。80000 或 100000
+
+```py
+        ...
+        # Compute absolute values for logging, eval, and save if given as ratio
+        if args.logging_steps is not None:
+            if args.logging_steps < 1:
+                self.state.logging_steps = math.ceil(max_steps * args.logging_steps)
+            else:
+                self.state.logging_steps = args.logging_steps
+        if args.eval_steps is not None:
+            if args.eval_steps < 1:
+                self.state.eval_steps = math.ceil(max_steps * args.eval_steps)
+            else:
+                self.state.eval_steps = args.eval_steps
+        if args.save_steps is not None:
+            if args.save_steps < 1:
+                self.state.save_steps = math.ceil(max_steps * args.save_steps)
+            else:
+                self.state.save_steps = args.save_steps
+        ...
+```
+
+将原版本的 self.state.compute_steps(args, max_steps) 展开为上面的三个 if 逻辑。
+
+```py
+        # Activate gradient checkpointing if needed
+        if args.gradient_checkpointing:
+            self.model.gradient_checkpointing_enable(
+                gradient_checkpointing_kwargs=args.gradient_checkpointing_kwargs
+            )
+
+        model = self._wrap_model(self.model_wrapped)
+```
+
+包装模型，以适应 DeepSpeed 或 FSDP。
+
+### scripts/train_dexvla_stage2.sh
+
+```bash
+deepspeed --master_port 29604 --num_gpus=8 --num_nodes=1 ./train_vla.py \
+  --deepspeed scripts/zero2.json \
+  --use_reasoning True \
+  --lora_enable False \
+  --action_dim 14 \
+  --state_dim 14 \
+  --flash_attn True \
+  --chunk_size 50 \
+  --load_pretrain_dit True \
+  --pretrain_dit_path $DIT_PRETRAIN \
+  --policy_head_type $ACTION_HEAD \
+  --policy_head_size "ScaleDP_H" \
+  --image_size_stable "(320,240)" \
+  --image_size_wrist "(320,240)" \
+  --task_name ${TASKNAME} \
+  --model_name_or_path $MNOP \
+  --version v0 \
+  --tune_mm_mlp_adapter True \
+  --freeze_vision_tower False \
+  --freeze_backbone False \
+  --mm_use_im_start_end False \
+  --mm_use_im_patch_token False \
+  --image_aspect_ratio pad \
+  --bf16 True \
+  --output_dir $OUTPUT \
+  --max_steps 100000 \
+  --per_device_train_batch_size 12 \
+  --gradient_accumulation_steps 1 \
+  --save_strategy "steps" \
+  --save_steps 10000 \
+  --save_total_limit 50 \
+  --learning_rate 2e-5 \
+  --weight_decay 0. \
+  --warmup_ratio 0.01 \
+  --lr_scheduler_type "constant" \
+  --logging_steps 50 \
+  --tf32 True \
+  --model_max_length 2048 \
+  --gradient_checkpointing True \
+  --dataloader_num_workers 8 \
+  --lazy_preprocess True \
+  --policy_class $ACTION_HEAD \
+  --concat "token_cat" \
+  --report_to tensorboard \
+  --logging_dir $OUTPUT/log | tee $OUTPUT/log.log
+```
 
 ### 计算 loss
 

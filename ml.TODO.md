@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1744656968151
+updated: 1744868282812
 created: 1738165674608
 ---
 
@@ -203,6 +203,12 @@ https://www.zhihu.com/question/1888903744047011293/answer/1888905234241258191
 ## 灵巧手和 affordance
 
 ManiTrans 和 AffordDP
+
+## 开拓视野
+
+> 通义集团: 基于文字，生成头部姿态和表情，生成音频。学习借鉴多模态数据 Fusion 和生成。
+> 使用特征提取，随后 Concat Motion 特征，输入文字嵌入，还有梅尔频谱这三个 embed。
+https://arxiv.org/abs/2504.02433v1
 
 ## Cpp 和开发
 

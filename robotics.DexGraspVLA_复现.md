@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1743406005110
+updated: 1744868632826
 created: 1741144146461
 ---
 
@@ -740,6 +740,9 @@ Modbus 通信支持以下：
 
 目前没有训练观察的历史信息到 obs 中，T == 1。
  
+### 模型
+
+使用因果掩码时，把视觉部分的掩码都加上？
 
 ### pyrealsense2: 获取 RGBD
 
