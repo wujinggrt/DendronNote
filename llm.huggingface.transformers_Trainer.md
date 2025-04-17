@@ -2,7 +2,7 @@
 id: 0da424ysmswufl4406wj1dt
 title: transformers_Trainer
 desc: ''
-updated: 1744653741003
+updated: 1744903856647
 created: 1740301523116
 ---
 
@@ -209,7 +209,7 @@ python -m torch.distributed.launch trainer-program.py ...
 
 ### 常见属性和参数
 
-- `output_dir`：必选，指定模型checkpoint和最终结果的输出目录，目录不存在会自动创建。模型保存
+- `output_dir`：必选，指定模型checkpoint和最终结果的输出目录，目录不存在会自动创建。checkpoint 保存在子目录 checkpoint-000 下。后面的数字代表训练步数。重启训练时，可以指定 `resume_from_checkpoint` 参数，指定从 checkpoint 恢复训练。
 - `learning_rate`: float, 学习率
 - `per_device_train_batch_size=8`: 训练批次大小
 - `per_device_eval_batch_size=8`: 评估批次大小
@@ -375,3 +375,5 @@ https://zhuanlan.zhihu.com/p/688157210
 
 LLM大模型之Trainer以及训练参数 - Glan格蓝的文章 - 知乎
 https://zhuanlan.zhihu.com/p/662619853
+
+https://huggingface.co/docs/transformers/v4.51.1/en/trainer?ckpt=specific+checkpoint

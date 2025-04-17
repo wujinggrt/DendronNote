@@ -2,7 +2,7 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA_阅读代码和复现
 desc: ''
-updated: 1744877957426
+updated: 1744912564030
 created: 1740053039805
 ---
 
@@ -526,26 +526,28 @@ self.llava_pythia_process 使用了 Qwen2VLAProcess() 对象。
         * 使用 `norm_stats` 对 `action_data` 进行 Min-Max 归一化到 `[-1, 1]` 区间。
     * **创建中间 `sample` 字典**: 包含初步处理后的 `image`, `state` (qpos), `action`, `is_pad`, `raw_lang`, `reasoning`。
 
-3.  **调用 `Qwen2VLAProcess.forward_process()` 进行最终处理**:
-    * 将上一步得到的 `sample` 字典传递给 `forward_process`。
-    * **图像最终处理**:
-        * 对 `sample['image']` 中的每个视角图像张量，调用 `qwen2_image_preprocess` 进行 Qwen2-VL 特定的预处理（包括转换回 PIL Image，根据相机类型 resize，应用 `Workspace_image` 处理）。
-        * 收集处理后的图像列表 `images_list`。
-    * **文本与消息格式化**:
-        * 调用 `datastruct_droid2llava` 将 `sample` 中的图像占位符和 `raw_lang` 格式化为 Qwen2-VL 对话模板所需的 `messages` 结构。
-        * 使用 `multimodal_processor.apply_chat_template` 生成模型所需的文本提示部分 (`text`)。
-    * **构建多模态输入**:
-        * 使用 `multimodal_processor` 将格式化的 `text` 和处理后的 `images_list` 整合为最终的模型输入 `model_inputs` (包含 `input_ids`, `attention_mask`, `pixel_values` 等)。
-    * **生成 LMM 训练标签 (`labels`)**:
-        * 构建期望的回答文本 `answer`，可能包含 `reasoning` 和固定的 "Next action:<|im_end|>"。
-        * 将 `answer` 分词。
-        * 将 `model_inputs` 中的 `input_ids` 和 `attention_mask` 与 `answer` 的分词结果拼接。
-        * 创建 `labels`：将 `-100` (忽略损失计算的 token) 组成的序列与 `answer` 的 `input_ids` 拼接。
-    * **构建最终输出字典 (`data_dict`)**:
-        * 从输入的 `sample` 复制 `state`, `action`, `is_pad`。
-        * 添加生成的 `labels`。
-        * 将 `model_inputs` 字典中的所有内容 (如 `input_ids`, `attention_mask`, `pixel_values`) 添加到 `data_dict` 中。
-    * 返回包含模型所需全部输入的 `data_dict`。
+#### Qwen2VLAProcess
+
+**调用 `Qwen2VLAProcess.forward_process()` 进行最终处理**:
+* 将上一步得到的 `sample` 字典传递给 `forward_process`。
+* **图像最终处理**:
+    * 对 `sample['image']` 中的每个视角图像张量，调用 `qwen2_image_preprocess` 进行 Qwen2-VL 特定的预处理（包括转换回 PIL Image，根据相机类型 resize，应用 `Workspace_image` 处理）。
+    * 收集处理后的图像列表 `images_list`。
+* **文本与消息格式化**:
+    * 调用 `datastruct_droid2llava` 将 `sample` 中的图像占位符和 `raw_lang` 格式化为 Qwen2-VL 对话模板所需的 `messages` 结构。
+    * 使用 `multimodal_processor.apply_chat_template` 生成模型所需的文本提示部分 (`text`)。
+* **构建多模态输入**:
+    * 使用 `multimodal_processor` 将格式化的 `text` 和处理后的 `images_list` 整合为最终的模型输入 `model_inputs` (包含 `input_ids`, `attention_mask`, `pixel_values` 等)。
+* **生成 LMM 训练标签 (`labels`)**:
+    * 构建期望的回答文本 `answer`，可能包含 `reasoning` 和固定的 "Next action:<|im_end|>"。
+    * 将 `answer` 分词。
+    * 将 `model_inputs` 中的 `input_ids` 和 `attention_mask` 与 `answer` 的分词结果拼接。
+    * 创建 `labels`：将 `-100` (忽略损失计算的 token) 组成的序列与 `answer` 的 `input_ids` 拼接。
+* **构建最终输出字典 (`data_dict`)，这是模型最终需要的输入，DataLoader 最终会获取这些字典**:
+    * 从输入的 `sample` 复制 `state`, `action`, `is_pad`。
+    * 添加生成的 `labels`。
+    * 将 `model_inputs` 字典中的所有内容 (如 `input_ids`, `attention_mask`, `pixel_values`) 添加到 `data_dict` 中。
+* 返回包含模型所需全部输入的 `data_dict`。
 
 这个 `data_dict` 就是最终输入 Qwen2VLA 模型进行训练的单一样本数据。具体格式参考如下，假设 DataLoader 组合为批次大小 B：
 * **`input_ids`**:
@@ -583,20 +585,20 @@ self.llava_pythia_process 使用了 Qwen2VLAProcess() 对象。
 
 * **`action`**:
     * **作用**: 归一化后的目标动作序列 (或动作差分序列)，用于计算 Diffusion Policy 的损失。
-    * **Shape**: `(B, chunk_size, action_dim)`
+    * **Shape**: `(B, max_episode_len, action_dim)`
     * **数据类型**: `torch.float32`
     * **说明**:
-        * `chunk_size` 是预测的动作序列长度 (来自 `DataArguments`, 默认 16)。
+        * `max_episode_len` 是预测的动作序列长度 (来自 `DataArguments`, 默认 16)。
         * `action_dim` 是动作空间的维度 (来自 `ActionHeadArguments`, 默认 10)。
 
 * **`is_pad`**:
-    * **作用**: 标记 `action` 序列中的哪些时间步是填充的 (因为原始 episode 可能比 `chunk_size` 短)。
-    * **Shape**: `(B, chunk_size)`
+    * **作用**: 标记 `action` 序列中的哪些时间步是填充的 (因为原始 episode 可能比 `max_episode_len` 短)。其中，is_pad[action_len:] = 1。
+    * **Shape**: `(B, max_episode_len)`
     * **数据类型**: `torch.bool`
 
-### Qwen2VLProcess
+**初始化**
 
-最后获取字典 sample，并传递给 qwen2_vla/utils/processing_qwen2_vla.py:class Qwen2VLProcessor.forward_process()。处理多模态输入，方便送入模型的训练。
+最后获取字典 sample，并传递给 qwen2_vla/utils/robot_data_processor.py:class Qwen2VLProcessor.forward_process()。处理多模态输入，方便送入模型的训练。
 
 Qwen2VLProcessor 构造时接受参数:
 - tokenizer: 从预训练模型加载。
@@ -1145,7 +1147,18 @@ VLA 的输入中，修改了 forward() 的 API，删去了最后一个参数，c
 
 ## 训练器：Qwen2VLATrainer
 
-调用它是，传入参数有 model=model, tokenizer=tokenizer, args=config["training_args"], sampler_params=sampler_params, **data_module。包含了传入的 train_dataset 等。
+大部分参数来自 Trainer 源码。修改部分，作者用 `#######` 包围，指出修改部分。比如：
+
+```py
+                ####################################################
+                with self.accelerator.accumulate(model):
+                    tr_loss_step, all_loss = self.training_step(
+                        model, inputs
+                    )  # modified,return all_loss
+                ####################################################
+```
+
+传入参数有 model=model, tokenizer=tokenizer, args=config["training_args"], sampler_params=sampler_params, **data_module。包含了传入的 train_dataset 等。
 
 可以从 get_train_dataloader() 方法看出，大部分是复制 Trainer 的源代码，修改部分来适配当前任务。
 
@@ -1352,6 +1365,10 @@ Trainer 的 train() 方法会调用 _inner_training_loop() 方法。大部分从
         - 调用回调函数记录日志、保存检查点或执行评估。
 - 日志记录和检查点保存。
 
+#### 设置训练控制变量
+
+加载 train_dataloader，设置最终训练的批次大小 total_train_batch_size。
+
 ```py
     def _inner_training_loop(
         self,
@@ -1366,13 +1383,18 @@ Trainer 的 train() 方法会调用 _inner_training_loop() 方法。大部分从
         ...
         train_dataloader = self.get_train_dataloader()
         ...
-        # 训练时的最终 batch 大小，由传入参数决定。
-        # self._train_batch_size 来自 TraningArguments.per_device_train_batch_size
-        # args.gradient_accumulation_steps 通常设置为 1
-        # args.world_size 代表训练的进程数（通常对应 GPU 核心数）。在多 GPU 时，有用
+
         total_train_batch_size = (
             self._train_batch_size * args.gradient_accumulation_steps * args.world_size
         )
+```
+
+训练时的最终 batch 大小，由传入参数决定。
+- self._train_batch_size 来自 TraningArguments.per_device_train_batch_size
+- args.gradient_accumulation_steps 通常设置为 1
+- args.world_size 代表训练的进程数（通常对应 GPU 核心数）。在多 GPU 时，有用
+
+```py
         ...
         # DataLoader 有 __len__ 方法，几乎总会返回 True
         if has_length(train_dataloader):
@@ -1387,25 +1409,11 @@ Trainer 的 train() 方法会调用 _inner_training_loop() 方法。大部分从
                 num_train_epochs = args.max_steps // num_update_steps_per_epoch + int(
                     args.max_steps % num_update_steps_per_epoch > 0
                 )
-                # May be slightly incorrect if the last batch in the training dataloader has a smaller size but it's
-                # the best we can do.
                 num_train_samples = args.max_steps * total_train_batch_size
                 if args.include_tokens_per_second:
                     num_train_tokens = (
                         self.num_tokens(train_dataloader, args.max_steps)
                         * args.gradient_accumulation_steps
-                    )
-            else:
-                max_steps = math.ceil(
-                    args.num_train_epochs * num_update_steps_per_epoch
-                )
-                num_train_epochs = math.ceil(args.num_train_epochs)
-                num_train_samples = (
-                    self.num_examples(train_dataloader) * args.num_train_epochs
-                )
-                if args.include_tokens_per_second:
-                    num_train_tokens = (
-                        self.num_tokens(train_dataloader) * args.num_train_epochs
                     )
             elif ... else ... # 不需要
 ```
@@ -1476,6 +1484,10 @@ class Trainer:
 - len_dataloader: 批次数量，不丢弃最后一个不完整批次
 - max_steps: 更新梯度的次数。80000 或 100000
 
+#### 设置日志、保存相关参数
+
+将原版本的 self.state.compute_steps(args, max_steps) 展开为上面的三个 if 逻辑。
+
 ```py
         ...
         # Compute absolute values for logging, eval, and save if given as ratio
@@ -1497,7 +1509,10 @@ class Trainer:
         ...
 ```
 
-将原版本的 self.state.compute_steps(args, max_steps) 展开为上面的三个 if 逻辑。
+
+#### 包装模型
+
+接下来，包装模型，以适应 DeepSpeed 或 FSDP。
 
 ```py
         # Activate gradient checkpointing if needed
@@ -1509,7 +1524,113 @@ class Trainer:
         model = self._wrap_model(self.model_wrapped)
 ```
 
-包装模型，以适应 DeepSpeed 或 FSDP。
+#### 加载 checkpoint
+
+接下来，检查是否需要从检查点加载训练：
+
+```py
+        # Check if continuing training from a checkpoint
+        if resume_from_checkpoint is not None and os.path.isfile(
+            os.path.join(resume_from_checkpoint, TRAINER_STATE_NAME)
+        ):
+            ...
+```
+
+#### 设置 callback_handler
+
+给 callback 传入训练所需的字段：
+
+```py
+        self.callback_handler.model = self.model
+        self.callback_handler.optimizer = self.optimizer
+        self.callback_handler.lr_scheduler = self.lr_scheduler
+        self.callback_handler.train_dataloader = train_dataloader
+```
+
+callback_handler 是一个回调处理器，负责处理训练过程中的各种事件，比如日志记录、模型保存等。维护了一个回调列表。
+
+self.callback_handler.callbacks 维护了默认的 callback。参考 trainer.py:DEFAULT_CALLBACKS。
+
+回调会在以下场景触发：
+- 训练开始前： self.callback_handler.on_train_begin()
+- epoch 开始前： self.callback_handler.on_epoch_begin()
+- 具体步骤开始前： self.callback_handler.on_step_begin()
+- 优化器更新前： self.callback_handler.on_pre_optimizer_step()
+- 优化器更新后： self.callback_handler.on_optimizer_step()
+- 批次训练步骤结束后： self.callback_handler.on_step_end()
+- 如果使用了梯度累积，没有更新梯度，子步骤结束后： self.callback_handler.on_substep_end()
+- epoch 结束： self.callback_handler.on_epoch_end()
+- 训练结束： self.callback_handler.on_train_end()
+
+其中，参数 self.control 包含了几个标志位。初始化时，参考 dataclass TrainingControl()。包含了
+- should_training_stop: bool = False
+- should_epoch_stop: bool = False
+- should_save: bool = False
+- should_evaluate: bool = False
+- should_log: bool = False
+
+在每个训练阶段（如 epoch 开始、步骤开始等），self.control 会被传递给回调函数（例如 on_epoch_begin）。不同的回调可以根据需要修改 self.control 的值，从而影响训练流程。例如，某个回调可能检测到异常情况，并将 should_training_stop 设置为 True，从而终止训练。
+
+#### callback 调用时机和训练大致流程
+
+关注何时调用 training_step()，优化器更注意。training_step() 包含了 loss 的 backward() 调用，所以此时逻辑直接是优化器更新。
+
+```py
+        self.control = self.callback_handler.on_train_begin(
+            args, self.state, self.control
+        )
+        ...
+        for epoch in range(epochs_trained, num_train_epochs):
+            epoch_iterator = train_dataloader
+            ...
+            self.control = self.callback_handler.on_epoch_begin(
+                args, self.state, self.control
+            )
+            ...
+            for step, inputs in enumerate(epoch_iterator):
+                total_batched_samples += 1
+                ...
+                if step % args.gradient_accumulation_steps == 0:
+                    self.control = self.callback_handler.on_step_begin(
+                        args, self.state, self.control
+                    )
+                ####################################################
+                with self.accelerator.accumulate(model):
+                    tr_loss_step, all_loss = self.training_step(
+                        model, inputs
+                    )  # modified,return all_loss
+                ####################################################
+                ...
+                if ...:
+                    self.control = self.callback_handler.on_pre_optimizer_step(
+                        args, self.state, self.control
+                    )
+                    self.optimizer.step()
+                    self.control = self.callback_handler.on_optimizer_step(
+                        args, self.state, self.control
+                    )
+                    ...
+                    self.control = self.callback_handler.on_step_end(
+                        args, self.state, self.control
+                    )
+                    ...
+                else:
+                    self.control = self.callback_handler.on_substep_end(
+                        args, self.state, self.control
+                    )
+            ...
+            self.control = self.callback_handler.on_epoch_end(
+                args, self.state, self.control
+            )
+        ...
+        self.control = self.callback_handler.on_train_end(
+            args, self.state, self.control
+        )
+```
+
+### lora
+
+使用了 peft，关注 _is_peft_model() 方法。
 
 ### scripts/train_dexvla_stage2.sh
 

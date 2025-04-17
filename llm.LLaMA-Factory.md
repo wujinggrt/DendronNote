@@ -2,7 +2,7 @@
 id: lvhxgyuvwyw5soqj59gc045
 title: LLaMA-Factory
 desc: ''
-updated: 1740557449425
+updated: 1744908990513
 created: 1740375991093
 ---
 
@@ -1093,6 +1093,8 @@ worker-2 slots=4
     }
 }
 ```
+
+## 如何支持自己的模型？
 
 ## Ref and Tag
 [Github](https://github.com/hiyouga/LLaMA-Factory) 

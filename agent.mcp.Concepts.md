@@ -2,7 +2,7 @@
 id: 9gc9g6ffxfzjvj43sh58m28
 title: Concepts
 desc: ''
-updated: 1743492990022
+updated: 1744902569117
 created: 1743147909324
 ---
 
@@ -189,7 +189,14 @@ def translate(message: str) -> str:
     return f'请将下面的话语翻译成中文：\n\n{message}'
 ```
 
+## insihgts
+
+RobotMCP？
+
 ## Ref and Tag
+
+MCP (Model Context Protocol)，一篇就够了。 - LastWhisper的文章 - 知乎
+https://zhuanlan.zhihu.com/p/29001189476
 
 Agent 时代基础设施 | MCP 协议介绍 - 锦恢的文章 - 知乎
 https://zhuanlan.zhihu.com/p/28859732955
