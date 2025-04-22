@@ -2,22 +2,34 @@
 id: tmruqcalaaqsqzkj35nehsq
 title: Uv
 desc: ''
-updated: 1742309626457
+updated: 1745322226373
 created: 1737822755943
 ---
 
 conda 下载速度慢，推荐用 conda 创建环境，不要用它下载包。
 
-pip install uv
+通过安装脚本安装 uv，或者直接用 pip 安装。
 
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+```bash
+pip install uv
+```
+
+```bash
 uv --help
+```
 
 ## Ref
 uv-速度飞快的pip替代 - 王云峰的文章 - 知乎
 https://zhuanlan.zhihu.com/p/689976933
 
 ## 创建虚拟环境
+
 类似 Python 的 venv，在当前目录或指定目录添加虚拟环境：
+
 ```sh
 # 在当前目录创建 myenv 目录，作为环境
 # 指定Python版本，注意需要对应版本的Python已经安装
@@ -26,9 +38,12 @@ uv venv myenv -p 3.12
 source myenv/bin/activate
 ```
 
-uv 不会自动下载 Python 包，所以上述命令只能够在当前 Python 3.12 版本起作用，否则不行。
+uv 会自动下载 Python 包，所以上述命令只能够在当前 Python 3.12 版本起作用，否则不行。
+
+为了区分，通常在项目目录下创建虚拟环境，并且使用默认目录 `.venv`。
 
 ## 用法
+
 与使用 pip 高度一致，只需要加上 uv 即可。比如：
 ```sh
 # 从镜像网站上拉取安装包

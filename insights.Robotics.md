@@ -2,7 +2,7 @@
 id: eszoks0gixjd0fjyul4wh10
 title: Robotics
 desc: ''
-updated: 1743576992442
+updated: 1745342523887
 created: 1740293600917
 ---
 
@@ -160,5 +160,11 @@ VLM 做分析 (analyse) 和指导 (instruct)。指导小模型找到感兴趣区
 细粒度的 Agent 设计：如果机器人需要完成一个动作，比如抓取，可以设计为 GraspAgent。如果是挥手和递东西，那么是 PassAgent。这样，再设计一个调度的 PlanningAgent 来 dispatch 任务。
 
 粗粒度的 Agent 设计：只有一个 RobotAgent，首先继承自 PlanningAgent，把动作规划为技能调用，即 ToolCalls，向 VLM 进行 ask。比如，清理桌面，清理一半，拿起一个物体时，告诉它那不是垃圾，你得放下。
+
+## MCP 启发
+
+是否大小模型的方式，也可以规范一套协议？
+
+Tool 的描述会提供给 LLM，生成合理的规划。是否机器人也需要提供一套描述，比如动作的描述，动作的参数，动作的条件，动作的限制，形成一套协议。
 
 ## Ref and Tag

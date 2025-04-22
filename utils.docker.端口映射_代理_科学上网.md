@@ -2,7 +2,7 @@
 id: tz6m430sfzjehicuojbggws
 title: 端口映射_代理_科学上网
 desc: ''
-updated: 1744710310517
+updated: 1745310762855
 created: 1742381049066
 ---
 
@@ -14,7 +14,7 @@ created: 1742381049066
 docker run ... -p 8080:80 ...
 ```
 
-参数格式 `-p [宿主机IP:]宿主机端口:容器端口[/协议]` 如下：
+参数格式 `-p [宿主机IP:]宿主机端口:容器端口[/协议]`，比如 `-p 127.0.0.1:5001:5000/udp`，具体如下：
 
 ```
 -p, --publish ip:[hostPort]:containerPort | [hostPort:]containerPort
