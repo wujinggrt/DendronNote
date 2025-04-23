@@ -2,7 +2,7 @@
 id: 7gk7py1tpsw1r4w8kms09q5
 title: Frp_内网穿透
 desc: ''
-updated: 1744795261194
+updated: 1745411230085
 created: 1744446321714
 ---
 
@@ -90,6 +90,12 @@ remotePort = 7001
 
 ```bash
 ssh loc的用户名@pub的公网IP -p 7001
+```
+
+也可以使用 sftp 来传输文件：
+
+```bash
+sftp -P 7001 user@ip-addr
 ```
 
 ## HTTP 内网穿透
