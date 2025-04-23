@@ -2,7 +2,7 @@
 id: 9gc9g6ffxfzjvj43sh58m28
 title: Concepts
 desc: ''
-updated: 1745325803841
+updated: 1745425784083
 created: 1743147909324
 ---
 
@@ -443,6 +443,8 @@ mcp server 便完成了。
 RobotMCP？
 
 ## Ref and Tag
+
+[[agent.mcp.reading_simple_chatbot]]
 
 MCP (Model Context Protocol)，一篇就够了。 - LastWhisper的文章 - 知乎
 https://zhuanlan.zhihu.com/p/29001189476
