@@ -1,8 +1,8 @@
 ---
 id: po1d50dtr8zzbao0sn1duvh
-title: LearnDendron
+title: LearnDendron_与插件Notes一起使用
 desc: ''
-updated: 1740465611107
+updated: 1745481222091
 created: 1737484383438
 ---
 
@@ -190,6 +190,14 @@ enableAutoCreateOnDefinition: true
 I want to start clean with a new vault at a custom location: Run `Dendron: Initialize Workspace` from the command prompt (or click this link) to start from a clean slate
 
 或者是 `Dendron: Change Workspace`。注意，此操作只能用于切换到初始化后的 Workspace。
+
+## 与插件 Notes 配合使用
+
+Dendron 有个不方便的缺点，需要重新打开一个 VsCode 窗口，记录笔记时，需要不停切换。而 Notes 插件则嵌入到每个项目。如果在看代码时，需要记录笔记，只需要在 Notes 中选中即可，不用切换 VsCode 的窗口，打开的笔记仍然在本项目内的一个新标签页。这会十分方便。
+
+如果项目是远程开发，目录在服务器上，配置 Notes 的路径时，需要关注远程部分路径。如果笔记目录在本地，依然可以使用 frp 等工具来穿透内网，再配合 WebDAV 即可访问。
+
+![notes_location](assets/images/LearnDendron_与插件Notes一起使用/notes_location.png)
 
 ## Ref and link
 

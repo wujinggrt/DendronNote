@@ -2,7 +2,7 @@
 id: 80vbkxsppb5pn942gmkfvt2
 title: Reading_simple_chatbot
 desc: ''
-updated: 1745343935269
+updated: 1745484512400
 created: 1745325784677
 ---
 
@@ -359,6 +359,41 @@ Description: {self.description}
 Arguments:
 {chr(10).join(args_desc)}
 """
+```
+
+```mermaid
+graph TD
+    A[开始] --> B[图像信息获取与编码]
+    B --> C[数值数据组织与提示词生成]
+    C --> D[模型微调（LoRA）]
+    D --> E[步进决策推理]
+    E --> F[执行动作]
+    F --> G{是否继续？}
+    G -- 是 --> B
+    G -- 否 --> H[结束]
+
+    subgraph 训练阶段
+        I[仿真数据生成] --> J[数据预处理]
+        J --> K[模型训练]
+    end
+    
+    K --> D
+
+    B -->|视觉编码器处理| B1[提取关键特征]
+    B1 -->|海底地形<br>障碍物位置<br>沉积物类型| C
+    
+    C -->|传感器数据转换| C1[压力数据]
+    C1 --> C2[速度数据]
+    C2 --> C3[深度数据]
+    C3 -->|生成结构化提示词| D
+    
+    D -->|低秩矩阵微调| D1[适应海底环境]
+    D1 -->|融合多模态数据| E
+    
+    E -->|多模态推理| E1[动作决策]
+    E1 --> F
+    
+    F -->|状态反馈| G
 ```
 
 比如：

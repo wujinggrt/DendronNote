@@ -2,7 +2,7 @@
 id: yhruy5kv9yl6vkfo9a230rb
 title: ATE_比赛
 desc: ''
-updated: 1744796538968
+updated: 1745495952353
 created: 1744617033668
 ---
 
@@ -145,6 +145,24 @@ python gym_rescue/example/rescue_demo.py -r -k
 ...
 If you are on Ubuntu or Debian, install libgtk2.0-dev and pkg-config, then re-run cmake or configure script in function 'cvShowImage'
 ```
+
+### 初始内容获取
+
+```py
+obs, info = env.reset()
+```
+
+返回的 info 是一个字典，info["reference_text"] 便是描述，info["reference_image"] 则是 np.ndarray。
+
+### action 的具体表示
+
+action 表示为: ([角速度，线速度], 视野， 操作)
+
+在键盘中，i j k l 分别表示前进、后退、左转、右转。
+- 前进：((0, 200), 0, 0)
+- 后退：((0, -200), 0, 0)
+- 左转：((-30, 0), 0, 0)
+- 右转：((30, 0), 0, 0)
 
 ## Ref and Tag
 
