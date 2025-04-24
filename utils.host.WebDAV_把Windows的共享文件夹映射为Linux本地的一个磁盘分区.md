@@ -1,8 +1,8 @@
 ---
 id: qfeqj0o8xylxbs32goxmvql
-title: 把Windows的共享文件夹映射为Linux本地的一个磁盘分区
+title: WebDAV_把Windows的共享文件夹映射为Linux本地的一个磁盘分区
 desc: ''
-updated: 1745478553160
+updated: 1745504608121
 created: 1745474388082
 ---
 
@@ -92,6 +92,12 @@ sudo mount -t davfs wujingdp.xyz:6060 ~/webdav/win_notes
 ```
 
 会提示输入用户名密码，根据设置输入即可。如果没有，则回车即可。
+
+如果需要读写权限，记得更换权限：
+
+```bash
+sudo chmod 777 ~/webdav/win_notes/*
+```
 
 设置自动挂仔，​​编辑/etc/fstab添加：
 
