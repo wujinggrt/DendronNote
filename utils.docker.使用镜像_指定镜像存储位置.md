@@ -1,10 +1,20 @@
 ---
 id: l1as99asaza2ux0otwtb82q
-title: 指定镜像存储位置
+title: 使用镜像_指定镜像存储位置
 desc: ''
-updated: 1744300520743
+updated: 1745516471986
 created: 1740389762581
 ---
+
+## 使用镜像
+
+打标签来重命名镜像：
+
+```bash
+docker tag <image_id> <new_image_name>[:<tag>]
+```
+
+## 指定镜像存储位置
 
 镜像和容器数据默认存储在 /var/lib/docker，修改为自定义路径，比如 /data1/docker。查看到 /var/lib/docker 的权限是 710，owner 和 group 都是 root，所以用 sudo 创建一个目录，作为存储的地方。
 
@@ -41,7 +51,7 @@ docker info # 查看 Docker Root Dir 是否指向了你指定的路径。
 journalctl -u docker.service
 ```
 
-## 查看存储本地的镜像
+### 查看存储本地的镜像
 
 ```bash
 ❯ docker images

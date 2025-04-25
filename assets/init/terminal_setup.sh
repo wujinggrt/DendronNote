@@ -17,12 +17,12 @@ NVIDIA_DRIVER_VERSION=550
 if [[ $UBUNTU_VERSION == 24.04 ]]; then
     # 24.04换源
     cp /etc/apt/sources.list.d/ubuntu.sources /etc/apt/sources.list.d/ubuntu.sources.bak
-    perl -i.bak -wple 's@(URIs:) http://archive.ubuntu.com/ubuntu/@$1 https://mirrors.tuna.tsinghua.edu.cn/ubuntu/@g;' \
+    perl -i.bak -wple 's@(URIs:) http://(archive|security).ubuntu.com/ubuntu/@$1 http://mirrors.tuna.tsinghua.edu.cn/ubuntu/@g;' \
     /etc/apt/sources.list.d/ubuntu.sources
 elif [[ $UBUNTU_VERSION == 22.04 ]]; then
     # 22.04 换源
-    sudo sed -i "s@http://.*archive.ubuntu.com@https://mirrors.tuna.tsinghua.edu.cn@g" /etc/apt/sources.list
-    sudo sed -i "s@http://.*security.ubuntu.com@https://mirrors.tuna.tsinghua.edu.cn@g" /etc/apt/sources.list
+    sudo sed -i "s@http://.*archive.ubuntu.com@http://mirrors.tuna.tsinghua.edu.cn@g" /etc/apt/sources.list
+    sudo sed -i "s@http://.*security.ubuntu.com@http://mirrors.tuna.tsinghua.edu.cn@g" /etc/apt/sources.list
 else
     echo "ERROR: Unsupported Ubuntu version: $UBUNTU_VERSION"
     exit 1
