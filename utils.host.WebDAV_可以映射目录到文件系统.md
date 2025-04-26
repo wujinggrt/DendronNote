@@ -158,7 +158,82 @@ docker run -it --rm \
   webdav_nginx
 ```
 
-## 最简单的方式：使用 bytemark/webdav 镜像
+
+## 使用 Ubuntu Docker 镜像制作
+
+```Dockerfile
+FROM ubuntu:22.04
+RUN sed -i "s@http://.*archive.ubuntu.com@http://mirrors.tuna.tsinghua.edu.cn@g" /etc/apt/sources.list \
+  && sed -i "s@http://.*security.ubuntu.com@http://mirrors.tuna.tsinghua.edu.cn@g" /etc/apt/sources.list \
+  && apt update && apt install -y nginx-full apache2-utils vim \
+  && mkdir -p /var/www/webdav && chmod 777 /var/www/webdav \
+  && chown -R www-data:www-data /var/www/webdav \
+  && rm -rf /etc/nginx/sites-enabled/* \
+  && htpasswd -bc /etc/nginx/webdav.passwd wj-24 sciencerobotics
+
+RUN cat > /etc/nginx/sites-available/webdav.conf <<EOF
+server {
+    listen 80; # 或者其他端口，例如 8080
+    server_name localhost; # 替换成你的服务器 IP 或域名
+
+    root /var/www/webdav; # WebDAV 根目录
+
+    location / {
+        # 允许客户端浏览目录 (可选)
+        autoindex on;
+
+        # 基本认证设置
+        auth_basic "Restricted WebDAV Area"; # 登录提示信息
+        auth_basic_user_file /etc/nginx/webdav.passwd; # 指向密码文件
+
+        # WebDAV 设置
+        dav_methods PUT DELETE MKCOL COPY MOVE; # 允许的 HTTP 方法
+        dav_ext_methods PROPFIND OPTIONS LOCK UNLOCK;      # 允许的扩展方法 (PROPFIND 很重要)
+
+        # Nginx 需要写入权限。这个指令设置新创建文件和目录的权限。
+        # user:rw 表示所有者有读写权限
+        # group:rw 表示同组用户有读写权限 (可选，根据需要调整)
+        # all:r 表示其他用户只有读权限 (可选，根据需要调整)
+        # 对于目录，执行权限会自动添加
+        dav_access user:rw group:rw all:rw;
+
+        # 允许客户端使用 PUT 方法创建所有必需的中间目录
+        create_full_put_path on;
+
+        client_max_body_size 0; # 允许上传的最大文件大小
+        #client_body_timeout 120s;   # 客户端请求体超时时间
+    }
+
+    # Nginx 日志 (可选，但推荐)
+    access_log /var/log/nginx/webdav.access.log;
+    error_log /var/log/nginx/webdav.error.log;
+}
+EOF
+
+# 如果 /etc/nginx/sites-enabled/default 文件存在且监听同一个端口（如 80），
+# 可能需要先移除默认站点的链接 sudo rm /etc/nginx/sites-enabled/default
+RUN ln -s /etc/nginx/sites-available/webdav.conf /etc/nginx/sites-enabled/
+RUN service nginx reload
+
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+```bash
+docker build . -t webdav_nginx
+htpasswd -bc conf/webdav.passwd wj-24 sciencerobotics
+```
+
+```bash
+docker run -it --rm \
+  -p 6062:80 \
+  # -v $(pwd)/conf/webdav.passwd:/etc/nginx/webdav.passwd \
+  -v $(pwd)/data:/var/www/webdav \
+  webdav_nginx
+```
+
+但是，在 Windows 下，映射网络驱动后，修改文件总是提示另存为新的文件，没有 Linux 的方便。
+
+## 最简单的方式：使用 bytemark/webdav 镜像（推荐）
 
 pull 之后：
 
