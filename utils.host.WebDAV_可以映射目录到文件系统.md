@@ -2,7 +2,7 @@
 id: qfeqj0o8xylxbs32goxmvql
 title: WebDAV_可以映射目录到文件系统
 desc: ''
-updated: 1745602963664
+updated: 1745732676674
 created: 1745474388082
 ---
 
@@ -381,6 +381,14 @@ sudo umount /mnt/webdav
 编辑->设置->同步->文件同步->"我的文库"附件同步方式：选择 WebDAV，在下面界面输入相关内容即可：
 
 ![zotero_webdav](assets/images/utils.host.WebDAV_可以映射目录到文件系统/zotero_webdav.png)
+
+## Windows 睡眠计划调整
+
+如果使用 wsl2 作为 WebDAV 的服务器，可能会出现断开连接的情况。这是因为进入了睡眠。设置笔记本接通电源后，不进入睡眠，仅仅关闭显示器即可：
+
+控制面板->硬件和声音->电源选项->编辑计划设置->使计算机进入睡眠状态，设置接通电源一栏的睡眠为从不，显示器可以关闭。如果是笔记本，合上盖子设置不采取任何操作。
+
+这样，即使 Win+L 锁屏，也不会关闭。
 
 ## Ref and Tag
 

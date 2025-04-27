@@ -2,7 +2,7 @@
 id: blk1s4zbfhd016wg0ppuatd
 title: Asyncio_异步
 desc: ''
-updated: 1745341912613
+updated: 1745689805760
 created: 1742836619998
 ---
 
@@ -19,6 +19,8 @@ asyncio 往往是构建 IO 密集型和高层级 结构化 网络代码的最佳
 - 创建和管理 事件循环，它提供用于 连接网络, 运行 子进程, 处理 OS 信号 等功能的异步 API；
 - 使用 transports 实现高效率协议;
 - 通过 async/await 语法 桥接 基于回调的库和代码。
+
+Tips：Vs Code 的 Jupyter Notebook 运行时已经创建了 event loop，不能够再添加新的，对于异步代码，直接 await 运行即可。
 
 ## 协程与任务
 
