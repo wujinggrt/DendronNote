@@ -32,6 +32,8 @@ flowchart LR
 
 [参考 VG 卷组](https://c.biancheng.net/view/918.html)。[PV 物理卷](https://c.biancheng.net/view/914.html)。[LV 逻辑卷](https://c.biancheng.net/view/920.html)。
 
+已经在物理卷上安装的系统，是否可以移动到卷组？是否可以重新创建逻辑卷或卷组？
+
 ### 物理卷管理
 
 使用 parted 或 fdisk 交互命令来创建物理分区。注意，操作分区后，使用命令 `partprobe` 重新读取分区表，或重启 OS。
@@ -232,15 +234,20 @@ chmod a+x /path/to/mountpoint
 umount -f /path/to/mountpoint # 卸载 FS，-f 代表 force
 ```
 
-## 持久化挂载
+## 自动化和持久化挂载：/etc/fstab
 
-实现开机自动挂在，比如：
-
-```bash
-echo "/dev/sdb1   /home/wujing/sdb1  xfs   defaults  0 0 " >> /etc/fstab 
+fstab 的格式是：
+```
+挂载分区  挂载点  文件系统类型  选项  是否备份  是否检测
 ```
 
-可以使用 UUID 替换设备名，避免设备位置更换后，名字修改。使用如下命令查看 sdb1 UUID：
+比如：
+
+```bash
+echo "/dev/sdb1  /home/wujing/sdb1  xfs  defaults  0 0 " >> /etc/fstab 
+```
+
+可以使用 UUID 替换挂载分区，避免设备位置更换后，名字修改。使用如下命令查看 sdb1 的 UUID：
 
 ```bash
 $ sudo blkid | grep sdb1
@@ -257,6 +264,7 @@ $ sudo blkid | grep sdb1
 适用场景：无需保留数据，且已做好完整备份。
 
 ### 使用 LVM（逻辑卷管理）合并（低风险，需初始化）
+
 操作方式：将两个分区初始化为 LVM 物理卷，合并为逻辑卷。
 
 风险：初始化分区为物理卷（pvcreate）会擦除分区数据。
@@ -264,6 +272,7 @@ $ sudo blkid | grep sdb1
 适用场景：愿意重新格式化分区并重建系统环境。
 
 ### 调整分区大小（中风险，依赖工具）
+
 工具：使用 gparted（图形化）或 parted（命令行）调整分区边界。
 
 风险：若第二个分区物理**紧邻**第一个分区后方，且文件系统支持在线调整（如 ext4），可能无需丢失数据。但操作中意外断电或中断可能导致数据损坏。
@@ -284,7 +293,7 @@ parted 命令进入交互界面后，选择设备，可以看到：
  5    512GB   1024GB  512GB   logical   ext4
 ```
 
-/dev/nvme0n1p6 在 /dev/nvme0n1p5 之后，所以可以调整其结束点位置，以扩充空间。关于查看具体起始点，可以使用 `❯ cat /sys/block/nvme0n1/nvme0n1p5/start` 命令查看。
+/dev/nvme0n1p6 在 /dev/nvme0n1p5 之后，所以可以调整其结束点位置，以扩充空间。关于查看具体起始点，可以使用 `cat /sys/block/nvme0n1/nvme0n1p5/start` 命令查看。
 
 使用 help 命令，可以看到操作的命令：
 - `resizepart NUMBER END` 改变 NUMBER 的大小

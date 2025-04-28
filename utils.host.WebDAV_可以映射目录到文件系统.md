@@ -333,11 +333,19 @@ sudo chmod 777 ~/webdav/win_notes
 sudo chmod 777 ~/webdav/win_notes/*
 ```
 
-设置自动挂仔，​​编辑/etc/fstab添加：
+上面都是临时挂载，重启电脑后都会丢失。可以设置自动挂仔，​​编辑 /etc/fstab 添加：
 
 ```bash
 wujingdp.xyz:6060 ~/webdav/win_notes davfs _netdev,noauto,user 0 0
 ```
+
+fstab 的格式是：
+
+```
+挂载分区  挂载点  文件系统类型  选项  是否备份  是否检测
+```
+
+WebDAV 可以看做是一个特殊的分区。
 
 取消挂载：
 
@@ -388,7 +396,7 @@ sudo umount /mnt/webdav
 
 控制面板->硬件和声音->电源选项->编辑计划设置->使计算机进入睡眠状态，设置接通电源一栏的睡眠为从不，显示器可以关闭。如果是笔记本，合上盖子设置不采取任何操作。
 
-这样，即使 Win+L 锁屏，也不会关闭。
+关键点在于设置电源和睡眠，可以关闭显示器，但是不能进入睡眠。若有睡眠需求，手动睡眠即可。这样，即使 Win+L 锁屏，或是屏幕自动关闭，也不会进入睡眠状态，导致 WebDAV 服务关闭。
 
 ## Ref and Tag
 
