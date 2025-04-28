@@ -2,7 +2,7 @@
 id: 4ogju3fm1rt556puboo1zzb
 title: GUI_界面
 desc: ''
-updated: 1743493631561
+updated: 1745847545132
 created: 1743468987345
 ---
 
@@ -42,10 +42,11 @@ docker run -dit \
     bash
 ```
 
-最后，运行时，允许用户访问 X11 服务：
+最后，执行 xhost + 来允许用户访问 X11 服务。注意，运行此命令时，需要首先设置允许打印的显示器，xhost + 只会作用于此 DISPLAY 环境变量值对应的显示器，其他显示器不会允许显示：
 
 ```bash
-xhost +  # 允许所有客户端连接（生产环境慎用）
+export DISPLAY=:16
+xhost +  # 允许所有客户端连接（生产环境慎用）$DISPLAY 对应的显示器
 # 或更安全的做法：
 xhost +local:docker  # 仅允许本地 Docker 容器访问
 ```
