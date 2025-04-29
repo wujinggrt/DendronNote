@@ -2,7 +2,7 @@
 id: ovto6hepvtttctxmnypiebq
 title: Awesome_terminal_终端各种命令脚本
 desc: ''
-updated: 1744708915967
+updated: 1745865669493
 created: 1742868524198
 ---
 
@@ -37,6 +37,52 @@ myfunc() {
 }
 myfunc
 echo $local_var    # 无输出（变量已销毁）
+```
+
+## curl
+
+常用参数：
+- `-C, --continue-at <offset>`: 断点续传。<offset> 可以是字节数，如果是 -，代表自动找到断点部分，自动续传。大C, $ curl -C - https:// # highlight part is necessary，否则就是解析为-C offset从offset偏移下载
+- `-o, --output <filename>`: 小 o，相当于wget
+- `-O, --remote-name`: 文件名是URL最后部分，自动命名。不指定 `-o` 或 `-O` 则默认输出到标准输出。
+- `-#`: 进度条
+- `-L, --location`:  (HTTP) 请求返回3XX code，server迁移了，则 redo 自动使用新的服务器 addr，会自动跳转到新的 URL。
+- `-s, --silent`: 禁止 curl 输出进度和错误信息，只显示下载结果。在执行下载的shell内容有用，比如 `$ sudo bash -c $(curl -fsL URL)`
+- `-S, --show-error`: 即使禁用了 -s 选项，也会显示错误信息。
+- `-f`: fail silently, This is mostly done to better enable scripts etc to better deal with failed attempts. 不报错，特别是 `curl -f ... && CMDS ...` 中，curl 失败不会影响后续命令进行。
+- `-l`: 仅仅返回状态码
+- `-k`: allow insecure server connections.
+
+请求服务相关参数：
+- `-G, --get`
+- `-A, --user-agent {{agent-name}}`: 指定客户端的用户代理标头，即User-Agent。curl 的默认用户代理字符串是 curl/[version]。
+- `-H, --header {{header}}`: HTTP 场景
+- `-d, --data {{data}}`: HTTP MQTT 场景下，在 POST 请求时。如果发送二进制内容，使用 --data-binary；发送不转义的内容，比如 @ 等，使用 --data-raw。例子：
+    curl -d "name=curl" https://example.com
+- `-D, --dump-header {filename}`:  将响应头保存到文件。
+- `-X, --request {method}`: method 可以是 GET，HEAD，POST 和 PUT。默认 GET。
+- `-k, --insecure`: 在 SFTP 和 SCP 场景，跳过 known_hosts
+- `--interface {name}`: 指定网卡，比如 eth0:1
+- `-x, --proxy [protocol://]host[:port]`
+
+curl --proxy http://proxy.example https://example.com
+
+```bash
+curl -A 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36' https://google.com
+```
+
+上面命令将User-Agent改成 Chrome 浏览器。
+
+```bash
+curl -X POST http://host:port/v1/chat/completions \   
+ -H "Content-Type: application/json" \    
+-H "Authorization: Bearer 在命令行设置的api-key" \    
+-d '{    
+"model": "qwen2.5-VL-7B-Instruct",    
+"messages": [
+   {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": [
+        {"type": "image_url", "image_url": {"url": "https://modelscope.oss-cn-beijing.aliyuncs.com/resource/qwen.png"}},        {"type": "text", "text": "图片里的文字是啥?"}    ]}    ]    }'
 ```
 
 ## ip 工具

@@ -2,7 +2,7 @@
 id: tmruqcalaaqsqzkj35nehsq
 title: Uv
 desc: ''
-updated: 1745322226373
+updated: 1745944650624
 created: 1737822755943
 ---
 
@@ -55,6 +55,13 @@ uv pip install -e .
 uv pip uninstall flask
 ```
 
+pip 的 -f，--find-links 参数，uv pip 使用 --find-links。
+
+```bash
+# pip3 install -f / --find-links	--find-links ...
+uv pip install --find-links {{url}}
+```
+
 安装的包会放到 .venv/lib/python3.12/site-packages 下。
 
 ## 最佳实践
@@ -64,7 +71,7 @@ uv pip uninstall flask
 ```bash
 git clone URI
 cd DIR
-uv ven
+uv venv
 source .ven/bin/activate
 ```
 

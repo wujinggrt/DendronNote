@@ -2,7 +2,7 @@
 id: xpm7k3l0en3aumjgrs2gri7
 title: HoST_学习不同姿势下人形机器人站立控制
 desc: ''
-updated: 1742437648425
+updated: 1745922034568
 created: 1742398503572
 ---
 
@@ -64,6 +64,19 @@ created: 1742398503572
 - **与现有系统的集成**：尚未展示如何将站立控制与现有的人形机器人系统（如导航、抓取等）进行集成。
 - **sim-to-real转移效果**：尽管领域随机化在一定程度上减少了模拟与现实之间的差距，但仍然存在一些差距，特别是在关节扭矩方面。
 - **运动的自然性和效率**：在某些情况下，动作的自然性和效率仍有提升空间。
+
+## 项目代码
+
+```bash
+uv pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu113
+```
+
+```
+   File "/workspace/HoST/isaacgym/python/isaacgym/torch_utils.py", line 135, in <module>
+    def get_axis_params(value, axis_idx, x_value=0., dtype=np.float, n_dims=3):
+```
+
+torch_utils.py:135 的 np.float 改为 np.float64。
 
 ## Ref and Tag
 
