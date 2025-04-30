@@ -2,7 +2,7 @@
 id: amykfzj12rgwy4jphkw8abd
 title: Dockerfile
 desc: ''
-updated: 1745810535811
+updated: 1745949472853
 created: 1745783052655
 ---
 
@@ -14,6 +14,10 @@ created: 1745783052655
 COPY hom* /mydir/
 COPY hom?.txt /mydir/
 ```
+
+## WORKDIR
+
+WORKDIR 指令用于设置工作目录。这个指令会创建一个新目录（如果该目录尚不存在），并将其设置为后续指令的工作目录。这对于组织文件结构和确保命令在正确的上下文中执行非常有用。如果没有指定，默认使用 / 目录。后续可以多次使用 WORKDIR 更改。
 
 ## Tips
 

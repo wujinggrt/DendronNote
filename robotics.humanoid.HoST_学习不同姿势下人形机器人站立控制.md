@@ -2,7 +2,7 @@
 id: xpm7k3l0en3aumjgrs2gri7
 title: HoST_学习不同姿势下人形机器人站立控制
 desc: ''
-updated: 1745922034568
+updated: 1745954382102
 created: 1742398503572
 ---
 
@@ -77,6 +77,38 @@ uv pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 
 ```
 
 torch_utils.py:135 的 np.float 改为 np.float64。
+
+### IsaacGym 渲染出错：需要安装 OpenGL 工具和库
+
+运行 IsaacGym 样例程序时，发生段错误（Segmentation Fault）:
+
+```bash
+examples# python 1080_balls_of_solitude.py
+Importing module 'gym_38' (/workspace/engineai_legged_gym/isaacgym/python/isaacgym/_bindings/linux-x86_64/gym_38.so)
+Setting GYM_USD_PLUG_INFO_PATH to /workspace/engineai_legged_gym/isaacgym/python/isaacgym/_bindings/linux-x86_64/usd/plugInfo.json
+WARNING: Forcing CPU pipeline.
+Not connected to PVD
++++ Using GPU PhysX
+Physics Engine: PhysX
+Physics Device: cuda:0
+GPU Pipeline: disabled
+Segmentation fault (core dumped)
+```
+
+如果指定训练 legged_gym 为 headless，不会出现错误。如果指定渲染图形界面模式，会出现错误。
+
+解决方案，安装 OpenGL 工具和库：
+
+```bash
+apt install -y mesa-utils libglvnd-dev
+```
+
+为了在 play 时候正常使用界面，依然需要安装：
+
+```bash
+apt install -y libglfw3 libglfw3-dev libgl1-mesa-dev libx11-dev
+```
+
 
 ## Ref and Tag
 
