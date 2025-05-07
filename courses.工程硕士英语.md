@@ -2,7 +2,7 @@
 id: rjexswayh0yvitkaf9qez5n
 title: 工程硕士英语
 desc: ''
-updated: 1744688701408
+updated: 1746501971528
 created: 1740448957635
 ---
 
@@ -108,5 +108,9 @@ Common mistakes:
 2. Bury your readers in detail
     - Before: A previous study conducted in 2014 found that 10% fewerindividuals were diagnosed with age-related diseases, suchas arthritis, in areas with such healthcare policies in place.
     - Adjusted: A previous study found that fewer individuals werediagnosed with age-related diseases in areas with suchhealth care policies.
+
+## 2025年5月6日
+
+论文如果不算抄袭，引用别人论文时，要用自己的语言组织来描述别人的工作，尽量用不同的词描述。
 
 ## Ref and Tag

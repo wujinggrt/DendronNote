@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1744868632826
+updated: 1746422461193
 created: 1741144146461
 ---
 
@@ -489,7 +489,7 @@ def numpy_to_base64(np_image: np.ndarray) -> str:
     # 转换维度顺序为HWC格式（如果必要），3 通道代表 RGB，4 代表 RGBA
     if np_image.shape[-1] not in [3, 4]:
         np_image = np.transpose(np_image, (1, 2, 0))
-    # 转换为PIL图像并编码
+    # 转换为PIL图像并编
     pil_img = Image.fromarray(np_image)
     buffered = BytesIO()
     pil_img.save(buffered, format="JPEG")

@@ -1,6 +1,8 @@
 #!/usr/bin/bash or zsh
-# 需要在 root 下执行
-# 执行使用sudo sh ./terminal_setup.sh
+# 执行使用 . ./terminal_setup.sh，随后用到 sudo 的命令会提示输入 sudo 密码，输入即可
+# 如果用户是 root，不会要求提醒输入密码，但会直接安装到 root 用户
+# 在镜像中，默认 root 用户，并且没有 sudo 命令，所以需要删除此脚本的所有 sudo，操作如下：
+# perl -i.bak -wple 's/sudo\s+//g' ./terminal_setup.sh
 UBUNTU_VERSION=$(lsb_release -d | perl -wnlae '$F[2] =~ /(\d\d\.\d\d)\.\d+/ and print $1')
 EMAIL_ADDRESS=wujinggrt@qq.com
 USER=wj-24
@@ -154,4 +156,28 @@ if [[ -n $DOCKER ]]; then
     fi
 fi
 
+# 初始假设默认是 Bash
+shell_name='bash'
+if shopt -u lastpipe 2> /dev/null; then
+    # 当前 shell 是 Bash，下面的 : 相当于 Python pass
+    :
+else
+    # 当前 shell 是 Zsh 或其他 shell
+    if [[ -n $ZSH_VERSION ]]; then
+        shell_name='zsh'
+    else
+        # 当前使用的 shell 不是 Bash 或 Zsh
+        shell_name=''
+    fi
+fi
 
+# 根据 shell 名称加载相应的配置文件
+if [ "$shell_name" = "bash" ]; then
+    if [ -f ~/.bashrc ]; then
+        . ~/.bashrc
+    fi
+elif [ "$shell_name" = "zsh" ]; then
+    if [ -f ~/.zshrc ]; then
+        . ~/.zshrc
+    fi
+fi

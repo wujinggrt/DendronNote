@@ -2,7 +2,7 @@
 id: 7gk7py1tpsw1r4w8kms09q5
 title: Frp_内网穿透
 desc: ''
-updated: 1745411230085
+updated: 1746216456698
 created: 1744446321714
 ---
 
@@ -43,7 +43,7 @@ flowchart TD
     Borwser <--http--> S
 ```
 
-## SSH 内网穿透
+## TCP 类型传统：以 SSH 内网穿透为例
 
 在 pub 上，修改 frps.toml：
 
@@ -97,6 +97,8 @@ ssh loc的用户名@pub的公网IP -p 7001
 ```bash
 sftp -P 7001 user@ip-addr
 ```
+
+其余的 TCP 类型协议，比如 VNC，WebDAV 等都可以用此方法转发来代理。
 
 ## HTTP 内网穿透
 

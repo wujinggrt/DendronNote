@@ -2,7 +2,7 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA_阅读代码和复现
 desc: ''
-updated: 1744912564030
+updated: 1746468208978
 created: 1740053039805
 ---
 
@@ -125,6 +125,39 @@ class DataArguments:
 使用 `ml_utils.load_model` 加载预训练的视觉-语言模型（VLM）和扩散专家（Diffusion Expert）。
 
 ```py
+def load_model(config=None, qwen2_vla_config=None, rank0_print=print, tokenizer=None):
+    ...
+    if training_args.load_pretrain: # loading pretrained weights
+        # 用于加载阶段 3 的训练
+        ...
+        else:
+            model = AutoModelForCausalLM.from_pretrained(
+                model_base,
+                config=qwen2_vla_config,
+                cache_dir=config['training_args'].cache_dir,
+                trust_remote_code=True,
+                _fast_init=False,
+                # attn_implementation="flash_attention_2",
+            )
+    else:
+        # 加载阶段 2 的训练
+        ...
+        else:
+            model = AutoModelForCausalLM.from_pretrained(
+                config['model_args'].model_name_or_path,
+                config=qwen2_vla_config,
+                cache_dir=config['training_args'].cache_dir,
+                trust_remote_code=True,
+                _fast_init=False,
+                # attn_implementation="flash_attention_2",
+                # **kwargs, # specified device map and dtype may cause nan initialize
+            )
+    ...
+```
+
+```py
+def main(...):
+    ...
     # load qwen2_vl tokenizer
     tokenizer = transformers.AutoTokenizer.from_pretrained(
         all_config["model_args"].model_name_or_path,
@@ -849,7 +882,7 @@ class Qwen2VLForConditionalGenerationForVLA(Qwen2VLPreTrainedModel, GenerationMi
         # 输入投影层，来自于 Fusion 模块
         self.input_action_proj = ActionProjector(config.hidden_size, config.hidden_size)
 
-        # 是否使用 film 来 fusion，默认使用
+        # 是否使用 film 来 fusion，默认使用 using_film
         if self.using_film:
             # Initialize projection layers and condition modulation layers
             # 嵌入 condition，即文本的 embedding。主要是放缩和偏移。
@@ -909,7 +942,9 @@ class Qwen2VLForConditionalGenerationForVLA(Qwen2VLPreTrainedModel, GenerationMi
         ...
         # 使用 FiLM 融合
         if self.using_film:
-            # (batch_size, hidden_dim)
+            # DexVLA 需要使用 using_film，所以用此分支。
+            # hidden_states 维度：(batch_size, hidden_dim)
+            # 不用最后一层的 logits
             action_hidden_states = self.film_forward(
                 labels=labels, input_ids=input_ids, hidden_states=hidden_states
             )
@@ -1162,6 +1197,53 @@ VLA 的输入中，修改了 forward() 的 API，删去了最后一个参数，c
 
 可以从 get_train_dataloader() 方法看出，大部分是复制 Trainer 的源代码，修改部分来适配当前任务。
 
+### 需要更新权重的模块
+
+原论文在 Stage 2 借鉴了 LLaVA 的多阶段训练方法，联合训练 VLM，MLP 和扩散专家，冻结 VLM 的 ViT 部分。需要更新参数的部分，参考 create_optimizer() 方法，只会更新 `require_grad=True` 的张量。具体参考 qwen2_vla/model_load_utils.py:load_model() 函数。
+
+冻结参数由如下决定：
+
+```py
+def load_model(config=None, qwen2_vla_config=None, rank0_print=print, tokenizer=None):
+    ...
+    model_args.freeze_backbone = training_args.freeze_backbone
+    if model_args.freeze_backbone:
+        model.requires_grad_(False)
+    else:
+        model.requires_grad_(True)
+
+    model.visual.requires_grad_(True) # set to true first
+    model.config.freeze_vision_tower = model_args.freeze_vision_tower = training_args.freeze_vision_tower
+    if model_args.freeze_vision_tower:
+        for n,p in model.visual.named_parameters():
+            if not 'lora' in n.lower():
+                p.requires_grad = False
+    else:
+        for p in model.visual.parameters():
+            p.requires_grad = True
+    ...
+    if not model_args.freeze_backbone:
+        try:
+            model.lm_head.requires_grad_(True)
+        except Exception as e:
+            print(e)
+    # action head need to be trained
+    model.policy_head.requires_grad_(True)
+
+    if config['model_args'].using_film:
+        model.input_action_proj.requires_grad_(True)
+        model.reasoning_action_proj.requires_grad_(True)
+        model.reasoning_film.requires_grad_(True)
+```
+
+首先根据 freeze_backbone 来设置整个模型更新梯度选项，后续根据冻结粒度重新设置需要更新和冻结的模块。在视觉部分，先设置所有视觉编码部分为可更新梯度。如果参数 freeze_vision_tower 为 True，仅仅更新 lora 部分；反之，全部更新视觉编码器部分。在 stage 2 & 3，传入 freeze_backbone 和 freeze_vision_tower 都为 False，全量更新参数。
+
+需要更新参数的模块有 lm_head, policy_head, input_action_proj, reasoning_action_proj, reasoning_film。分别对应扩散专家，MLPs 和 FiLM 部分。
+
+如果需要用 lora 微调，需要指定 freeze_backbone 和 freeze_vision_tower 为 True。
+
+是否可以借鉴 Qwen VL 系列来多阶段训练，以达到更优对齐效果。
+
 ### dataset 设置流程
 
 ```mermaid
@@ -1340,6 +1422,8 @@ self.optimizer = optimizer_cls(
     optimizer_grouped_parameters, **optimizer_kwargs
 )
 ```
+
+论文指出，第二阶段联合训练 VLM，投影层和扩散专家，冻结 visual encoder。可以从优化器查看，哪些部分冻结，哪些部分训练。
 
 ### training_step()
 
@@ -1718,6 +1802,31 @@ HiRT 发表了论文，解决了 VLM 模型与策略模型生成速度不匹配�
 #### Q：在 class Qwen2VLForConditionalGenerationForVLA 中，扩散专家是怎么调用的
 
 #### Q：forward() 中的 hidden_states 是什么
+
+## Insights
+
+这些本质还是 VLM 生成子推理，与使用了 logits 转化为子推理语句后的文本内容并无差别。我认为还是应该使用输出后的文本作为条件输入，通过 prompt 要求输出短文本。
+
+比如，在 DexGraspVLA，想要实现远处由主相机抓取，接近后由腕部相机抓取，那么可以使用 VLM 判断机械臂是否接近，输出的文字作为 condition，来训练。
+
+需要一个有一定能力的小模型，对齐大模型。
+
+使用 VLM 的输出当做门控的两阶段思路：
+1. 手臂距离较远时，文本应当是“关注头部图像”，注意力应当聚焦在头部图像，然后机械臂抓取。
+2. 靠近时，文本应当是“关注腕部相机”，这样达到注意力机制是关注腕部相机部分更多，然后再慢慢靠近并抓取。但是，需要提供抓取的 hint，才更有效吧。hint 应当是 SAM2 + Cuitie 的分割。
+
+通过机械手和物体的 bbox 判断机械臂是否靠近？
+
+运用 MoE 激活参数的思路，如何可视化 MoE 激活的部分？这是需要做的。MoE 来完成这样的工作，关注不同区域。当条件时关注头部图像时，SAM2 分割头部图像；关注腕部，分割腕部头像。分割部分的 hint 模块是灵活的。
+
+需要注意小模型的掩码构造？
+
+训练思路也是先分阶段训练：训练头部相机机械臂靠近，再训练关注腕部相机时协同靠近和抓取。
+
+创新点：
+1. 小模型两阶段训练；
+2. 大模型动态分析注意力部分，对齐。
+3. 小模型 MoE；
 
 ## Tag and Ref
 

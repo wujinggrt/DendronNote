@@ -1,5 +1,7 @@
 #!/usr/bin/bash or zsh
 # source ./zsh_setup.sh
+# 在镜像中，默认 root 用户，并且没有 sudo 命令，所以需要删除此脚本的所有 sudo，操作如下：
+# perl -i.bak -wple 's/sudo\s+//g' ./zsh_setup.sh
 sudo apt update && sudo apt install -y zsh
 # ohmyzsh
 # sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
@@ -20,10 +22,14 @@ perl -i.bak -wple 's/(ZSH_THEME=)(.*)$/$1"powerlevel10k\/powerlevel10k"/g;' ~/.z
 perl -i.bak -wple 's/(plugins=)(.*)$/$1\(git zsh-autosuggestions z zsh-syntax-highlighting fast-syntax-highlighting\)/g;' ~/.zshrc
 
 # 设置 .zshrc
+LOCAL_PROFILE="$HOME/.local_profile"
 cat >> ~/.zshrc <<- EOF
-if [[ -f ~/.local_profile ]]; then
-        source ~/.local_profile
+if [[ -f $LOCAL_PROFILE ]]; then
+        . $LOCAL_PROFILE
 fi
+EOF
+
+cat >> $LOCAL_PROFILE <<- EOF
 # ctrl+u clear cursor before
 bindkey '^U' backward-kill-line
 bindkey '^]' autosuggest-accept
@@ -34,16 +40,21 @@ alias tnew='tmux new -s'
 alias tls='tmux ls'
 alias tat='tmux attach -t'
 
+# docker
+alias drr='docker run -it --rm'
+alias de='docker exec -it'
+alias ds='docker stop'
+alias drm='docker rm'
+
 alias pe='perl -wlne'
 
 alias gS='git status'
 alias gs='git stage'
 
-alias drr='docker run -it --rm'
-alias de='docker exec -it'
-
 # 开启系统代理
 function proxy_on() {
+        # proxy_on
+        # proxy_on {{prot#}}
         local port=7890
         if [[ $# -eq 1 && $1 =~ ^[0-9]+$ ]]; then
                 port=$1
@@ -76,11 +87,11 @@ export HF_HOME="/data1/wj_24/.cache/huggingface"
 # export HOME="/data1/wj_24"
 
 export HF_TOKEN="*******************"
-export LD_LIBRARY_PATH=/usr/local/cuda-12.6/lib64:$LD_LIBRARY_PATH
+#export LD_LIBRARY_PATH=/usr/local/cuda-12.6/lib64:$LD_LIBRARY_PATH
 
 
 export WANDB_API_KEY="*********************"
 EOF
 
-# chsh -s $(which zsh)
+sudo chsh -s $(which zsh)
 # 下一次进终端便可配置 zsh 的 powerlevel10k 外观

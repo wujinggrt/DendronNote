@@ -2,7 +2,7 @@
 id: h8tb3c7d4h53sonlniytpp3
 title: 卸载和安装
 desc: ''
-updated: 1744042508476
+updated: 1746456352039
 created: 1744041065305
 ---
 
@@ -56,9 +56,7 @@ sudo rm -rf /var/lib/docker
 wget http://mirror.fishros.com/install/install.py -O install.py
 ```
 
-考察此文件，安装 Docker 对应脚本：
-
-tools/tool_install_docker.py
+考察此文件，安装 Docker 对应脚本为 tools/tool_install_docker.py。
 
 ## Ref and Tag
 
