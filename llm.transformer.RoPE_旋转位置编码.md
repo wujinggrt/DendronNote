@@ -2,7 +2,7 @@
 id: 607ng4ib05dyd441uqnus6n
 title: RoPE_旋转位置编码
 desc: ''
-updated: 1745945035448
+updated: 1746719857595
 created: 1745859217851
 ---
 
@@ -92,7 +92,27 @@ g(\boldsymbol{x}_m, \boldsymbol{x}_n, m - n) &= \operatorname{Re} \left[ (\bolds
 \end{align*}
 $$
 
-其中，Re 代表复数的实部。使用复数和欧拉公式等推导（省略），$f_q$ 可以表示为：
+其中，Re 代表复数的实部。使用复数和欧拉公式等推导（省略）。其中，复数可以使用矩阵表达：
+
+$$
+a + bi \quad \leftrightarrow \quad \begin{pmatrix} a & -b \\ b & a \end{pmatrix}
+$$
+
+$$
+\begin{align*}
+(a + bi)(c + di) &= (ac - bd) + (ad + bc)i \\
+\begin{pmatrix} a & -b \\ b & a \end{pmatrix}
+\begin{pmatrix} c & -d \\ d & c \end{pmatrix}
+&=
+\begin{pmatrix} ac - bd & -ad - bc \\ ad + bc & ac - bd \end{pmatrix}
+\end{align*}
+$$
+
+$$
+\cos n \theta + \boldsymbol{i} \sin n\theta \leftrightarrow \begin{pmatrix} \cos m \theta & -\sin m \theta \\ \sin m \theta & \cos m \theta \end{pmatrix}
+$$
+
+最终 $f_q$ 可以表示为：
 
 $$
 \begin{align*}
@@ -198,7 +218,6 @@ x_{d-2}
 \sin m\theta_{d/2-1} \\
 \sin m\theta_{d/2-1}
 \end{pmatrix}
-\tag{15}
 $$
 
 $\otimes$ 代表逐位相乘，对应 PyTorch 的 `*` 操作，将两个张量的每个元素相乘，而非矩阵乘法。

@@ -2,7 +2,7 @@
 id: 2nbimo1w05qd1lpgkghblc7
 title: Qwen2.5-VL
 desc: ''
-updated: 1746444113600
+updated: 1746718284094
 created: 1740130046405
 ---
 
@@ -23,15 +23,17 @@ Qwen2.5-VL 的核心思路在于通过以下几个方面提升 LVLM 的性能：
 ## 方案与技术
 
 **模型架构**：
-- **LLM**：采用 Qwen2.5 LLM 的预训练权重作为初始化，并修改了 1D RoPE 为多模态旋转位置嵌入（Multimodal Rotary Position Embedding Aligned to Absolute Time, MRoPE）。
+- **LLM**：采用 Qwen2.5 LLM 的预训练权重作为初始化，并修改了 1D RoPE 为多模态旋转位置嵌入（Multimodal Rotary Position Embedding Aligned to Absolute Time, MRoPE），并与绝对时间对齐。
 - **视觉编码器**：重新设计的 Vision Transformer (ViT) 架构，集成了 2D-RoPE 和窗口注意力机制，以支持原生输入分辨率并加速计算。
-- **Vision-Language Merger**：采用基于 MLP 的方法**压缩**图像特征序列，将空间相邻的四个 patch 特征组合并通过两层 MLP 投影到与 LLM 文本嵌入对齐的维度。
+- **基于 MLP 的 Vision-Language Merger**：采用基于 MLP 的方法**压缩**图像特征序列，将空间相邻的四个 patch 特征组合并通过两层 MLP 投影到与 LLM 文本嵌入对齐的维度。
 
 **快速高效的视觉编码器**：
 - 在大多数层中引入窗口注意力机制，确保计算成本与 patch 数量呈线性关系。
 - 采用 2D 旋转位置嵌入（RoPE）来有效捕获 2D 空间中的空间关系。
 - 对于视频数据，将连续两帧分组在一起，减少输入到语言模型的 tokens 数量。
 - 采用 RMSNorm 进行归一化，并使用 SwiGLU 作为激活函数，以提高计算效率和视觉与语言组件之间的兼容性。
+
+MRoPE 位置编码把 text, image, video 三种模态统一作位置编码，作用于 LLM。每个 token 用 [t, h, w] = (frame_idx, height_idx, width_idx) 三个位置表示。
 
 **原生动态分辨率和帧率**：
 - 在空间域，动态地将不同大小的图像转换为具有相应长度的 tokens 序列。
@@ -183,5 +185,11 @@ special_tokens={
 [Qwen2.5-VL相比Qwen2-VL的主要改进 - 特里斯丹的文章 - 知乎](https://zhuanlan.zhihu.com/p/25692213650)
 
 [官网博客介绍](https://qwenlm.github.io/blog/qwen2.5-vl/)
+
+Qwen系列解读：回顾Qwen2.5-VL，目前最好的多模态开源算法之一 - 曾天真的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1897297231637357678
+
+QWen2.5 VL 阅读记录 - 奇奇的文章 - 知乎
+https://zhuanlan.zhihu.com/p/26113026053
 
 #LLM
