@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1744868282812
+updated: 1746720967420
 created: 1738165674608
 ---
 
@@ -97,6 +97,15 @@ https://wildlma.github.io/
 
 近几年VLA方案调研（截止25.03.14） - 张云聪的文章 - 知乎
 https://zhuanlan.zhihu.com/p/30182000493
+
+### 开阔视野
+
+Diffusion as Shader: 更接近现实世界的3D可控视频生成 - 曾天真的文章 - 知乎
+https://zhuanlan.zhihu.com/p/18584496690
+> 如果使用扩散专家方案，是否可以关注让扩散生成更细节的动作？也可以转化为可控的扩散生成？
+
+同上
+https://arxiv.org/pdf/2504.20690 
 
 ## RL
 在线强化学习改进VLA模型 - 黄浴的文章 - 知乎
