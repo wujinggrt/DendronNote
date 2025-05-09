@@ -2,11 +2,11 @@
 id: c94nomsi6llb1p1j0av6vx1
 title: 调整_CPU_为高性能模式
 desc: ''
-updated: 1742350325827
+updated: 1746597082982
 created: 1742350274860
 ---
 
-调整CPU为高性能模式需要安装cpufrequtils，随后调整。要求在root用户下执行，命令总结如下：
+调整CPU为高性能模式需要安装 cpufrequtils，随后调整。要求在 root用户下执行，命令总结如下：
 
 ```bash
 sudo su

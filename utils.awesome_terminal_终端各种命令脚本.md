@@ -2,14 +2,47 @@
 id: ovto6hepvtttctxmnypiebq
 title: Awesome_terminal_终端各种命令脚本
 desc: ''
-updated: 1745865669493
+updated: 1746597892331
 created: 1742868524198
 ---
+
+## 重定向
+
+### Here Documents
+
+用法：
+
+```bash
+cat << EOF
+<html> 
+  <head> 
+    <title>$TITLE</title> 
+  </head> 
+  <body> 
+    <h1>$TITLE</h1> 
+    <p>$TIMESTAMP</p>
+  </body> 
+</html>
+EOF
+```
+
+有时候，为了美观，不需要前置空白字符（包括制表符）时，可以使用 `<<-` 的形式：
+
+```bash
+ftp -n <<- _EOF_ 
+  open $FTP_SERVER 
+  user anonymous me@linuxbox 
+  cd $FTP_PATH 
+  hash 
+  get $REMOTE_FILE 
+  bye 
+_EOF_
+```
 
 ## 工作 job 管理
 
 ```py
-{{any_command}} &             # 在后台运行某命令，也可用 CTRL+Z 将当前进程挂到后台
+{{any_command}} &         # 在后台运行某命令，也可用 CTRL+Z 将当前进程挂到后台
 jobs                      # 查看所有后台进程（jobs）
 bg                        # 查看后台进程，并切换过去
 fg                        # 切换后台进程到前台
