@@ -2,7 +2,7 @@
 id: 8uriumohgfxd1icere7lvus
 title: AI_paper_reading_辅助论文和代码阅读
 desc: ''
-updated: 1746721595283
+updated: 1746764591130
 created: 1740377066945
 ---
 
@@ -124,3 +124,6 @@ https://zhuanlan.zhihu.com/p/25296368487
 ## Ref and Tag
 [论文解读工作流](https://zhuanlan.zhihu.com/p/16619370854)
 [锦恢向大模型如 DeepSeek 上传论文 PDF，发现模型对细节的理解能力很强。关键在于提供有效的上下文](https://www.zhihu.com/pin/1875019045138489344)
+
+关于大模型时代计算机专业学生如何学习? - tomsheep的回答 - 知乎
+https://www.zhihu.com/question/1892623315119609185/answer/1903507939794326874

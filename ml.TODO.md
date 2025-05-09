@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1746720967420
+updated: 1746763464499
 created: 1738165674608
 ---
 
@@ -196,6 +196,11 @@ https://zhuanlan.zhihu.com/p/29123783155
 
 【论文解读】：START：让大模型学会「借工具思考」 - tomsheep的文章 - 知乎
 https://zhuanlan.zhihu.com/p/28933816497
+
+## Humanoid
+
+Homie
+https://github.com/OpenRobotLab/OpenHomie
 
 ## Hack 和工程能力
 
