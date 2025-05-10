@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1746763464499
+updated: 1746803629243
 created: 1738165674608
 ---
 
@@ -175,6 +175,13 @@ https://zhuanlan.zhihu.com/p/14681365893
 
 Kimi K1.5: Long Context RL 的成功实践 - Chayenne Zhao的文章 - 知乎
 https://zhuanlan.zhihu.com/p/1894282607325344277
+
+### 借鉴如何抽象问题和定义 reward
+
+LEPA：让大模型在自训练中学会“先规划后作答” - 熵基跃迁的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1902287686124963811
+
+Flow-GRPO: https://arxiv.org/html/2505.05470v1
 
 ### World Model
 
