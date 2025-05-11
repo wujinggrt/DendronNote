@@ -2,7 +2,7 @@
 id: lpte0rof6j18ynbemekbxfj
 title: In-Context_Edit_只需微调很小的参数可以编辑图像
 desc: ''
-updated: 1746868728111
+updated: 1746941846961
 created: 1746721526427
 ---
 
@@ -102,7 +102,7 @@ IC prompt 强化了 DiT 模型，模型以双联画的形式生成编辑后的�
 
 Mixutre of LoRAs: MoE 范式有两个优势：1. 定制化地处理。每个专家关注独有的操作；2. 动态计算，通过路由机制选择特定专家。
 
-作者使用混合 LoRA-MoE 结构，用于 DiT block。包含了平行 LoRA 专家，
+作者使用混合 LoRA-MoE 结构，用于 DiT block。包含了平行 LoRA 专家，集成到了多模态注意力模块的输出投影层 (FFN)。一共有 N 个LoRA 专家，rank r 和 scaling factor $\alpha$。对于每个输入 token，通过路由分类器 $G$ 选择最合适的专家。
 
 3.  **早期滤波器推理时缩放 (Early Filter Inference Time Scaling, §3.3)：**
     *   **动机：** **初始噪声**对最终编辑结果质量**影响显著**。对于指令编辑任务，编辑成功与否往往在去噪过程的早期少数几步就能显现。
