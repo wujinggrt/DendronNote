@@ -119,6 +119,8 @@
         "<C-t>": false,
         "<C-v>": false,
         "<C-x>": false,
+        "<C-e>": false,
+        "<C-y>": false,
         "<C-z>": false
     },
     "vim.normalModeKeyBindingsNonRecursive": [
