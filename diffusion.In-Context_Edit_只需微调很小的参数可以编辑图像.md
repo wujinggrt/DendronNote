@@ -2,7 +2,7 @@
 id: lpte0rof6j18ynbemekbxfj
 title: In-Context_Edit_只需微调很小的参数可以编辑图像
 desc: ''
-updated: 1746941846961
+updated: 1746954680437
 created: 1746721526427
 ---
 
@@ -102,17 +102,32 @@ IC prompt 强化了 DiT 模型，模型以双联画的形式生成编辑后的�
 
 Mixutre of LoRAs: MoE 范式有两个优势：1. 定制化地处理。每个专家关注独有的操作；2. 动态计算，通过路由机制选择特定专家。
 
-作者使用混合 LoRA-MoE 结构，用于 DiT block。包含了平行 LoRA 专家，集成到了多模态注意力模块的输出投影层 (FFN)。一共有 N 个LoRA 专家，rank r 和 scaling factor $\alpha$。对于每个输入 token，通过路由分类器 $G$ 选择最合适的专家。
+作者使用混合 LoRA-MoE 结构，用于 DiT block。包含了平行 LoRA 专家，集成到了多模态注意力模块的输出投影层 (FFN)。一共有 N 个LoRA 专家，rank r 和 scaling factor $\alpha$。对于每个输入 token，通过路由分类器 $G$ 选择最合适的专家。路由会保留 top-k 个专家。
+
+$$
+\text{Output} = \text{BaseLayer}(x) + \frac{\alpha}{r} \sum_{i=1}^{N} G(x)_i \cdot B_i \cdot A_i \cdot x
+$$
+
+$$
+G(x)_i = \text{softmax}(\text{TopK}(g(x), k))_i
+$$
+
+ $B_i \in \mathbb{R}^{d \times r}$ and $A_i \in \mathbb{R}^{r \times k}$ with $r \ll \min(d, k)$ represent the learned weights for the $i$-th LoRA expert, and $x \in \mathbb{R}^k$ is the input tokens. The routing classifier assigns a selection probability $G(x)_i$ to each expert, and the final output is the weighted sum of the experts' outputs.
+
 
 3.  **早期滤波器推理时缩放 (Early Filter Inference Time Scaling, §3.3)：**
-    *   **动机：** **初始噪声**对最终编辑结果质量**影响显著**。对于指令编辑任务，编辑成功与否往往在去噪过程的早期少数几步就能显现。
+    *   **动机：** **初始噪声**对最终编辑结果质量**影响显著**。对于指令编辑任务，编辑成功与否往往在去噪过程的早期少数几步就能显现。一些能够明显地对齐人类偏好。在推理时期，选择合适的 nosies 证实有效 [27, 50]。
     *   **流程：**
-        1.  **候选生成：** 采样 `m` 个不同的初始噪声候选。
+        1.  **候选生成：** 采样 `M` 个不同的初始噪声候选。
         2.  **初步编辑：** 对每个噪声候选执行 `m` 步（`m` 远小于总去噪步数 `n`）的初步去噪，得到 `M` 个早期编辑结果。
         3.  **VLM 评估：** 使用一个视觉语言模型 (VLM，如 Qwen-VL) 评估这 `M` 个早期结果与编辑指令的符合程度。
         4.  **最优选择：** 通过类似冒泡排序的成对比较选出最佳的噪声候选。
         5.  **最终生成：** 使用选出的最优噪声，执行完整的 `n` 步去噪过程，生成最终编辑图像。
     *   **优势：** 提高了编辑的稳定性和输出质量，使得结果更符合人类偏好。
+
+![inference_time_scalling](assets/images/diffusion.In-Context_Edit_只需微调很小的参数可以编辑图像/inference_time_scaling.png)
+
+Insight: **不同于生成式任务，图像领域仅较少 steps，便可判断是否能够对齐到指令。**
 
 *   **Mermaid 流程图：**
     ```mermaid
