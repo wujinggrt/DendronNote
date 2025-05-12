@@ -2,7 +2,7 @@
 id: ofrxkx80oycjvdala8m9sik
 title: RDT
 desc: ''
-updated: 1746971924907
+updated: 1746981130614
 created: 1746971411816
 ---
 
@@ -50,7 +50,7 @@ created: 1746971411816
     ```mermaid
     graph LR
         A[双臂操作基础模型研发] --> B{核心挑战};
-        B --> C1[双臂协调复杂性 (多模态动作)];
+        B --> C1[双臂协调复杂性：多模态动作];
         B --> C2[数据稀缺];
         B --> C3[模型架构局限];
         B --> C4[跨机器人数据异构性];
@@ -79,16 +79,16 @@ created: 1746971411816
 本文提出的 Robotics Diffusion Transformer (RDT) 是一个专为双臂操作设计的语言条件视觉运动策略。其核心思想是利用扩散模型强大的分布表示能力来捕捉双臂操作中固有的多模态动作，并结合 Transformer 的可扩展性处理异构输入。
 
 1.  **RDT 模型 (Diffusion Modeling for Robotics)：**
-    *   **目标：** 学习条件概率分布 `p(a_t | l, o_t)`，其中 `a_t` 是动作，`l` 是语言指令，`o_t` 是观测。
-    *   **扩散过程：** 与标准扩散模型类似，通过 K 步去噪过程从纯噪声动作 `a_t^K` 恢复到干净动作 `a_t^0`。
-    *   **网络 `f_θ`：** 学习一个去噪网络 `f_θ(l, o_t, a_t^k, k)` 来预测干净动作，通过最小化 MSE 损失进行训练：`L(θ) := MSE (a_t, f_θ(l, o_t, sqrt(ᾱ_k)a_t + sqrt(1-ᾱ_k)ε, k))`。
-    *   **动作分块 (Action Chunking)：** 实际中预测一个动作序列 `a_t:t+Ta` 以增强时间一致性并减少误差累积。
+    *   **目标：** 学习条件概率分布 $p(a_t | l, o_t)$，其中 $a_t$ 是动作，$l$ 是语言指令，$o_t$ 是观测。
+    *   **扩散过程：** 与标准扩散模型类似，通过 K 步去噪过程从纯噪声动作 $a_t^K$ 恢复到干净动作 $a_t^0$。
+    *   **网络 $f_θ$：** 学习一个去噪网络 $f_θ(l, o_t, a_t^k, k)$ 来预测干净动作，通过最小化 MSE 损失进行训练：$L(θ) := MSE (a_t, f_θ(l, o_t, sqrt(ᾱ_k)a_t + sqrt(1-ᾱ_k)ε, k))$。
+    *   **动作分块 (Action Chunking)：** 实际中预测一个动作序列 $a_t:t+Ta$ 以增强时间一致性并减少误差累积。
     *   **针对机器人数据的架构调整：**
         *   **异构多模态输入编码：**
-            *   **低维输入 (Low-Dimensional Inputs)：** 本体感知 `z_t`、噪声动作块 `ã_t:t+Ta`、控制频率 `c`、扩散时间步 `k`。使用带傅里叶特征的 MLP 进行编码。`z_t` 和 `ã_t:t+Ta` 先嵌入到 PIUAS。
-            *   **图像输入 (Image Inputs)：** 历史图像 `X_t-Timg+1:t+1` (Timg=2, 包含外部、左右腕部相机图像)。使用固定的 SigLIP 编码器，并引入多维位置编码和随机掩码。
-            *   **语言输入 (Language Inputs)：** 语言指令 `l`。使用固定的 T5-XXL 编码器。
-        *   **核心网络 `f_θ` 结构 (基于 Diffusion Transformer - DiT)：**
+            *   **低维输入 (Low-Dimensional Inputs)：** 本体感知 $z_t$、噪声动作块 $ã_t:t+Ta$、控制频率 $c$、扩散时间步 $k$。使用带傅里叶特征的 MLP 进行编码。$z_t$ 和 $ã_t:t+Ta$ 先嵌入到 PIUAS。
+            *   **图像输入 (Image Inputs)：** 历史图像 $X_t-Timg+1:t+1$ (Timg=2, 包含外部、左右腕部相机图像)。使用固定的 SigLIP 编码器，并引入多维位置编码和随机掩码。
+            *   **语言输入 (Language Inputs)：** 语言指令 $l$。使用固定的 T5-XXL 编码器。
+        *   **核心网络 $f_θ$ 结构 (基于 Diffusion Transformer - DiT)：**
             *   **QKNorm & RMSNorm：** 替换 DiT 中的 LayerNorm，以增强数值稳定性并更好地处理时间序列特性。
             *   **MLP 解码器 (MLP Decoder)：** 用非线性 MLP 替换 DiT 末端的线性解码器，以更好拟合非线性机器人动作。
             *   **交替条件注入 (Alternating Condition Injection - ACI)：** 在 DiT 块的交叉注意力层中，交替注入图像和文本 token，而非同时注入，以避免信息量大的图像 token 压制文本信息，从而提升指令跟随能力。
