@@ -2,7 +2,7 @@
 id: ofrxkx80oycjvdala8m9sik
 title: RDT
 desc: ''
-updated: 1746981130614
+updated: 1747042682949
 created: 1746971411816
 ---
 
@@ -81,7 +81,7 @@ created: 1746971411816
 1.  **RDT 模型 (Diffusion Modeling for Robotics)：**
     *   **目标：** 学习条件概率分布 $p(a_t | l, o_t)$，其中 $a_t$ 是动作，$l$ 是语言指令，$o_t$ 是观测。
     *   **扩散过程：** 与标准扩散模型类似，通过 K 步去噪过程从纯噪声动作 $a_t^K$ 恢复到干净动作 $a_t^0$。
-    *   **网络 $f_θ$：** 学习一个去噪网络 $f_θ(l, o_t, a_t^k, k)$ 来预测干净动作，通过最小化 MSE 损失进行训练：$L(θ) := MSE (a_t, f_θ(l, o_t, sqrt(ᾱ_k)a_t + sqrt(1-ᾱ_k)ε, k))$。
+    *   **网络 $f_θ$：** 学习一个去噪网络 $f_θ(l, o_t, a_t^k, k)$ 来预测干净动作，通过最小化 MSE 损失进行训练：$L(θ) := MSE(a_t, f_θ(l, o_t, \sqrt{ᾱ_k}a_t + \sqrt{1-ᾱ_k}ε, k))$。
     *   **动作分块 (Action Chunking)：** 实际中预测一个动作序列 $a_t:t+Ta$ 以增强时间一致性并减少误差累积。
     *   **针对机器人数据的架构调整：**
         *   **异构多模态输入编码：**
@@ -132,9 +132,9 @@ created: 1746971411816
         Freq_Token --> LowDim_Input_Tokens;
         TS_Token --> LowDim_Input_Tokens;
 
-        LowDim_Input_Tokens --> DIT_Blocks[DiT Blocks (L层)];
-        Lang_Tokens -->|交替条件注入 (ACI)| DIT_Blocks;
-        Img_Tokens -->|交替条件注入 (ACI)| DIT_Blocks;
+        LowDim_Input_Tokens --> DIT_Blocks[DiT Blocks L层];
+        Lang_Tokens -->|交替条件注入 ACI| DIT_Blocks;
+        Img_Tokens -->|交替条件注入 ACI| DIT_Blocks;
         DIT_Blocks --QKNorm, RMSNorm--> Processed_Latent;
         Processed_Latent --> MLP_Decoder[MLP 解码器];
         MLP_Decoder --> Output[去噪后动作块 a_t:t+Ta];
