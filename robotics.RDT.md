@@ -2,7 +2,7 @@
 id: ofrxkx80oycjvdala8m9sik
 title: RDT
 desc: ''
-updated: 1747042682949
+updated: 1747102736857
 created: 1746971411816
 ---
 
@@ -85,8 +85,8 @@ created: 1746971411816
     *   **动作分块 (Action Chunking)：** 实际中预测一个动作序列 $a_t:t+Ta$ 以增强时间一致性并减少误差累积。
     *   **针对机器人数据的架构调整：**
         *   **异构多模态输入编码：**
-            *   **低维输入 (Low-Dimensional Inputs)：** 本体感知 $z_t$、噪声动作块 $ã_t:t+Ta$、控制频率 $c$、扩散时间步 $k$。使用带傅里叶特征的 MLP 进行编码。$z_t$ 和 $ã_t:t+Ta$ 先嵌入到 PIUAS。
-            *   **图像输入 (Image Inputs)：** 历史图像 $X_t-Timg+1:t+1$ (Timg=2, 包含外部、左右腕部相机图像)。使用固定的 SigLIP 编码器，并引入多维位置编码和随机掩码。
+            *   **低维输入 (Low-Dimensional Inputs)：** 本体感知 $z_t$、噪声动作块 $ã_t:t+Ta$、控制频率 $c$、扩散时间步 $k$。使用带傅里叶特征的 MLP 进行编码。$z_t$ 和 $ã_t:t+T_a$ 先嵌入到 PIUAS。
+            *   **图像输入 (Image Inputs)：** 历史图像 $X_{t-T_{img}+1:t+1}$ (Timg=2, 包含外部、左右腕部相机图像)。使用固定的 SigLIP 编码器，并引入多维位置编码和随机掩码。
             *   **语言输入 (Language Inputs)：** 语言指令 $l$。使用固定的 T5-XXL 编码器。
         *   **核心网络 $f_θ$ 结构 (基于 Diffusion Transformer - DiT)：**
             *   **QKNorm & RMSNorm：** 替换 DiT 中的 LayerNorm，以增强数值稳定性并更好地处理时间序列特性。

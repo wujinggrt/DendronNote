@@ -2,7 +2,7 @@
 id: eszoks0gixjd0fjyul4wh10
 title: Robotics
 desc: ''
-updated: 1746963837561
+updated: 1747101851718
 created: 1740293600917
 ---
 
@@ -198,5 +198,9 @@ https://zhuanlan.zhihu.com/p/13036626546
 > Diffusion Model Alignment Using Direct Preference Optimization
 
 Diffusion Reward
+
+## 能否创建一个 Context？
+
+Context 包含了很多 VLM 和扩散专家共同理解的特征。直接用 VLM 的 ViT？
 
 ## Ref and Tag

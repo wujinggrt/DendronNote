@@ -2,7 +2,7 @@
 id: rjexswayh0yvitkaf9qez5n
 title: 工程硕士英语
 desc: ''
-updated: 1746501971528
+updated: 1747105700856
 created: 1740448957635
 ---
 
@@ -112,5 +112,9 @@ Common mistakes:
 ## 2025年5月6日
 
 论文如果不算抄袭，引用别人论文时，要用自己的语言组织来描述别人的工作，尽量用不同的词描述。
+
+## 2025年5月13日
+
+可能考：集体主义可能对应 high power，权力较大；个人主义对应 low power，权力较小。
 
 ## Ref and Tag
