@@ -2,7 +2,7 @@
 id: tmruqcalaaqsqzkj35nehsq
 title: Uv
 desc: ''
-updated: 1745944650624
+updated: 1747224179586
 created: 1737822755943
 ---
 
@@ -44,6 +44,8 @@ uv 会自动下载 Python 包，所以上述命令只能够在当前 Python 3.12
 
 ## 用法
 
+### uv pip install
+
 与使用 pip 高度一致，只需要加上 uv 即可。比如：
 ```sh
 # 从镜像网站上拉取安装包
@@ -55,7 +57,7 @@ uv pip install -e .
 uv pip uninstall flask
 ```
 
-pip 的 -f，--find-links 参数，uv pip 使用 --find-links。
+pip install 的 -f，--find-links 参数，uv pip 使用 --find-links。
 
 ```bash
 # pip3 install -f / --find-links	--find-links ...
@@ -63,6 +65,8 @@ uv pip install --find-links {{url}}
 ```
 
 安装的包会放到 .venv/lib/python3.12/site-packages 下。
+
+--no-build-isolation 表示​​禁用构建隔离环境​​。默认情况下，pip 在安装包时会创建一个临时的、隔离的虚拟环境（即“构建隔离”），仅在该环境中安装构建所需的依赖项（如 setuptools、wheel 等），以避免与用户全局环境的依赖发生冲突。使用此参数后，pip 将直接使用当前 Python 环境中已安装的依赖进行构建，跳过隔离环境的创建。
 
 ## 最佳实践
 

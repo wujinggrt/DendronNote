@@ -77,7 +77,7 @@
     "vim.leader": ",",
     "vim.sneak": true,
     "vim.easymotion": true,
-    "vim.camelCaseMotion.enable": true,
+    "vim.camelCaseMotion.enable": false,
     "vim.statusBarColorControl": false,
     "vim.statusBarColors.normal": [
         "#8FBCBB",
@@ -125,8 +125,6 @@
     },
     "vim.normalModeKeyBindingsNonRecursive": [
         {
-            // 配合插件camelCaseMotion使用，将w,b功能替换成在camelCase, snake_case
-            // 之间移动
             "before": [
                 "<Ctrl>",
                 "a"
@@ -139,26 +137,6 @@
                 "G"
             ]
         },
-        // {
-        //     // 配合插件camelCaseMotion使用，将w,b功能替换成在camelCase, snake_case
-        //     // 之间移动
-        //     "before": [
-        //         "w"
-        //     ],
-        //     "after": [
-        //         "<leader>",
-        //         "w"
-        //     ]
-        // },
-        // {
-        //     "before": [
-        //         "b"
-        //     ],
-        //     "after": [
-        //         "<leader>",
-        //         "b"
-        //     ]
-        // },
         {
             "before": [
                 "e"

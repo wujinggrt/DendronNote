@@ -2,7 +2,7 @@
 id: 7gk7py1tpsw1r4w8kms09q5
 title: Frp_内网穿透
 desc: ''
-updated: 1746216456698
+updated: 1747213527578
 created: 1744446321714
 ---
 
@@ -45,6 +45,8 @@ flowchart TD
 
 ## TCP 类型传统：以 SSH 内网穿透为例
 
+### 服务端
+
 在 pub 上，修改 frps.toml：
 
 ```toml
@@ -61,6 +63,8 @@ sudo ufw allow 7001
 ```
 
 **注意**，如果使用云服务器，需要在网页的控制台上设置防火墙来打开端口，仅仅在命令行中使用 ufw 打开端口是无效的。
+
+### 客户端
 
 在 loc (需要被穿透的设备，比如 NAS 服务器) 上，创建 ssh.toml：
 
@@ -98,7 +102,47 @@ ssh loc的用户名@pub的公网IP -p 7001
 sftp -P 7001 user@ip-addr
 ```
 
-其余的 TCP 类型协议，比如 VNC，WebDAV 等都可以用此方法转发来代理。
+其余的 TCP 类型协议，比如 VNC，WebDAV 等都可以用此方法转发来代理。足矣覆盖常见场景。
+
+### 特殊 case
+
+如果一台主机可以 ping 通另一台，而另一台不能够 ping 通此主机。甚至可以利用目标主机来作为 frp 服务器，打开 tcp 端口来实现内网穿透。
+
+以只能被 ping 通的主机作为服务器（IP addr 为 192.168.19.204），设置如下：
+
+```toml
+bindPort = 19879
+```
+
+```bash
+./frps -c frps.toml
+```
+
+在可以 ping 通服务器的主机配置：
+
+```toml
+serverAddr = "192.168.19.204"
+serverPort = 19879
+
+[[proxies]]
+name = "junji-pc-local"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 22
+remotePort = 19878
+```
+
+```bash
+./frpc -c tcp_port.toml
+```
+
+TCP 的包可以通过访问服务器端口 19878，转发到本地的 22 端口上。比如，可以使用 ssh 来访问：
+
+```bash
+ssh -p 19878 wujing@localhost
+```
+
+便可以登录到客户端的主机，实现穿透。
 
 ## HTTP 内网穿透
 

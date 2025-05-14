@@ -2,7 +2,7 @@
 id: vdmg23j454hslejym14pzwt
 title: 使用_GPU
 desc: ''
-updated: 1745981359051
+updated: 1747227431607
 created: 1742306170823
 ---
 
@@ -67,11 +67,15 @@ docker run --gpus '"device=1,2"' 【镜像名】
 
 可能会更繁琐，但是控制粒度更细节。普通时候，使用 --gpus all 一把梭即可。
 
-`-e NVIDIA_VISIBLE_DEVICES=0,1` **更通用，推荐**，不仅适用于 CUDA 应用程序，还适用于其他使用 NVIDIA GPU 的应用程序。而 `CUDA_VISIBLE_DEVICES` 主要针对 CUDA 应用程序。
+`-e NVIDIA_VISIBLE_DEVICES=0,1` 在容器环境下**更通用，推荐**。不仅适用于 CUDA 应用程序，还适用于其他使用 NVIDIA GPU 的应用程序。而 `CUDA_VISIBLE_DEVICES` 主要针对 CUDA 应用程序，并且 `CUDA_VISIBLE_DEVICES` 受限于 `NVIDIA_VISIBLE_DEVICES` 的作用。
 
 `-e NVIDIA_DRIVER_CAPABILITIES=compute,utility` NVIDIA_DRIVER_CAPABILITIES 是一个环境变量，用于指定容器内 NVIDIA 驱动程序所需的能力。这些能力包括计算、图形、视频编码和解码等。
 
 注意，`--privileged` 指定后，就算 NVIDIA_VISIBLE_DEVICES=1 也会看到所有显卡。容器会获得主机的几乎所有权限，包括直接访问所有 GPU 设备。这可能会导致 NVIDIA_VISIBLE_DEVICES 环境变量被忽略，因为特权模式下的容器可以直接访问主机的所有设备。就算是 --gpus 1 也一样。
+
+​​使用建议​​
+- ​​多用户共享 GPU 服务器​​：通过 CUDA_VISIBLE_DEVICES 隔离不同用户的进程。
+- ​​容器化部署​​：优先使用 NVIDIA_VISIBLE_DEVICES 实现硬件级隔离，再结合 CUDA_VISIBLE_DEVICES 细化容器内的 GPU 分配。
 
 ## 例子
 

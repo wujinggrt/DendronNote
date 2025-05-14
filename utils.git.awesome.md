@@ -2,9 +2,23 @@
 id: lrfk6147jm7jwvejhs6zha5
 title: Awesome
 desc: ''
-updated: 1744462267639
+updated: 1747223907974
 created: 1744461965642
 ---
+
+## git pull
+
+拉取远程仓库的特定分支：
+
+```bash
+git clone -b <分支名> <仓库URL>
+```
+
+例子：
+
+```bash
+git clone -b CVPR-Challenge-2025-Round1 git@github.com:TianxingChen/RoboTwin.git
+```
 
 ## 常见使用命令
 
