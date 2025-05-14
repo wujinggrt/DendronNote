@@ -2,7 +2,7 @@
 id: 2nbimo1w05qd1lpgkghblc7
 title: Qwen2.5-VL
 desc: ''
-updated: 1746718284094
+updated: 1747150913524
 created: 1740130046405
 ---
 
@@ -176,6 +176,10 @@ special_tokens={
   'additional_special_tokens': ['<|im_start|>', '<|im_end|>', '<|object_ref_start|>', '<|object_ref_end|>', '<|box_start|>', '<|box_end|>', '<|quad_start|>', '<|quad_end|>', '<|vision_start|>', '<|vision_end|>', '<|vision_pad|>', '<|image_pad|>', '<|video_pad|>']
 }, 
 ```
+
+## 能力类别
+
+各家VL模型或多模态模型的能力大幅偏向OCR/物体识别/HTML类任务，稍微带点逻辑的题目基本都是0分。
 
 ## Tag and Ref
 [【多模态大模型】Qwen2.5-VL解剖 - Plunck的文章 - 知乎](https://zhuanlan.zhihu.com/p/24986805514)

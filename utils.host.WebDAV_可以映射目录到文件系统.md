@@ -2,7 +2,7 @@
 id: qfeqj0o8xylxbs32goxmvql
 title: WebDAV_可以映射目录到文件系统
 desc: ''
-updated: 1745732676674
+updated: 1747150004495
 created: 1745474388082
 ---
 
@@ -233,6 +233,29 @@ docker run -it --rm \
 
 但是，在 Windows 下，映射网络驱动后，修改文件总是提示另存为新的文件，没有 Linux 的方便。
 
+### 注意
+
+如果 nginx 没有 nginx-dav-ext-module 模块，可能报错如下：
+
+```
+unknown directive "dav_ext_methods" in /etc/nginx/conf.d/webdav.conf
+```
+
+dav_ext_methods 是第三方模块 ​​nginx-dav-ext-module​​ 提供的指令，用于扩展 WebDAV 的 PROPFIND、OPTIONS、LOCK、UNLOCK 方法支持。​​标准 Nginx 的 http_dav_module 不包含此指令​​，仅支持基础方法（PUT/DELETE/MKCOL/COPY/MOVE）
+
+解决方案，可以不用这些方法。在 webdav.conf 中注释此句。
+
+也可以扩展方法，重新配置镜像：
+
+```Dockerfile
+FROM nginx:latest
+RUN apt update && apt install -y nginx-extras
+# 开放端口
+EXPOSE 80
+# 启动命令
+CMD ["nginx", "-g", "daemon off;"]
+```
+
 ## 最简单的方式：使用 bytemark/webdav 镜像（推荐）
 
 pull 之后：
@@ -257,27 +280,48 @@ docker run --rm \
 
 直接映射到 data 这种做法更方便。
 
-### 注意
+### 例子
 
-如果 nginx 没有 nginx-dav-ext-module 模块，可能报错如下：
-
+```bash
+docker run \
+  -d --name webdav \
+  -p 6061:80 \
+  -e USERNAME=wj-24 \
+  -e PASSWORD=sciencerobotics \
+  -v ~/share:/var/lib/dav/data \
+  bytemark/webdav:latest
 ```
-unknown directive "dav_ext_methods" in /etc/nginx/conf.d/webdav.conf
-```
 
-dav_ext_methods 是第三方模块 ​​nginx-dav-ext-module​​ 提供的指令，用于扩展 WebDAV 的 PROPFIND、OPTIONS、LOCK、UNLOCK 方法支持。​​标准 Nginx 的 http_dav_module 不包含此指令​​，仅支持基础方法（PUT/DELETE/MKCOL/COPY/MOVE）
+使用 systemd 服务启动：
 
-解决方案，可以不用这些方法。在 webdav.conf 中注释此句。
+```ini
+[Unit]
+Description=WebDAV Container at /home/wujing/share
+Requires=docker.service
+After=docker.service
 
-也可以扩展方法，重新配置镜像：
+[Service]
+#Restart=always
+#RestartSec=10s
+ExecStart=/usr/bin/docker run \
+  --rm \
+  --name webdav_service \
+  -p 6061:80 \
+  -e USERNAME=wj-24 \
+  -e PASSWORD=sciencerobotics \
+  -v /home/wujing/share:/var/lib/dav/data \
+  bytemark/webdav:latest
 
-```Dockerfile
-FROM nginx:latest
-RUN apt update && apt install -y nginx-extras
-# 开放端口
-EXPOSE 80
-# 启动命令
-CMD ["nginx", "-g", "daemon off;"]
+ExecStop=/usr/bin/docker stop webdav_service
+# Optional: If 'docker stop' might hang, you can add a timeout
+# ExecStop=/usr/bin/docker stop -t 10 my_container_name # Stop with a 10-second timeout
+
+# --- Post-stop actions (optional) ---
+# ExecStopPost=/usr/bin/docker rm -f my_container_name # Optional: Remove the container after stopping
+# Be careful with this if you want to preserve data
+
+[Install]
+WantedBy=multi-user.target
 ```
 
 ## 配置内网穿透
