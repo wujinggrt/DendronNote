@@ -2,7 +2,7 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA_阅读代码和复现
 desc: ''
-updated: 1746468208978
+updated: 1747388835445
 created: 1740053039805
 ---
 
@@ -721,7 +721,9 @@ class Attention(nn.Module):
         ...
 ```
 
-use_fused_attn() 是 timm 库提供的环境兼容性检测函数，允许用户通过全局配置强制启用/禁用（如 timm 的 FUSED_ATTENTION 标志），减少硬编码依赖。self.fused_attn 是布尔值，动态选择是否启用融合优化的注意力计算。在支持优化的环境（最新 PyTorch 和 CUDA GPU），启用融合，可以提升性能。如果 self.fused_attn，可以直接用 F.scaled_dot_product_attention()，有优化实现。否则，只能手动实现传统注意力。
+use_fused_attn() 是 timm 库提供的环境兼容性检测函数，允许用户通过全局配置强制启用/禁用（如 timm 的 FUSED_ATTENTION 标志），减少硬编码依赖。self.fused_attn 是布尔值，动态选择是否启用融合优化的注意力计算。在支持优化的环境（最新 PyTorch 和 CUDA GPU），启用融合，可以提升性能。
+
+如果 self.fused_attn，可以直接用 F.scaled_dot_product_attention()，通常**​​有高度优化的底层实现**。
 
 输入格式：forward() 输入 x 为 shape (B, N, C)。attn_mask 中，-inf 代表遮掩。
 

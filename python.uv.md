@@ -2,7 +2,7 @@
 id: tmruqcalaaqsqzkj35nehsq
 title: Uv
 desc: ''
-updated: 1747224179586
+updated: 1747365498862
 created: 1737822755943
 ---
 
@@ -66,7 +66,7 @@ uv pip install --find-links {{url}}
 
 安装的包会放到 .venv/lib/python3.12/site-packages 下。
 
---no-build-isolation 表示​​禁用构建隔离环境​​。默认情况下，pip 在安装包时会创建一个临时的、隔离的虚拟环境（即“构建隔离”），仅在该环境中安装构建所需的依赖项（如 setuptools、wheel 等），以避免与用户全局环境的依赖发生冲突。使用此参数后，pip 将直接使用当前 Python 环境中已安装的依赖进行构建，跳过隔离环境的创建。
+`uv pip install --no-build-isolation` 表示​​禁用构建隔离环境​​。默认情况下，pip 在安装包时会创建一个临时的、隔离的虚拟环境（即“构建隔离”），仅在该环境中安装构建所需的依赖项（如 setuptools、wheel 等），以避免与用户全局环境的依赖发生冲突。使用此参数后，pip 将直接使用当前 Python 环境中已安装的依赖进行构建，跳过隔离环境的创建。
 
 ## 最佳实践
 

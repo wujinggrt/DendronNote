@@ -2,7 +2,7 @@
 id: eszoks0gixjd0fjyul4wh10
 title: Robotics
 desc: ''
-updated: 1747246277235
+updated: 1747388108052
 created: 1740293600917
 ---
 
@@ -153,6 +153,8 @@ RL 不会带来新知识，所以有些内容，还是要先通过其他方式�
 深度部分，使用类似 FoundationStereo 的模型，关于图片，使用一个 Depth Anything V2 估计单目深度；再使用一个共享参数的 CNN 网络，来提取共同的视觉特征。再使用一个 Context 网络模块提取上下文信息。
 
 可以在比赛上，查看引入深度信息到扩散策略的表现。
+
+DexGraspVLA 训练好了实际表现优秀。说明在定位抓取的物体上，DiT 是一个优秀的选择。VLM 应当优先关注定位，再关注规划。
 
 ## VRFT + Robot
 

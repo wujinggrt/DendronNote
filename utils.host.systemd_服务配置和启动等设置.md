@@ -2,7 +2,7 @@
 id: 7d8vhioct7wag76b0fqz8me
 title: Systemd_服务配置和启动等设置
 desc: ''
-updated: 1746522819699
+updated: 1747284214533
 created: 1744559529402
 ---
 
@@ -98,8 +98,15 @@ ExecReload=/bin/kill -HUP $MAINPID
 
 `ExecStart=/path/to/executable`，指定服务的可执行文件路径。可以有多个 ExecStart 指令，systemd 会依次执行。
 
-`Restart={{Option}}`，指定服务的重启策略。选项：no, always, on-failure、on-abort、on-success、on-watchdog。
+`Restart={{Option}}`，指定服务的重启策略。选项：
+- no
+- always: 服务进程退出后，总是重启
+- on-failure: 服务进程​​非正常退出​​（退出码非 0）重启，服务状态的 Active 字段为 failed
+- on-abort
+- on-success
+- on-watchdog
 
+ `RestartSec=5s` 设置重启延迟。通常伴随 `Restart = on-failure` 使用，应对高可用场景。
 
 ### Targets
 
