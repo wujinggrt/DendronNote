@@ -1,8 +1,8 @@
 ---
 id: l1as99asaza2ux0otwtb82q
-title: 使用镜像_指定镜像存储位置
+title: 使用镜像和容器_导出_指定镜像存储位置
 desc: ''
-updated: 1745516471986
+updated: 1747328172905
 created: 1740389762581
 ---
 
@@ -68,6 +68,28 @@ ubuntu        20.04                            6013ae1a63c2   5 months ago    72
 ```
 
 /data1/docker/image/overlay2/imagedb/content/sha256 保存了镜像元数据，具体来说是哈希值。镜像分层文件则在 /data1/docker/image/overlay2/layerdb/sha256 中。
+
+## 导出和导入容器
+
+```bash
+docker export {{container_id}}  -o {{name}}.tar
+```
+
+导入：
+
+```bash
+docker import {{/path/to/your_container.tar}} {{repository:tag}}
+```
+
+或通过管道直接导入：
+
+```bash
+cat your_container.tar | docker import - repository:tag
+```
+
+注意事项，docker export/import ​​与 docker save/load 的区别​​：
+- export/import 操作的是容器文件系统，会丢失历史记录和元数据（如环境变量、端口映射等），仅保存容器当前状态。
+- save/load 操作的是完整镜像，保留所有历史记录和层结构，适合迁移镜像。
 
 ## Ref and Tag
 
