@@ -2,7 +2,7 @@
 id: f05p6c9udsrbsu66kxhfesi
 title: VACE_All_in_One_视频生成和编辑集成到一个模型
 desc: ''
-updated: 1747593950506
+updated: 1747675858415
 created: 1747559246932
 ---
 
@@ -58,8 +58,42 @@ created: 1747559246932
 
 ![task_categories](assets/images/diffusion.VACE_All_in_One_视频生成和编辑集成到一个模型/task_categories.png)
 
+### 模型结构
+
+![vace_framework](assets/images/diffusion.VACE_All_in_One_视频生成和编辑集成到一个模型/vace_framework.png)
+
+重新构造了 DiT 结构，以支持 VCU 输入。文本的 token 化已经很成熟，所以只考虑 context frames 和 masks 的 tokenization。随后，the context tokens 与 noisy video tokens 组合，微调 DiT 模型。作者提出一个 Context Adapter Tuning 策略，the context tokens 可以通过 Context Blocks，并添加到原来的 DiT Block。
+
+#### Context Tokenization
+
+需要将 VCU 输入 tokenize，需要 Concept Decoupling, Context Latent Encode and Context Embedder 来处理。
+
+**Concept Decoupling**: 对输入的视频内容进行语义层面的分解与重组，以支持多任务条件下的灵活视频生成与编辑。其核心思想是：​​将输入的视频帧划分为需修改的“反应帧”（Reactive Frames）和需保留的“非活动帧”（Inactive Frames）​​，从而分离需要编辑的部分与需要保持连贯性的部分。
+
+给定视频帧序列 F 和掩码序列 M（掩码标识需编辑的区域），通过逐帧逐像素的掩码操作：
+- ​​反应帧 F_c ​= F×M​​：提取需修改的区域（如被掩码覆盖的物体、需要重绘的背景）。后续，此部分会发生改变。
+- ​​非活动帧 F_k ​= F×(1−M)​​：保留未被掩码覆盖的区域（如背景、不需要编辑的物体）。后续此部分保留。特别地，reference images 通常在 F_k 部分。
+
+在 ​​文本生成视频（T2V）​​ 任务中，掩码 M 为全零矩阵，所有帧均为非活动帧，模型完全依赖文本生成。
+在 ​​视频编辑​​ 任务中，掩码 M 标记编辑区域（如替换物体），模型仅修改 F_c ​ 对应的内容。
+
+**Context Latent Encoding**: 将视频的时空上下文信息编码为紧凑的潜在表示，为后续生成或编辑任务提供全局一致的语义约束。其核心目标是：​​通过隐式建模视频的时空依赖关系，保留需保留区域（非活动帧）的连贯性，并为需生成区域（反应帧）提供上下文感知的生成条件​​。
+
+DiT 处理 noisy video latents $X \in \mathbb{R}^{n' \times h' \times w' \times d'}$，n' 是时间形状，n' 个帧，h' 和 w' 是高和宽，d' 是潜向量维度。类似地，F_c, F_k, M 也会编码到高维特征空间，以恰当地处理时空关系。F_c 与 F_k 后续都会在 VAE 中处理，映射 F_c 和 F_k 到与噪声 X 的相同潜空间，保持时空一致性。为了保证 reference image 不被杂糅，会单独编码它，之后按照原有的时序维度关系拼接回来。Mask M 直接 reshape 和插值即可。最终，与 X 在时空上对齐，都有形状 n'x h' x w'。
+
+接收来自 ​​Concept Decoupling​​ 的解耦结果：
+- ​​非活动帧潜在特征​​ Z_k​: 对应需保留区域的潜在编码（如背景、未修改物体的特征）。
+- ​​反应帧潜在特征​​ Z_c: 对应需生成/编辑区域的潜在编码（如待修改物体的外观、动作）。
+
+跨帧注意力机制​​：
+通过 ​​Cross-Frame Attention​​ 模块建模帧间依赖：$Z_{out} = \text{Softmax}(\frac{QK^T}{\sqrt{d_k}}) V$
+
+- 在 ​​视频生成（T2V）​​ 中，Z_k​ 为空，模型完全依赖文本生成潜在编码。
+- 在 ​​视频编辑​​ 中，Z_k ​提供保留区域的上下文锚点，确保生成内容与原始视频无缝衔接。
+
+**​​Context Embedder**: 将多模态输入（如视频、文本、掩码）编码为统一的潜在表示，为后续的生成或编辑任务提供语义和时空条件。其核心目标是：​​通过联合建模视频内容与用户指令（如文本提示），提取任务相关的上下文特征，并抑制无关噪声​​。
 
 
-Insights：是否可以通过输入视频模态，让机械臂决定从上抓或下抓。实现 In-Context Learning。
+Insights：是否可以通过输入视频模态，让机械臂决定从上抓或下抓。实现 In-Context Learning。还有，如何考虑机械臂动作的 token 化，也很重要。
 
 ## Ref and Tag
