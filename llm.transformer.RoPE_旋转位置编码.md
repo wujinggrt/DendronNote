@@ -2,7 +2,7 @@
 id: 607ng4ib05dyd441uqnus6n
 title: RoPE_旋转位置编码
 desc: ''
-updated: 1746719857595
+updated: 1747545062244
 created: 1745859217851
 ---
 
@@ -231,6 +231,8 @@ def precompute_freqs_cis(dim: int, seq_len: int, theta: float = 10000.0):
     # 生成 token 序列索引 t = [0, 1,..., seq_len-1]
     t = torch.arange(seq_len, device=freqs.device)
     # freqs.shape = [seq_len, dim // 2]
+    # 生成 t 个 freqs，0 theta, 1 theta, 2 theta, ..., seq_len-1 theta
+    # shape 为 (seq_len, seq_len, dim // 2)
     freqs = torch.outer(t, freqs).float()
     # 假设 freqs = [x, y]
     # 则 freqs_cis = [cos(x) + sin(x)i, cos(y) + sin(y)i]

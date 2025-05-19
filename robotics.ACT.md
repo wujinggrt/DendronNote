@@ -106,6 +106,6 @@ with h5py.File("episode_0_scriped.hdf5", "r") as f:
 
 ## Ref and Tag
 
-[[robotics.DexVLA_阅读代码和复现]]
+[[robotics.DexVLA_code_阅读代码和复现]]
 
 #Robotics

@@ -359,7 +359,7 @@ classDiagram
     QWen2VLATrainer --> EMAModel : Composition
 ```
 
-更多参考 [[训练器：Qwen2VLATrainer|robotics.DexVLA_阅读代码和复现#训练器qwen2vlatrainer]]。
+更多参考 [[训练器：Qwen2VLATrainer|robotics.DexVLA_code_阅读代码和复现#训练器qwen2vlatrainer]]。
 
 
 ### 修改 Trainer 实现 LoRA++

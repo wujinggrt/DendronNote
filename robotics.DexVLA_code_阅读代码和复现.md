@@ -1,8 +1,8 @@
 ---
 id: 4gb9ottxmfh95i6654zy8hq
-title: DexVLA_阅读代码和复现
+title: DexVLA_code_阅读代码和复现
 desc: ''
-updated: 1747388835445
+updated: 1747413301456
 created: 1740053039805
 ---
 
@@ -748,7 +748,7 @@ $$
 
 ![scaledp](assets/images/robotics.DexVLA_阅读代码和复现/scaledp.png)
 
-使用了多层的 ScaleDPBlock。借鉴了 ScaleDP 的工作，使用 Adaptive Layer Norm (DiT 也用到)。参考： <[[Scaling_Diffusion_Policy_in_Transformer_to_1B|robotics.Scaling_Diffusion_Policy_in_Transformer_to_1B#^arh7om3id148]]>
+使用了多层的 ScaleDPBlock。借鉴了 ScaleDP 的工作，使用 Adaptive Layer Norm (DiT 也用到)。参考： <[[ScaledDP_Scaling_Diffusion_Policy_in_Transformer_to_1B|robotics.ScaledDP_Scaling_Diffusion_Policy_in_Transformer_to_1B#^arh7om3id148]]>
 
 ```py
 def modulate(x, shift, scale):

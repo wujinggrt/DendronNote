@@ -2,7 +2,7 @@
 id: kcism5sjj3bvuntcovct65l
 title: 注意力机制公式_漂亮的Attention实现
 desc: ''
-updated: 1745863216042
+updated: 1747591370367
 created: 1741315704596
 ---
 
@@ -140,6 +140,146 @@ class Attention(nn.Module):
 ```
 
 参考 timm 的 Attention。
+
+### 另外实现
+
+```py
+def flash_attention(q, k, v, num_heads):
+    q = rearrange(q, "b s (n d) -> b n s d", n=num_heads)
+    k = rearrange(k, "b s (n d) -> b n s d", n=num_heads)
+    v = rearrange(v, "b s (n d) -> b n s d", n=num_heads)
+    x = F.scaled_dot_product_attention(q, k, v)
+    x = rearrange(x, "b n s d -> b s (n d)", n=num_heads)
+    return x
+
+def sinusoidal_embedding_1d(dim, position):
+    sinusoid = torch.outer(
+        position.type(torch.float64),
+        torch.pow(
+            10000,
+            -torch.arange(dim // 2, dtype=torch.float64, device=position.device).div(
+                dim // 2
+            ),
+        ),
+    )
+    x = torch.cat([torch.cos(sinusoid), torch.sin(sinusoid)], dim=1)
+    return x.to(position.dtype)
+
+
+def precompute_freqs_cis_3d(dim: int, end: int = 1024, theta: float = 10000.0):
+    # 3d rope precompute
+    f_freqs_cis = precompute_freqs_cis(dim - 2 * (dim // 3), end, theta)
+    h_freqs_cis = precompute_freqs_cis(dim // 3, end, theta)
+    w_freqs_cis = precompute_freqs_cis(dim // 3, end, theta)
+    return f_freqs_cis, h_freqs_cis, w_freqs_cis
+
+
+def precompute_freqs_cis(dim: int, end: int = 1024, theta: float = 10000.0):
+    # 1d rope precompute
+    freqs = 1.0 / (theta ** (torch.arange(0, dim, 2)[: (dim // 2)].double() / dim))
+    freqs = torch.outer(torch.arange(end, device=freqs.device), freqs)
+    freqs_cis = torch.polar(torch.ones_like(freqs), freqs)  # complex64
+    return freqs_cis
+
+def rope_apply(x, freqs, num_heads):
+    x = rearrange(x, "b s (n d) -> b s n d", n=num_heads)
+    x_out = torch.view_as_complex(
+        x.to(torch.float64).reshape(x.shape[0], x.shape[1], x.shape[2], -1, 2)
+    )
+    x_out = torch.view_as_real(x_out * freqs).flatten(2)
+    return x_out.to(x.dtype)
+
+
+class RMSNorm(nn.Module):
+    def __init__(self, dim, eps=1e-5):
+        super().__init__()
+        self.eps = eps
+        self.weight = nn.Parameter(torch.ones(dim))
+
+    def norm(self, x):
+        return x * torch.rsqrt(x.pow(2).mean(dim=-1, keepdim=True) + self.eps)
+
+    def forward(self, x):
+        dtype = x.dtype
+        return self.norm(x.float()).to(dtype) * self.weight
+
+
+class AttentionModule(nn.Module):
+    def __init__(self, num_heads):
+        super().__init__()
+        self.num_heads = num_heads
+
+    def forward(self, q, k, v):
+        x = flash_attention(q=q, k=k, v=v, num_heads=self.num_heads)
+        return x
+
+
+class SelfAttention(nn.Module):
+    def __init__(self, dim: int, num_heads: int, eps: float = 1e-6):
+        super().__init__()
+        self.dim = dim
+        self.num_heads = num_heads
+        self.head_dim = dim // num_heads
+
+        self.q = nn.Linear(dim, dim)
+        self.k = nn.Linear(dim, dim)
+        self.v = nn.Linear(dim, dim)
+        self.o = nn.Linear(dim, dim)
+        self.norm_q = RMSNorm(dim, eps=eps)
+        self.norm_k = RMSNorm(dim, eps=eps)
+
+        self.attn = AttentionModule(self.num_heads)
+
+    def forward(self, x, freqs):
+        q = self.norm_q(self.q(x))
+        k = self.norm_k(self.k(x))
+        v = self.v(x)
+        q = rope_apply(q, freqs, self.num_heads)
+        k = rope_apply(k, freqs, self.num_heads)
+        x = self.attn(q, k, v)
+        return self.o(x)
+
+
+class CrossAttention(nn.Module):
+    def __init__(
+        self, dim: int, num_heads: int, eps: float = 1e-6, has_image_input: bool = False
+    ):
+        super().__init__()
+        self.dim = dim
+        self.num_heads = num_heads
+        self.head_dim = dim // num_heads
+
+        self.q = nn.Linear(dim, dim)
+        self.k = nn.Linear(dim, dim)
+        self.v = nn.Linear(dim, dim)
+        self.o = nn.Linear(dim, dim)
+        self.norm_q = RMSNorm(dim, eps=eps)
+        self.norm_k = RMSNorm(dim, eps=eps)
+        self.has_image_input = has_image_input
+        if has_image_input:
+            self.k_img = nn.Linear(dim, dim)
+            self.v_img = nn.Linear(dim, dim)
+            self.norm_k_img = RMSNorm(dim, eps=eps)
+
+        self.attn = AttentionModule(self.num_heads)
+
+    def forward(self, x: torch.Tensor, y: torch.Tensor):
+        if self.has_image_input:
+            img = y[:, :257]
+            ctx = y[:, 257:]
+        else:
+            ctx = y
+        q = self.norm_q(self.q(x))
+        k = self.norm_k(self.k(ctx))
+        v = self.v(ctx)
+        x = self.attn(q, k, v)
+        if self.has_image_input:
+            k_img = self.norm_k_img(self.k_img(img))
+            v_img = self.v_img(img)
+            y = flash_attention(q, k_img, v_img, num_heads=self.num_heads)
+            x = x + y
+        return self.o(x)
+```
 
 ## Ref and Tag
 
