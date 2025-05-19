@@ -2,7 +2,7 @@
 id: pycd8tjfjszc6x3g7ghbhs8
 title: Einops_方便地操作张量
 desc: ''
-updated: 1744880684241
+updated: 1747636951413
 created: 1741161107888
 ---
 
@@ -114,6 +114,10 @@ print(rearrange(t1, 'b h (ph w) -> b w (h ph)', ph=1))
 ```py
 print(rearrange(t1, "b ... -> b (...)"))
 ```
+
+在拼接时，注意顺序。两个合在一起时，比如 b h (ph w) -> b w (h ph)，原来有 3 个轴，最后轴是 ph x w，我们引入一个中间状态来方便想象。矩阵来方便思考，形状是 ph x w 的，并且有 h 个如此矩阵依次排列。
+
+在理解后，可以用抽象的方式来理解，只用顺序来理解即可。(ph w) 与 (w ph) 的区别在于顺序，ph 个 w 维的向量拼接在一起。(w ph) 则是转置后，w 个 ph 的向量拼接起来。抽象理解，就是针对原来的 w，按照每行第一个、二个依次拼接。
 
 ## repeat 增加维度
 

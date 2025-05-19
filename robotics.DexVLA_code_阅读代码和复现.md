@@ -2,7 +2,7 @@
 id: 4gb9ottxmfh95i6654zy8hq
 title: DexVLA_code_阅读代码和复现
 desc: ''
-updated: 1747413301456
+updated: 1747642414832
 created: 1740053039805
 ---
 
@@ -813,8 +813,8 @@ ScaleDP 配置默认 n_obs_steps 为 2，时间步为 T_cond = 1，obs_as_cond �
 #### forward()
 
 接收参数：
-- actions (of shape (batch_size, action_horizon, action_dim))：学习时的目标动作。action_dim 配置于 config.output_dim，3+6+1=10。只使用前 num_queries 条参与训练，对应配置中 prediction_horizon。
-- hidden_states (of shape (batch_size, num_tokens, hidden_dim)) 在 VLA 中，配置 config.using_film 经过 Fusion 模块后，shape (batch_size, hidden_dim)
+- actions (of shape (batch_size, action_horizon, action_dim))：学习时的目标动作。action_dim 配置于 config.output_dim，3+6+1=10。只使用前 num_queries 条参与训练，对应配置中 prediction_horizon。推理阶段传入 None 即可。
+- hidden_states (of shape (batch_size, num_tokens, hidden_dim)): 在 VLA 中，VLM 最后一层 decoder layer 输出的 hidden_states，经过线性层 lm_head 输出为 logits，再传给 Fusion 模块后，shape (batch_size, hidden_dim)
 - states (batch_size, states_dim)：通常是 14 维，包含机器人当前物理状态，比如关节状态（角度、速度和扭矩）、末端执行器状态等。
 - is_pad (of shape (batch_size, Ta))：actions 小于 16 或开头部分长度不够 16，需要填充。is_pad 用于标识哪些部分是填充。
 - 返回：训练时返回 loss，推理时返回动作。
