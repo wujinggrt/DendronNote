@@ -2,7 +2,7 @@
 id: rjexswayh0yvitkaf9qez5n
 title: 工程硕士英语
 desc: ''
-updated: 1747105700856
+updated: 1747708903539
 created: 1740448957635
 ---
 
@@ -116,5 +116,12 @@ Common mistakes:
 ## 2025年5月13日
 
 可能考：集体主义可能对应 high power，权力较大；个人主义对应 low power，权力较小。
+
+## 2025年5月20日
+
+Tolerance for ambiguity 模糊容忍度
+Uncertainty avoidance 不确定性规避。高则希望回避，低则希望发生。
+
+High tolerance for ambiguity = low uncertainty avoidance
 
 ## Ref and Tag
