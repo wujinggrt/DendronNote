@@ -2,7 +2,7 @@
 id: fy2s8m05x0g49ca0ej3wrws
 title: FoundationStereo_深度估计
 desc: ''
-updated: 1747386351982
+updated: 1748004290328
 created: 1747386293455
 ---
 
@@ -86,6 +86,15 @@ FoundationStereo 的整体架构如图 2 所示，主要包含以下几个模块
         *   使用一个预训练并冻结的 ViT-based 单目深度估计模型 (DepthAnythingV2 [79]) 提取左右图像的特征。
         *   设计一个轻量级 CNN (EdgeNeXt-S [40]) 作为 Side-Tuning Adapter (STA)。该 CNN 学习将 DepthAnythingV2 提取的特征（论文中选择在最终输出头之前的特征图）与自身从图像中提取的多尺度特征相结合，生成用于立体匹配的一元特征 (unary features) `f_l`, `f_r`。STA 权重在左右图之间共享。
         *   同时，STA 也提取上下文特征 (context features) `f_c` 用于后续的迭代优化。
+
+在 DepthAnythingV2 最终输出头之前，使用 4x4，stride 为 4 的 CNN downscale 特征。此特征随后与同层 CNN 拼接起来。此 side CNN 网络因此学习到了适配 ViT 特征，随后完成立体匹配任务。作者发现此架构适应得很好。
+
+**对机器人的启发**：
+机械臂上的镜头每次移动，就是新的视角，这是与固定双目最大的不同之处。通过双目提供信息纠正关节角位置。训练时，制作数据集。使用 DP 生成动作，用 mask 跟踪机械臂位置，判读机械臂是否接近物体，给与惩罚。或者分为两阶段训练。
+- 一阶段：replay 关节角数据，重播动作，训练固定视角和移动视角的辨别能力。也许添加一个 Side-Tuning Adapter，思路会类似微调大模型，加入场景细节的理解，让视觉编码器适应机械臂移动的视角。
+- 二阶段：replay，训练 DiT 或者 DP
+
+可以借鉴 Qwen2.5-VL 的训练模式，对齐视觉、甚至语言（umT5 编码器）到动作。
 
 2.  **注意力混合代价滤波 (Attentive Hybrid Cost Filtering - AHCF)：**
     *   **混合代价体构建 (Hybrid Cost Volume Construction)：**
@@ -201,5 +210,31 @@ graph LR
 
 1.  **效率：** 当前模型尚未针对效率进行优化，在 NVIDIA A100 GPU 上处理 375x1242 大小的图像耗时 0.7 秒。未来可以探索蒸馏、剪枝等技术提升效率。
 2.  **数据覆盖范围：** FSD 数据集中包含的透明物体种类有限。通过增加更多样化的全透明物体进行数据增强，可以进一步提升模型的鲁棒性。
+
+## CodeBase
+
+### 样例代码
+
+安装环境后，运行 demo：
+
+```bash
+python scripts/run_demo.py \
+ --left_file ./assets/left.png \
+ --right_file ./assets/right.png \
+ --ckpt_dir ./pretrained_models/23-51-11/model_best_bp2.pth \
+ --out_dir ./test_outputs/
+```
+
+### 代码分析
+
+core/foundation_stereo.py 文件下的 FoundationStereo 类是关键。
+
+```py
+class FoundationSetero(...):
+    def forward(self, image1, image2, iters=12, flow_init=None, test_mode=False, low_memory=False, init_disp=None):
+        ...
+```
+
+iters 参数代表 GRU 迭代次数，run_demo.py 默认使用 32 次。
 
 ## Ref and Tag

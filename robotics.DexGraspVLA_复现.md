@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1746422461193
+updated: 1747987226115
 created: 1741144146461
 ---
 
@@ -685,6 +685,8 @@ policy:
         # local weights path, null for online loading
         local_weights_path: /home/wj-24/.cache/torch/hub/checkpoints/dinov2_vitb14_pretrain.pth
 ```
+
+能否考虑 head 和 hand 共用一个模型？
 
 ### np.uint64 与任何数计算，都会得到 np.float64，不能作为下标
 

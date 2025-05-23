@@ -2,7 +2,7 @@
 id: 7cd9he4w15xq7jbt88b3xp4
 title: Zarr
 desc: ''
-updated: 1742699057257
+updated: 1747979580285
 created: 1739872667023
 ---
 
@@ -12,6 +12,7 @@ Zarr是一种存储分组、压缩的N维数组的格式。
 ## Arrays
 
 类似 numpy 的 np.array，例子：
+
 ```py
 import zarr
 store = zarr.storage.MemoryStore()
@@ -66,6 +67,7 @@ print("Chunks shape:", array_custom_chunks.chunks)
 最佳实践，把 chunks 的 shape 选择为训练时，最常用的 (batch_size, data_shape[:])，而不是 (1, data_shape[:])。
 
 ### 持久化
+
 ```py
 z1 = zarr.create_array(store='data/example-1.zarr', shape=(10000, 10000), chunks=(1000, 1000), dtype='int32')
 z1[:] = 42
@@ -74,12 +76,13 @@ z1[:, 0] = np.arange(10000)
 ```
 
 创建新的持久化的 array，不用 flush，数据自动落盘。比如打开验证：
+
 ```py
 z2 = zarr.open_array('data/example-1.zarr', mode='r')
 np.all(z1[:] == z2[:])
 ```
 
-直接保存 NumPy arrays：
+直接保存：
 ```py
 a = np.arange(10)
 zarr.save('data/example-2.zarr', a)
@@ -480,7 +483,7 @@ root = zarr.group(store=store, overwrite=True)
 root = zarr.open(store=store, mode="a")
 ```
 
-转储和拷贝的例子：
+## 转储和拷贝的例子
 
 ```py
 def create_dexgraspvla_dataset_from_custom(src_path: str, dst_path: str) -> None:
@@ -513,7 +516,7 @@ def create_dexgraspvla_dataset_from_custom(src_path: str, dst_path: str) -> None
 
 但是拷贝更推荐使用 zarr.copy_store()。
 
-### ZipStore 例子
+## ZipStore 例子
 
 关于 ZipStore，可以使用 zarr.group 打开：
 ```py
