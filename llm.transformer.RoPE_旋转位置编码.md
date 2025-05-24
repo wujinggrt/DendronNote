@@ -2,7 +2,7 @@
 id: 607ng4ib05dyd441uqnus6n
 title: RoPE_旋转位置编码
 desc: ''
-updated: 1747545062244
+updated: 1748017818627
 created: 1745859217851
 ---
 
@@ -220,25 +220,29 @@ x_{d-2}
 \end{pmatrix}
 $$
 
-$\otimes$ 代表逐位相乘，对应 PyTorch 的 `*` 操作，将两个张量的每个元素相乘，而非矩阵乘法。
+$\otimes$ 代表逐位相乘，对应 PyTorch 的 `*` 操作，将两个张量的每个元素相乘，而非矩阵乘法。$\boldsymbol{x}$ 对应后续的向量 $\boldsymbol{q}, \boldsymbol{k}$。
 
 ## LLaMA 的实现
 
 ```py
 def precompute_freqs_cis(dim: int, seq_len: int, theta: float = 10000.0):
-    # freqs 包含了各个 θ
+    # cis 是 cos(θ) + i sin(θ) 的缩写
+    # freqs 包含了各个 θ，torch.arange(0, dim, 2) 对应 2i 部分。
     freqs = 1.0 / (theta ** (torch.arange(0, dim, 2)[: (dim // 2)].float() / dim))
     # 生成 token 序列索引 t = [0, 1,..., seq_len-1]
     t = torch.arange(seq_len, device=freqs.device)
     # freqs.shape = [seq_len, dim // 2]
-    # 生成 t 个 freqs，0 theta, 1 theta, 2 theta, ..., seq_len-1 theta
-    # shape 为 (seq_len, seq_len, dim // 2)
+    # 对每个 theta，生成 seq_len 个 freqs，比如：
+    # [[0 theta 0, 1 theta 0, 2 theta 0, ..., seq_len-1 theta 0],
+    #  [0 theta 1, 1 theta 1, 2 theta 1, ..., seq_len-1 theta 1],
+    #  ,...
+    #  seq_len-1 theta seq_len-1]
+    # 结果的 shape 为 (seq_len, seq_len, dim // 2)
     freqs = torch.outer(t, freqs).float()
-    # 假设 freqs = [x, y]
-    # 则 freqs_cis = [cos(x) + sin(x)i, cos(y) + sin(y)i]
+    # 使用复数，x 乘以复数，容易实现上述元素乘法
+    # freqs_cis = [1 * cos(θ0) + 1 * sin(θ0)i, cos(θ1) + sin(θ1)i, ...]
     freqs_cis = torch.polar(torch.ones_like(freqs), freqs)
     return freqs_cis
-
 
 def apply_rotary_emb(
     xq: torch.Tensor,
@@ -247,10 +251,15 @@ def apply_rotary_emb(
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     # xq.shape = [batch_size, seq_len, dim]
     # xq_.shape = [batch_size, seq_len, dim // 2, 2]
+    # dim 原来的元素为 [x0,x1,x2,...,xd-1]
+    # reshape 之后，shape 为 (dim//2, 2) 意味着排列如下：
+    # [[x0,x1],[x2,x3],...,[xd-2,xd-1]]
+    # xq_ = rearrange(xq, "b s (n d) -> b s n d", n=num_heads)
     xq_ = xq.float().reshape(*xq.shape[:-1], -1, 2)
     xk_ = xk.float().reshape(*xk.shape[:-1], -1, 2)
 
     # 转为复数域
+    # [[x0+x1 i],[x2+x3 i],...,[xd-2+xd-1 i]]
     xq_ = torch.view_as_complex(xq_)
     xk_ = torch.view_as_complex(xk_)
 

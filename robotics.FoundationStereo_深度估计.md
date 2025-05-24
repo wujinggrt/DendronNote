@@ -2,7 +2,7 @@
 id: fy2s8m05x0g49ca0ej3wrws
 title: FoundationStereo_深度估计
 desc: ''
-updated: 1748004290328
+updated: 1748020163581
 created: 1747386293455
 ---
 
@@ -78,19 +78,23 @@ created: 1747386293455
 
 ### 方法
 
+![overview](assets/images/robotics.FoundationStereo_深度估计/overview.png)
+
 FoundationStereo 的整体架构如图 2 所示，主要包含以下几个模块：
 
 1.  **单目基础模型适配 (Monocular Foundation Model Adaptation - STA)：**
     *   **目的：** 缓解 sim-to-real gap，并引入强大的单目几何先验。
     *   **过程：**
         *   使用一个预训练并冻结的 ViT-based 单目深度估计模型 (DepthAnythingV2 [79]) 提取左右图像的特征。
-        *   设计一个轻量级 CNN (EdgeNeXt-S [40]) 作为 Side-Tuning Adapter (STA)。该 CNN 学习将 DepthAnythingV2 提取的特征（论文中选择在最终输出头之前的特征图）与自身从图像中提取的多尺度特征相结合，生成用于立体匹配的一元特征 (unary features) `f_l`, `f_r`。STA 权重在左右图之间共享。
+        *   使用一个轻量级 CNN (EdgeNeXt-S [40]，内存更友好，更大的 CNN 结构不会有额外收益) 作为 Side-Tuning Adapter (STA)。该 CNN 学习将 DepthAnythingV2 提取的特征（论文中选择在最终输出头之前的特征图）与自身从图像中提取的多尺度特征相结合，生成用于立体匹配的一元特征 (unary features) `f_l`, `f_r`。STA 权重在左右图之间共享。
         *   同时，STA 也提取上下文特征 (context features) `f_c` 用于后续的迭代优化。
 
-在 DepthAnythingV2 最终输出头之前，使用 4x4，stride 为 4 的 CNN downscale 特征。此特征随后与同层 CNN 拼接起来。此 side CNN 网络因此学习到了适配 ViT 特征，随后完成立体匹配任务。作者发现此架构适应得很好。
+在 DepthAnythingV2 最终输出头之前，使用 4x4，stride 为 4 的 CNN downscale 特征。此特征随后与同层 CNN 的 1/4 缩放拼接起来。此 side CNN 网络因此学习到了适配 ViT 特征，随后完成立体匹配任务。作者发现此架构适应得很好。
+
+丰富的单目视觉先验显著提升预测模糊区域能力。仅使用 DepthAnythingV2 的原生单目深度，会存在缩放不准确。作者使用从立体图像提取的潜特征作为几何先验，并对比代价滤波。
 
 **对机器人的启发**：
-机械臂上的镜头每次移动，就是新的视角，这是与固定双目最大的不同之处。通过双目提供信息纠正关节角位置。训练时，制作数据集。使用 DP 生成动作，用 mask 跟踪机械臂位置，判读机械臂是否接近物体，给与惩罚。或者分为两阶段训练。
+机械臂上的镜头每次移动，就是新的视角，相比双目，腕部相机的双目距离和移动范围更大，这是与固定双目最大的不同之处。通过双目提供信息纠正关节角位置。训练时，制作数据集。使用 DP 生成动作，用 mask 跟踪机械臂位置，判读机械臂是否接近物体，给与惩罚。或者分为两阶段训练。
 - 一阶段：replay 关节角数据，重播动作，训练固定视角和移动视角的辨别能力。也许添加一个 Side-Tuning Adapter，思路会类似微调大模型，加入场景细节的理解，让视觉编码器适应机械臂移动的视角。
 - 二阶段：replay，训练 DiT 或者 DP
 

@@ -2,7 +2,7 @@
 id: 79m0yaj6thit46x22078d01
 title: MRoPE_多模态旋转位置编码
 desc: ''
-updated: 1746723516931
+updated: 1748017501911
 created: 1746636769551
 ---
 
@@ -55,6 +55,31 @@ $$
 两种选择：一是放弃 x 和 y 的对称性，RoPE-2D 依旧取 $\theta_i = b^{-2i/d}$，自然地 $\theta_{2j} \neq \theta_{2j+1}$；二是将 RoPE-2D 取 $\theta_{2j} = \theta_{2j+1} = b^{-4j/d}$，此时纯文本的位置编码与 RoPE-1D **略有不同**。
 
 两种方案各有优劣。
+
+三维的情况，由 2D 的两两一组变为每六个一组，对应位置 (x,y,z) 的 embedding 操作如下：
+
+x[0], x[1], x[2], x[3], x[4], x[5] 分别乘以下面矩阵：
+
+$$
+\left[ \begin{array}{cc}
+\cos x \theta_0 & -\sin x \theta_0 \\
+\sin x \theta_0 & \cos x \theta_0
+\end{array} \right]
+$$
+
+$$
+\left[ \begin{array}{cc}
+\cos y \theta_0 & -\sin y \theta_0 \\
+\sin y \theta_0 & \cos y \theta_0
+\end{array} \right]
+$$
+
+$$
+\left[ \begin{array}{cc}
+\cos z \theta_0 & -\sin z \theta_0 \\
+\sin z \theta_0 & \cos z \theta_0
+\end{array} \right]
+$$
 
 考察 Qwen2VL 的实现。ViT 部分用到了 RoPE-2D，在 LLM 部分用到了 RoPE-3D。
 

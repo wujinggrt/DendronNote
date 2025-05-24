@@ -2,7 +2,7 @@
 id: kcism5sjj3bvuntcovct65l
 title: 注意力机制公式_漂亮的Attention实现
 desc: ''
-updated: 1747591370367
+updated: 1748014072712
 created: 1741315704596
 ---
 
@@ -178,6 +178,10 @@ def precompute_freqs_cis(dim: int, end: int = 1024, theta: float = 10000.0):
     # 1d rope precompute
     freqs = 1.0 / (theta ** (torch.arange(0, dim, 2)[: (dim // 2)].double() / dim))
     freqs = torch.outer(torch.arange(end, device=freqs.device), freqs)
+    # 根据笛卡尔坐标系的绝对值和角度，计算出复数的表示。
+    # 比如 (1, pi / 2)，对应在 y 坐标轴上，可以得到复数 0+1j，对应坐标 (0, 1)
+    # 下面得到 r cos theta + r sin theta j
+    # 使用复数，让 x 的加法更容易
     freqs_cis = torch.polar(torch.ones_like(freqs), freqs)  # complex64
     return freqs_cis
 
