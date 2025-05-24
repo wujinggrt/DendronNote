@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1747987226115
+updated: 1748068311766
 created: 1741144146461
 ---
 
@@ -89,7 +89,7 @@ self.dino_head.eval()
 
 ### forward_head()
 
-参数 rgbm_data 是 (B,T,4,H,W)，其中，对应 (B,T,4,518,518)。取出 mask_data 为 (B,T,1,518,518)。传给 self.mask_process_net 网络时，由于网络的 patch_embed 使用了 Conv2d，所以对 mask_data reshape 为 ("B T ... -> (B T) ...")。mask 提取特征为 (B*T, num_patches, head_feature_dim)。其中，使用了 14 作为 patch_size，于是 num_patches = patch_size^2 = (518 // 14)^2 = 37*37 = 1369，得到 (B*T, 1369, head_feature_dim)。
+参数 rgbm_data 是 (B,T,4,H,W)，其中，对应 (B,T,4,518,518)。取出 mask_data 为 (B,T,1,518,518)。传给 self.mask_process_net 网络时，由于网络的 patch_embed 使用了 Conv2d，所以对 mask_data reshape 为 ("B T ... -> (B T) ...")。mask 提取特征为 (B*T, num_patches, head_feature_dim)。其中，使用了 14 作为 patch_size，于是 `num_patches = patch_size^2 = (518 // 14)^2 = 37*37 = 1369`，得到 `(B*T, 1369, head_feature_dim)`。
 
 ### forward()
 

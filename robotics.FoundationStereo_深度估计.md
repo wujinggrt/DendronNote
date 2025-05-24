@@ -2,7 +2,7 @@
 id: fy2s8m05x0g49ca0ej3wrws
 title: FoundationStereo_深度估计
 desc: ''
-updated: 1748004290328
+updated: 1748074395476
 created: 1747386293455
 ---
 
@@ -95,6 +95,10 @@ FoundationStereo 的整体架构如图 2 所示，主要包含以下几个模块
 - 二阶段：replay，训练 DiT 或者 DP
 
 可以借鉴 Qwen2.5-VL 的训练模式，对齐视觉、甚至语言（umT5 编码器）到动作。
+
+**DinoV2 用法**：
+
+通常使用 DinoV2 最后一层。
 
 2.  **注意力混合代价滤波 (Attentive Hybrid Cost Filtering - AHCF)：**
     *   **混合代价体构建 (Hybrid Cost Volume Construction)：**
