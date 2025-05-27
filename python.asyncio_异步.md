@@ -2,7 +2,7 @@
 id: blk1s4zbfhd016wg0ppuatd
 title: Asyncio_异步
 desc: ''
-updated: 1745689805760
+updated: 1748087758815
 created: 1742836619998
 ---
 
@@ -207,7 +207,7 @@ async def my_async_context():
         # 返回资源给调用方
         yield resource 
     finally:
-        # 清理逻辑
+        # 清理逻辑，放到 finally 保证执行
         await cleanup_resource(resource)
 
 # 用法

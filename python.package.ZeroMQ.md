@@ -2,7 +2,7 @@
 id: 6jmn71jemd9d7rz9fp41fzl
 title: ZeroMQ
 desc: ''
-updated: 1743468613081
+updated: 1748154553994
 created: 1743325170137
 ---
 
@@ -27,7 +27,7 @@ created: 1743325170137
 
 ### zmq.REQ / zmq.REP（严格同步）
 
-```pt
+```py
 # 服务端（REP）
 rep_socket = context.socket(zmq.REP)
 rep_socket.bind("tcp://*:5555")
@@ -89,18 +89,24 @@ response = dealer.recv()
 ### zmq.PAIR（双向对等通信）
 
 ```py
+context = zmq.Context()
 # 进程 A
 pair_a = context.socket(zmq.PAIR)
+# 还可以绑定网络通信，比如
+# pair_a.bind("tcp://*:15555")
 pair_a.bind("ipc:///tmp/pair.ipc")
 pair_a.send(b"Hello from A")
 message = pair_a.recv()
 
 # 进程 B
 pair_b = context.socket(zmq.PAIR)
+# pair_b.connect("tcp://pair_a_ip:15555")
 pair_b.connect("ipc:///tmp/pair.ipc")
 message = pair_b.recv()
 pair_b.send(b"Hello from B")
 ```
+
+此模式可以不严格遵循发送和接收的顺序，双发随时可以发送和接收。recv() 时，如果对方没有 send()，则会阻塞。只能点对点，不像 REQ/REP 模式可以一对多。但仅推荐用于简单、固定的点对点连接需求。
 
 ### ZeroMQ：（REQ-REP 模式） + 零拷贝传输
 

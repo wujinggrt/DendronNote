@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1747987226115
+updated: 1748097644585
 created: 1741144146461
 ---
 
@@ -89,7 +89,7 @@ self.dino_head.eval()
 
 ### forward_head()
 
-参数 rgbm_data 是 (B,T,4,H,W)，其中，对应 (B,T,4,518,518)。取出 mask_data 为 (B,T,1,518,518)。传给 self.mask_process_net 网络时，由于网络的 patch_embed 使用了 Conv2d，所以对 mask_data reshape 为 ("B T ... -> (B T) ...")。mask 提取特征为 (B*T, num_patches, head_feature_dim)。其中，使用了 14 作为 patch_size，于是 num_patches = patch_size^2 = (518 // 14)^2 = 37*37 = 1369，得到 (B*T, 1369, head_feature_dim)。
+参数 rgbm_data 是 (B,T,4,H,W)，其中，对应 (B,T,4,518,518)。取出 mask_data 为 (B,T,1,518,518)。传给 self.mask_process_net 网络时，由于网络的 patch_embed 使用了 Conv2d，所以对 mask_data reshape 为 ("B T ... -> (B T) ...")。mask 提取特征为 (B*T, num_patches, head_feature_dim)。其中，使用了 14 作为 patch_size，于是 `num_patches = patch_size^2 = (518 // 14)^2 = 37*37 = 1369`，得到 `(B*T, 1369, head_feature_dim)`。
 
 ### forward()
 
@@ -704,6 +704,39 @@ float_difference = end - start # 得到的结果是 np.float64，而非 int
 np.uint64 与 int 类型的四则运算，都不会得到 int，只会得到 np.float64。这会有问题，如果计算的结果用于**索引**或是**切片**，则会导致**异常**。
 
 ## 部署
+
+### 加载 Workspace 和 Policy
+
+参考原来的 diffusion policy 项目的部署，文件 eval_real_robot.py 中：
+
+```py
+    ...
+    # load checkpoint
+    # input 是 checkpoint 的路径
+    ckpt_path = input
+    payload = torch.load(open(ckpt_path, 'rb'), pickle_module=dill)
+    cfg = payload['cfg']
+    cls = hydra.utils.get_class(cfg._target_)
+    workspace = cls(cfg)
+    workspace: BaseWorkspace
+    workspace.load_payload(payload, exclude_keys=None, include_keys=None)
+    # hacks for method-specific setup.
+    action_offset = 0
+    delta_action = False
+    if 'diffusion' in cfg.name:
+        # diffusion model
+        policy: BaseImagePolicy
+        policy = workspace.model
+        if cfg.training.use_ema:
+            policy = workspace.ema_model
+
+        device = torch.device('cuda')
+        policy.eval().to(device)
+
+        # set inference params
+        policy.num_inference_steps = 16 # DDIM inference iterations
+        policy.n_action_steps = policy.horizon - policy.n_obs_steps + 1
+```
 
 ### ObsEncoder
 

@@ -2,7 +2,7 @@
 id: wcgjhins6g2h2yd1yqpaowm
 title: CNN
 desc: ''
-updated: 1741624378447
+updated: 1748067262695
 created: 1741397322508
 ---
 
@@ -82,7 +82,7 @@ $$
 W_{\text{out}} = \left\lfloor \frac{W_{\text{in}} + 2 \times \text{padding}[1] - \text{dilation}[1] \times (\text{kernel\_size}[1] - 1) - 1}{\text{stride}[1]} + 1 \right\rfloor
 $$
 
-- 通常使用默认的 padding=0 和 dialation=0，从而 H_out 为 (H_in - kernel_size / stride) + 1。W_out 同理。
+- 通常使用默认的 padding=0 和 dialation=1，从而 H_out 为 (H_in - kernel_size) / stride + 1。W_out 同理。
 - 通常选择 kernel_size == stride，比如 ViT 常选的 14，从而有 H_out == H_in // kernel_size。常用于提取 patch 信息。典型例子是 ViT 的工作。首先使用 nn.Conv2d，提取每个 patch 的特征，且 kernel_size 即 patch_size。但是 CLIPVisionEmbeddings 使用的 nn.Conv2d 指定了 bias=False。另一个例子，如：
 
 ```py
