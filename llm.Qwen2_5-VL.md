@@ -2,7 +2,7 @@
 id: 2nbimo1w05qd1lpgkghblc7
 title: Qwen2.5-VL
 desc: ''
-updated: 1747150913524
+updated: 1748316208806
 created: 1740130046405
 ---
 
@@ -51,6 +51,8 @@ MRoPE 位置编码把 text, image, video 三种模态统一作位置编码，作
 **训练方法**
 - 预训练：分三个阶段训练，首先训练 ViT，然后训练所有模型参数，最后增加序列长度并加入视频和基于 agent 的数据。
 - 后训练：采用监督式微调（SFT）和直接偏好优化（DPO）的双阶段优化模式，冻结 ViT 参数。
+
+Grounding Data with Absolute Position Coordinates. 原生尺寸图像更能接近真实世界信息。如何增强 bbox 和 point 定位能力？
 
 ## QA
 
