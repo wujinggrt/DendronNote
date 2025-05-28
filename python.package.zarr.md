@@ -2,7 +2,7 @@
 id: 7cd9he4w15xq7jbt88b3xp4
 title: Zarr
 desc: ''
-updated: 1747979580285
+updated: 1748455563443
 created: 1739872667023
 ---
 
@@ -38,6 +38,19 @@ src = zarr.open(path="path/to/file", mode="r")
 此时，src 使用了 DirectoryStore。如果顶层是 Group，则是 Group。
 
 注意，以 w 模式打开，会删除原文件上的所有内容。所以，以 a 模式打开更保险，可以追加或修改。
+
+### 保证数组（包含新建）
+
+```py
+src = zarr.open(src_path, mode="a")
+rgb = src["/data/rgb"]
+rgbm = src.require_dataset(
+    name="data/rgbm",
+    shape=(rgb.shape[0],) + rgb.shape[1:3] + (4,),
+    chunks=(1,) + rgb.shape[1:3] + (4,),
+    dtype=np.uint8,
+)
+```
 
 ### 转换为 numpy.ndarry
 
