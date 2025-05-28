@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1748097644585
+updated: 1748441351352
 created: 1741144146461
 ---
 
@@ -780,6 +780,14 @@ Modbus 通信支持以下：
 使用因果掩码时，把视觉部分的掩码都加上？
 
 ### pyrealsense2: 获取 RGBD
+
+#### 训练
+
+打包当前代码：
+
+```bash
+find DexGraspVLA -mindepth 1 -maxdepth 1 | perl -wnle 'm@.*/(Cutie|\.vscode|.*.pkl|__pycache__|data|outputs|local|\.git|wandb|sam2)@ || print;'
+```
 
 ## Ref and Tag
 
