@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1748441351352
+updated: 1748491822660
 created: 1741144146461
 ---
 
@@ -781,13 +781,25 @@ Modbus 通信支持以下：
 
 ### pyrealsense2: 获取 RGBD
 
-#### 训练
+### 训练
 
 打包当前代码：
 
 ```bash
 find DexGraspVLA -mindepth 1 -maxdepth 1 | perl -wnle 'm@.*/(Cutie|\.vscode|.*.pkl|__pycache__|data|outputs|local|\.git|wandb|sam2)@ || print;'
 ```
+
+### 可视化注意力
+
+配置 get_attn_map 之后，在输出检查点的同级目录下，train_sample_attn_maps 目录保存了注意力文件，具体为 pkl 形式。指定 attn_map 路劲后，策略预测时，输出到此位置：
+
+```py
+    pred_action = policy.predict_action(batch['obs'], output_path)
+```
+
+策略的每次预测动作时，记录每个 DiT 块的 attn_weights，每个 attn_weight 来自噪声和条件的交叉注意力部分，而非自注意力部分，即 $Q K^T$ 后，经过了 softmax 归一化。attn_weights 仅取前两个 samples，
+
+x 形状是 (B, N, D)，修改为 (B, h, T, d)，随后交叉注意力得到的形状是 (B, h, T, T)。而 attn_weights
 
 ## Ref and Tag
 
