@@ -1,3 +1,72 @@
+# ctrl+u clear cursor before
+bindkey '^U' backward-kill-line
+bindkey '^]' autosuggest-accept
+# 使用英文终端
+export LANG=en_US.UTF-8\nexport LANGUAGE=en_US:en
+
+alias l="ls -alh"
+
+alias tnew='tmux new -s'
+alias tls='tmux ls'
+alias tat='tmux attach -t'
+
+# docker
+alias drr='docker run -it --rm'
+alias de='docker exec -it'
+alias ds='docker stop'
+alias drm='docker rm'
+
+alias pne='perl -wlne'
+alias ppe='perl -wlpe'
+alias pae="perl -wnlae"
+
+alias gS='git status'
+alias gs='git stage'
+
+export THU_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
+export PATH=$PATH:/usr/local/lib
+
+export HF_DATASETS_CACHE="/data1/wj_24/.cache/huggingface/datasets"
+export HF_HOME="/data1/wj_24/.cache/huggingface"
+# 个人路径根据常用状态设置
+# export HOME="/data1/wj_24"
+
+export HF_TOKEN="*******************"
+#export LD_LIBRARY_PATH=/usr/local/cuda-12.6/lib64:$LD_LIBRARY_PATH
+
+
+export WANDB_API_KEY="*********************"
+
+# 开启系统代理
+function proxy_on() {
+        # proxy_on
+        # proxy_on {{prot#}}
+        local port=7890
+        if [[ $# -eq 1 && $1 =~ ^[0-9]+$ ]]; then
+                port=$1
+        fi
+        export http_proxy=http://127.0.0.1:$port
+        export https_proxy=http://127.0.0.1:$port
+        export no_proxy=127.0.0.1,localhost
+        export HTTP_PROXY=http://127.0.0.1:$port
+        export HTTPS_PROXY=http://127.0.0.1:$port
+        export NO_PROXY=127.0.0.1,localhost
+        echo -e "\033[32m[√] 已开启代理，端口 $port\033[0m"
+}
+
+# 关闭系统代理
+function proxy_off(){
+        unset http_proxy
+        unset https_proxy
+        unset no_proxy
+        unset HTTP_PROXY
+        unset HTTPS_PROXY
+        unset NO_PROXY
+        echo -e "\033[31m[×] 已关闭代理\033[0m"
+}
+
+
+# for wsl GUI
 export MESA_GL_VERSION_OVERRIDE=3.3
 unset LIBGL_ALWAYS_INDIRECT
 

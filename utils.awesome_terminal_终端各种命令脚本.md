@@ -2,11 +2,11 @@
 id: ovto6hepvtttctxmnypiebq
 title: Awesome_terminal_终端各种命令脚本
 desc: ''
-updated: 1746597892331
+updated: 1749047723610
 created: 1742868524198
 ---
 
-## 重定向
+## IO 重定向
 
 ### Here Documents
 
@@ -118,7 +118,7 @@ curl -X POST http://host:port/v1/chat/completions \
         {"type": "image_url", "image_url": {"url": "https://modelscope.oss-cn-beijing.aliyuncs.com/resource/qwen.png"}},        {"type": "text", "text": "图片里的文字是啥?"}    ]}    ]    }'
 ```
 
-## ip 工具
+## 网络工具：ip 工具等
 
 ### 静态 ip 地址
 
@@ -147,14 +147,21 @@ sudo netplan apply
 
 ### 网桥
 
+安装工具：
+
 ```bash
 sudo apt install bridge-utils
+```
+
+构建虚拟网卡设备，网桥，其中桥接的网卡是 eth0：
+
+```bash
 sudo ip link add name br0 type bridge
 sudo ip link set dev eth0 master br0
 sudo ip link set dev br0 up
 ```
 
-注意查看设备，比如 eth0 是我们桥接用到的网卡。
+master 代表网卡 eth0 作为网桥的 br0 的从属，监听 br0 的流量。
 
 设置网桥的 ip 和 mask，决定了 LAN 中的识别方式。
 
@@ -164,7 +171,8 @@ sudo ip link show br0
 sudo ip addr show br0
 ```
 
-移除：
+移除需要关闭：
+
 ```bash
 sudo ip link set dev br0 down
 sudo ip link set dev eth0 nomaster
@@ -241,7 +249,7 @@ sudo ufw allow from 192.168.123.0/24
 
 设置路由后，发现 ping 不通。查看 arp -a，192.168.19.57 已经有正确的 MAC 地址。使用 traceroute 工具查看，执行 traceroute -m 15 192.168.19.57，发现包在网关 192.168.19.254 后，找不到 192.168.19.57 了。具体来说，
 
-## ufw 端口的防火墙
+### ufw 端口的防火墙
 
 有时需要打开对应端口，其他主机才能访问。
 
@@ -254,6 +262,66 @@ sudo ufw allow from 192.168.123.0/24 # 允许来自此网络的流量
 sudo ufw deny {{port}}
 sudo ufw delete {{rule_number}} # 删除规则
 ```
+
+### ssh 隧道封装 TCP/UDP 流量
+
+只要能够 ssh 通信，就可以使用隧道封装流量。SSH 隧道在传输层（TCP）之上工作，将原始流量封装在 SSH 的安全连接中。本质上，SSH 隧道通过一条加密的 TCP 连接传输其他协议的数据。
+
+#### 简单的本地端口转发到远程服务器
+
+比如，能够用 ssh 登录服务器:
+
+```bash
+ssh root@js2.blockelite.cn -p 10636
+```
+
+若服务器监听端口 15558，那么，可以包装如下：
+
+```bash
+ssh -N -L 12321:localhost:15558 root@js2.blockelite.cn -p 10636
+```
+
+-L 将本地 12321 端口映射到远程服务器的 `localhost:15558`，其中 `localhost` 表示以远程服务器的视角看到的地址，甚至可以写为远程服务器能够访问到的其他地址。在客户端，可以通过访问 `localhost:12321`，访问到服务器的 `localhost:15558` 端口，连接到本地 SSH 隧道端口来转发。
+
+-N 代表不执行任何命令，只转发流量。
+
+比如，在服务端运行：
+
+```bash
+python -m http.server 15558
+```
+
+在客户端运行如下内容，可以验证访问：
+
+```bash
+telnet localhost 12321
+```
+
+#### 远程服务器访问本地服务（反向隧道）
+
+在服务端执行：
+
+```bash
+ssh -N -R 5556:localhost:5555 用户名@客户端机器
+```
+
+服务端的端口 5555 映射到客户端机器的 5556 端口。
+
+#### Tpis：-f, -N 选项
+
+-N 表示不执行远程命令，只作端口转发，连接后不启动 shell 进程，不分配伪终端，节省资源。
+
+-f 表示 SSH 认证后转入后台运行，不占用当前终端。
+
+#### 三种隧道模式
+
+|隧道类型|封装内容|底层传输|典型用途|
+|---|---|---|---|
+|本地端口转发(-L)|任意 TCP 流量|TCP|访问远程数据库、内网 Web|
+|远程端口转发(-R)|任意 TCP 流量|TCP|暴露内网服务到公网|
+|动态 SOCKS(-D)|任意 TCP 流量（SOCKS 代理）|TCP|浏览器全局代理|
+|UDP 转发(-T 扩展)|UDP over TCP 隧道|TCP|DNS 查询、游戏服务器|
+
 
 ## sudo 免密码
 

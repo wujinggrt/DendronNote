@@ -2,9 +2,21 @@
 id: 5a3xsgk01h72w4ezxpchfxj
 title: Re_正则
 desc: ''
-updated: 1743343930733
+updated: 1748881003715
 created: 1742456931966
 ---
+
+## 正则的 metacharacters
+
+```
+^ $ . [ ] { } - ? * + ( ) | \
+```
+
+分为两种类型：
+- basic regular expressions (BRE):  `^ $ . [ ] *`
+- extended regular expressions (ERE): `()|{}?+`，使用 grep 时，需要使用 `-E` 选项
+
+vim, find 仅支持 BRE，使用 ERE 时，需要在前面用 `\` 转义为 ERE 才行。比如 `()|{}?+`。
 
 ## 多行匹配
 
@@ -21,11 +33,11 @@ created: 1742456931966
 
 ### 返回对象 re.Match
 
-| 方法 | 描述 |
-| --- | --- |
-| group(num=0) | num=0 代表匹配的整个表达式的字符串，其他值则是对应的元组。 |
-| groups() | 返回包含所有小组字符串的元组。 |
-| span([group]) | 0 代表整个匹配的字符串的区间下标，其他值对应小组字符串起始下标。|
+| 方法          | 描述                                                             |
+| ------------- | ---------------------------------------------------------------- |
+| group(num=0)  | num=0 代表匹配的整个表达式的字符串，其他值则是对应的元组。       |
+| groups()      | 返回包含所有小组字符串的元组。                                   |
+| span([group]) | 0 代表整个匹配的字符串的区间下标，其他值对应小组字符串起始下标。 |
 
 ### match()
 
@@ -79,11 +91,11 @@ for match in it:
 
 返回的 class re.Pattern 实例，有如下方法：
 
-| 方法 | 描述 |
-| --- | --- |
+| 方法                                        | 描述                                                 |
+| ------------------------------------------- | ---------------------------------------------------- |
 | search(string[, pos[, endpos]]) -> re.Match | 相当于 re.search(pattern, string[pos:endpos], flags) |
-| match(string[, pos[, endpos]]) | 类似 |
-| split(string, maxsplit=0) | 同 re.split() |
+| match(string[, pos[, endpos]])              | 类似                                                 |
+| split(string, maxsplit=0)                   | 同 re.split()                                        |
 
 ## re.sub(pattern, repl, string, count=0, flags=0) 类似 sed 替换功能
 
@@ -152,6 +164,74 @@ def parse_model_answer(answer_text: str, expected_names: list) -> Optional[Dict[
 ```
 
 比如，从模型回答的文本中，我们想用期待的名字来匹配，但是，万一名字中有 `.` 等元字符，可能匹配不到我们期待的名字。比如，期待匹配类似 `Dr. Marting is a knight`。
+
+## 断言的语法结构
+
+在匹配字符和元组时，指定匹配的内容满足某些条件。
+
+### 正向先行断言（positive  lookahead）
+
+正向先行断言（positive lookahead），查找某个位置后面是否跟随特定的模式，而不消耗实际的字符。
+
+形式：`(?=pattern)`，比如 `\d+(?=PM)` 能够匹配 `12PM`，`3PM` 等，我们的 `\d+` 除了匹配数字，还要求后面紧跟的内容不能为 `PM`，且 `PM` 不消耗匹配的字符，不会在模式中有任何处理。
+
+```py
+import re
+res = re.findall(r'\d+(?=PM)', '12PM 3PM 4AM')
+print(res)
+# ['12', '3']
+```
+
+### 负向先行断言（negative lookahead）
+
+匹配字符串时，查找某个位置之后是否**不跟着**特定的模式。
+
+形式：`(?!pattern)`，比如 `\d+(?!PM)` 能够匹配 `12AM`，`3AM` 等。
+
+```bash
+$ echo "123AW"  | perl -wnle 'm@\d+(?!AW)@ and print $&;'
+# 12
+```
+
+### 正向后行断言（positive lookbehind）
+
+位置之前是否跟着特定模式。
+
+形式：`(?<=pattern)`，比如 `(?<=abc)def` 能够匹配 `abcdef`，结果为 `def`。
+
+### 负向后行断言（negative lookbehind）
+
+位置之前方是否不跟着特定模式。
+
+形式：`(?<!pattern)`，比如 `(?<!abc)def` 能够匹配 `xyzdef`，结果为 `def`。
+
+### 应用
+
+在 tar 命令打包项目时，需要排除 `build` 和 `tmp` 等目录，可以使用通配符的方案：
+
+```bash
+find . -maxdepth 1 \( -not -name '*/build' -and -not -name '*/tmp' \)
+```
+
+正则的方案：
+
+```bash
+find . -maxdepth 1 -not -regex '.*/\(build\|tmp\)'
+```
+
+注意，find 命令中的 regex 使用元字符 `()|` 等需要使用 `\` 转义。
+
+使用断言来排除多个单词，正则如下：
+
+```regex
+^(?!.*build)(?!.*tmp).*$
+```
+
+```bash
+find . -maxdepth 1 | perl -wnle 'm@^(?!.*(build|tmp)$)@ and print;'
+```
+
+负向先行断言，匹配如此的开头（对应 `^` 部分）；此开头后续不能跟任意以 `build` 或 `tmp` 结尾的字符串，其中 `$` 代表字符串限定在最末尾了。
 
 ## Ref and Tag
 

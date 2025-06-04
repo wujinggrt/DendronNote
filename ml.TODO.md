@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1746803629243
+updated: 1749047955078
 created: 1738165674608
 ---
 
@@ -97,6 +97,11 @@ https://wildlma.github.io/
 
 近几年VLA方案调研（截止25.03.14） - 张云聪的文章 - 知乎
 https://zhuanlan.zhihu.com/p/30182000493
+
+https://openai.com/index/thinking-with-images/
+
+来自Thinking with Images战地记者的报道 - 庞子奇的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1912734467589650419
 
 ### 开阔视野
 
