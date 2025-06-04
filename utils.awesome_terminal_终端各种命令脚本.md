@@ -2,9 +2,15 @@
 id: ovto6hepvtttctxmnypiebq
 title: Awesome_terminal_终端各种命令脚本
 desc: ''
-updated: 1749047723610
+updated: 1749054360258
 created: 1742868524198
 ---
+
+## 执行命令
+
+### source 与 .
+
+最佳实践：在交互式命令行中使用 source，在脚本中使用 `.`。
 
 ## IO 重定向
 

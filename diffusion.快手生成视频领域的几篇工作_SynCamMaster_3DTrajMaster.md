@@ -1,6 +1,6 @@
 ---
 id: 84iqzfptr0ec34yt8cyjzg6
-title: 快手生成视频领域的几篇工作
+title: 快手生成视频领域的几篇工作_SynCamMaster_3DTrajMaster
 desc: ''
 updated: 1747590693967
 created: 1747414356055

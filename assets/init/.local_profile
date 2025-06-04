@@ -1,11 +1,14 @@
 # ctrl+u clear cursor before
 bindkey '^U' backward-kill-line
 bindkey '^]' autosuggest-accept
+
 # 使用英文终端
 export LANG=en_US.UTF-8\nexport LANGUAGE=en_US:en
 
+# 常用命令 alias
 alias l="ls -alh"
 
+# tmux
 alias tnew='tmux new -s'
 alias tls='tmux ls'
 alias tat='tmux attach -t'
@@ -16,22 +19,26 @@ alias de='docker exec -it'
 alias ds='docker stop'
 alias drm='docker rm'
 
+# perl
 alias pne='perl -wlne'
 alias ppe='perl -wlpe'
 alias pae="perl -wnlae"
 
+# git
 alias gS='git status'
 alias gs='git stage'
 
 export THU_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
 export PATH=$PATH:/usr/local/lib
 
+# Huggingface
 export HF_DATASETS_CACHE="/data1/wj_24/.cache/huggingface/datasets"
 export HF_HOME="/data1/wj_24/.cache/huggingface"
 # 个人路径根据常用状态设置
 # export HOME="/data1/wj_24"
 
 export HF_TOKEN="*******************"
+
 #export LD_LIBRARY_PATH=/usr/local/cuda-12.6/lib64:$LD_LIBRARY_PATH
 
 

@@ -1,4 +1,5 @@
-#!/usr/bin/bash or zsh
+#!/bin/bash
+# or zsh
 # source ./zsh_setup.sh
 # 在镜像中，默认 root 用户，并且没有 sudo 命令，所以需要删除此脚本的所有 sudo，操作如下：
 # perl -i.bak -wple 's/sudo\s+//g' ./zsh_setup.sh

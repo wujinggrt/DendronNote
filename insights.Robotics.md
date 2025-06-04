@@ -2,7 +2,7 @@
 id: eszoks0gixjd0fjyul4wh10
 title: Robotics
 desc: ''
-updated: 1748597735362
+updated: 1749053086634
 created: 1740293600917
 ---
 
@@ -199,6 +199,10 @@ VLM 做分析 (analyse) 和指导 (instruct)。指导小模型找到感兴趣区
 是否大小模型的方式，也可以规范一套协议？
 
 Tool 的描述会提供给 LLM，生成合理的规划。是否机器人也需要提供一套描述，比如动作的描述，动作的参数，动作的条件，动作的限制，形成一套协议。
+
+## VACE
+
+机器人的 All-in-One 模型？如何处理？单臂、双臂，触觉、视觉，通过 mask 处理。
 
 ## In-Context Edit
 

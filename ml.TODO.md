@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1749047955078
+updated: 1749055794380
 created: 1738165674608
 ---
 
@@ -197,6 +197,10 @@ https://zhuanlan.zhihu.com/p/21498615281
 【论文解读】IRIS：用Transformer构建世界模型 - tomsheep的文章 - 知乎
 https://zhuanlan.zhihu.com/p/21353183728
 
+NV 的技术报告很有干活
+
+真机强化学习？
+
 ## Agent
 
 Manus发布一天后迅速出现OpenManus、OWL 等复刻项目，怎么做到的？ - 锦恢的回答 - 知乎
@@ -229,6 +233,10 @@ https://www.zhihu.com/question/1888903744047011293/answer/1888905234241258191
 ## 灵巧手和 affordance
 
 ManiTrans 和 AffordDP
+
+## 数据采集工作
+
+智元的数据采集十分优秀
 
 ## 开拓视野
 
