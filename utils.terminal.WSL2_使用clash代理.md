@@ -2,7 +2,7 @@
 id: jhyuc715xjusi152pfx0ydf
 title: WSL2_使用clash代理
 desc: ''
-updated: 1744303797781
+updated: 1749092103270
 created: 1744038579155
 ---
 
@@ -34,7 +34,7 @@ dnsTunneling=true
 firewall=true
 ```
 
-重启 WSL2：`wsl --shutdown` 后，重新启动。可以使用命令 `ip a` 查看地址是否与宿主机一致。
+重启 WSL2，首先查看名字，`wsl -l -v`；`wsl --shutdown` 后，重新启动。可以使用命令 `ip a` 查看地址是否与宿主机一致。
 
 在 Clash 一端，打开 "Allow LAN" 选项，于是 WSL2 所有流量会经过代理。
 

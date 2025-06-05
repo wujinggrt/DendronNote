@@ -2,7 +2,7 @@
 id: f05p6c9udsrbsu66kxhfesi
 title: VACE_All_in_One_视频生成和编辑集成到一个模型
 desc: ''
-updated: 1747675858415
+updated: 1749131746545
 created: 1747559246932
 ---
 
@@ -79,7 +79,7 @@ created: 1747559246932
 
 **Context Latent Encoding**: 将视频的时空上下文信息编码为紧凑的潜在表示，为后续生成或编辑任务提供全局一致的语义约束。其核心目标是：​​通过隐式建模视频的时空依赖关系，保留需保留区域（非活动帧）的连贯性，并为需生成区域（反应帧）提供上下文感知的生成条件​​。
 
-DiT 处理 noisy video latents $X \in \mathbb{R}^{n' \times h' \times w' \times d'}$，n' 是时间形状，n' 个帧，h' 和 w' 是高和宽，d' 是潜向量维度。类似地，F_c, F_k, M 也会编码到高维特征空间，以恰当地处理时空关系。F_c 与 F_k 后续都会在 VAE 中处理，映射 F_c 和 F_k 到与噪声 X 的相同潜空间，保持时空一致性。为了保证 reference image 不被杂糅，会单独编码它，之后按照原有的时序维度关系拼接回来。Mask M 直接 reshape 和插值即可。最终，与 X 在时空上对齐，都有形状 n'x h' x w'。
+DiT 处理 noisy video latents $X \in \mathbb{R}^{n' \times h' \times w' \times d'}$，n' 是时间维度，对应帧数量，h' 和 w' 是高和宽，d' 是潜向量维度。类似地，F_c, F_k, M 也会编码到高维特征空间，以恰当地处理时空关系。F_c 与 F_k 后续都会在 VAE 中处理，映射 F_c 和 F_k 到与噪声 X 的相同潜空间，保持时空一致性。为了保证 reference image 不被杂糅，会单独编码它，之后按照原有的时序维度关系拼接回来。Mask M 直接 reshape 和插值即可。最终，与 X 在时空上对齐，都有形状 n'x h' x w'。
 
 接收来自 ​​Concept Decoupling​​ 的解耦结果：
 - ​​非活动帧潜在特征​​ Z_k​: 对应需保留区域的潜在编码（如背景、未修改物体的特征）。
@@ -91,9 +91,18 @@ DiT 处理 noisy video latents $X \in \mathbb{R}^{n' \times h' \times w' \times 
 - 在 ​​视频生成（T2V）​​ 中，Z_k​ 为空，模型完全依赖文本生成潜在编码。
 - 在 ​​视频编辑​​ 中，Z_k ​提供保留区域的上下文锚点，确保生成内容与原始视频无缝衔接。
 
-**​​Context Embedder**: 将多模态输入（如视频、文本、掩码）编码为统一的潜在表示，为后续的生成或编辑任务提供语义和时空条件。其核心目标是：​​通过联合建模视频内容与用户指令（如文本提示），提取任务相关的上下文特征，并抑制无关噪声​​。
+**​​Context Embedder**: 将多模态输入（如视频、文本、掩码）编码为统一的潜在表示，concatenate F_c, F_k 和 M，再 tokenizing 为 context tokens。Tokenize F_c 和 F_k 的权重与原 video embedder 相同，而 M 部分则初始化为 0。其核心目标是：​​通过联合建模视频内容与用户指令（如文本提示），提取任务相关的上下文特征，并抑制无关噪声​​。
 
+### 微调方式
+
+Fully Fine-Tuning and Context Adapter Tuning
+
+Fully fine-tuning 是简单且容易想到的方式，相加 context tokens 与 noisy tokens。
+
+Context Adapter 思想类似 ResNet，
 
 Insights：是否可以通过输入视频模态，让机械臂决定从上抓或下抓。实现 In-Context Learning。还有，如何考虑机械臂动作的 token 化，也很重要。
+
+是否可以训练自注意力的抓取，然后用 Context Adapter 适配下游？甚至是不同具身？
 
 ## Ref and Tag

@@ -7,6 +7,7 @@ export LANG=en_US.UTF-8\nexport LANGUAGE=en_US:en
 
 # 常用命令 alias
 alias l="ls -alh"
+alias cD="cd .."
 
 # tmux
 alias tnew='tmux new -s'
@@ -92,15 +93,3 @@ unset LIBGL_ALWAYS_INDIRECT
 
 # source /usr/share/colcon_cd/function/colcon_cd.sh
 # export _colcon_cd_root=/opt/ros/rolling/
-
-# Java
-export JAVA_HOME=/home/wujing/tools/jdk-22.0.1
-export JRE_HOME=${JAVA_HOME}/jre
-export CLASSPATH=.:${JAVA_HOME}/lib:${JRE_HOME}/lib
-export PATH=$PATH:${JAVA_HOME}/bin
-
-# WSL2
-export DESKTOP=/mnt/c/Users/10945/Desktop
-export WIN_HOME=/mnt/c/Users/10945
-export DOCUMENTS=/mnt/c/Users/10945/Documents
-export DOWNLOADS=/mnt/c/Users/10945/Downloads
