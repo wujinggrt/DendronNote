@@ -2,7 +2,7 @@
 id: fyepomr2rnswm2zsv3hk12s
 title: Quick_start
 desc: ''
-updated: 1743525941933
+updated: 1749191539716
 created: 1743493714764
 ---
 
@@ -25,123 +25,13 @@ docker run -dit \
 docker exec -it myros2 bash
 ```
 
-进入终端后，安装一些常用工具：
-
-```bash
-apt install -y vim
-```
+进入终端后，需要安装一些常用工具。
 
 后面默认使用了 docker 的 root 环境，不再加上 sudo。版本使用 rolling，文档注意使用 rolling 的版本。
 
-## 常用命令
+## 初始化
 
-### 安装
-
-```bash
-# rolling 版本的海龟，docker 版本对应 rolling
-# colcon 是构建包的工具
-# rqt 可视化组件和依赖
-apt -y install ros-rolling-turtlesim python3-colcon-common-extensions '~nros-rolling-rqt*' \
-    iproute2
-```
-
-### 查看组件
-
-```bash
-ros2 pkg executables turtlesim # 查看 package 下的可执行文件
-ros2 node list
-ros2 topic list
-ros2 service list
-ros2 action list
-```
-
-## 运行可执行文件
-
-```bash
-ros2 run {{package}} {{executable}} 
-```
-
-### 节点
-
-```bash
-ros2 node list # list current running nodes
-# 查看节点细节。比如 /my_turtle
-# 查看订阅者，发布者，服务和 actions
-ros2 node info {{node}}
-```
-
-### 话题
-
-```bash
-ros2 topic list # show topic
-ros2 topic list -t # show topic with type，更详细
-# 监听话题，如果发布数据到此话题则打印，用于调试
-ros2 topic echo {{topic}} 
-ros2 topic echo {{topic}} --no-arr # 不显示 arr 字段
-ros2 topic info {{topic}} # 查看话题细节
-# 推送信息到话题
-# '{{args}}' 单引号中的 {{args}} 时 YAML 格式的，特别注意冒号后要紧跟空格
-ros2 topic pub {{topic}} {{msg_type}} '{{args}}'
-# 例子，--once 代表仅发布一次；或者指定 --rate hz，以 hz 频率一直发送
-# 随后可以 ros2 topic echo /turtle1/pose 可以看到有内容
-ros2 topic pub --once /turtle1/cmd_vel \
-    geometry_msgs/msg/Twist \
-    "{linear: {x: 2.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 1.8}}"
-
-ros2 topic hz {{topic}} # 查看数据发布速率
-```
-
-### interface: 查看类型定义的工具，与 type 打交道
-
-```bash
-# 查看类型的定义，展示数据组成细节
-ros2 interface show {{service_type | message_type | action_type}}
-# 例子
-ros2 interface show geometry_msgs/msg/Twist
-```
-
-### service
-
-```bash
-ros2 service list
-ros2 service type {{service}}
-# arguments 参数可选
-ros2 service call {{service}} {{service_type}} {{arguments}}
-ros2 service echo {{service_type | service_type}} {{arguments}}
-# 根据服务类型查找服务
-ros2 service find {{service type name}}
-```
-
-### Parameters
-
-```bash
-ros2 param list
-ros2 param get {{node}} {{parameter}}
-ros2 param set {{node}} {{parameter}} {{value}}
-# 查看所有节点参数值，以 yaml 格式展示
-# 可以重定向到 yaml 文件
-ros2 param dump {{node}}
-ros2 param load {{node}} {{parameter_file}}
-```
-
-### Actions
-
-```bash
-ros2 action list
-ros2 action list -t
-ros2 action type {{action}}
-ros2 action info {{action}}
-```
-
-### 创建 package
-
-```bash
-ros2 pkg create
-```
-
-## 配置环境
-
-## 使用 ROS2
+### 初始化环境
 
 运行 setup.bash 脚本，初始化环境。如果是 zsh，则用 setup.zsh。
 
@@ -149,7 +39,6 @@ ros2 pkg create
 # Replace ".bash" with your shell if you're not using bash
 # Possible values are: setup.bash, setup.sh, setup.zsh
 source /opt/ros/rolling/setup.bash
-[rti_connext_dds_cmake_module][warning] No RTI Connext DDS installation specified.. RTI Connext DDS will not be available at runtime,unless you already configured LD_LIBRARY_PATH manually.
 ```
 
 可以这一过程放入 /root/.bashrc，每次进入 bash 即激活。
@@ -189,8 +78,137 @@ ros2 run turtlesim turtle_teleop_key
 # 重复第一只海龟命令
 ros2 run turtlesim turtle_teleop_key --ros-args --remap turtle1/cmd_vel:=turtle2/cmd_vel
 ```
+### 安装
 
-### 对比：话题，服务，动作
+```bash
+# rolling 版本的海龟，docker 版本对应 rolling
+# colcon 是构建包的工具
+# rqt 可视化组件和依赖
+apt -y install ros-rolling-turtlesim python3-colcon-common-extensions '~nros-rolling-rqt*' \
+    iproute2
+```
+
+### 查看组件
+
+```bash
+ros2 pkg executables turtlesim # 查看 package 下的可执行文件
+ros2 node list
+ros2 topic list
+ros2 service list
+ros2 action list
+```
+
+
+可以看到，ROS2 使用象牙符号 := 赋值。
+
+## 常用命令
+
+### 运行
+
+```bash
+ros2 run {{package}} {{executable}}
+```
+
+可以指定参数 `--ros-args --remap {{node_property}}:={{new_value}}`，重新分配节点属性。`-r` 是对应短选项。
+
+### Node
+
+```bash
+ros2 node list # list current running nodes
+# 查看节点细节。比如 /my_turtle
+# 可以看到订阅者，发布者，服务和 actions
+ros2 node info {{node}}
+```
+
+### Topic 
+
+节点运行时，会发布和订阅话题。查看命令如下：
+
+```bash
+ros2 topic list
+ros2 topic list -t # show topic with type，更详细
+```
+
+可以监听话题并打印：
+
+```bash
+# 监听话题，如果发布数据到此话题则打印，用于调试
+ros2 topic echo {{topic}} 
+ros2 topic echo {{topic}} --no-arr # 不显示 arr 字段
+```
+
+查看话题的类型，发布、订阅者数量：
+
+```bash
+ros2 topic info {{topic}}
+```
+查看到类型后，可以用 `ros2 interface show {{type}}` 查看 schema。
+
+知道类型后，可以直接发布数据到话题，其中数据要表现为 YAML 格式，要注意冒号后紧跟空格。
+
+```bash
+ros2 topic pub {{topic}} {{msg_type}} '{{args}}'
+# 例子，--once 代表仅发布一次；或者指定 --rate hz，以 hz 频率一直发送
+# 随后可以 ros2 topic echo /turtle1/pose 可以看到有内容
+ros2 topic pub --once /turtle1/cmd_vel \
+    geometry_msgs/msg/Twist \
+    "{linear: {x: 2.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 1.8}}"
+
+ros2 topic hz {{topic}} # 查看数据发布速率
+```
+
+### interface: 查看类型定义，与 type 打交道
+
+```bash
+# 查看类型的定义，展示数据组成细节
+ros2 interface show {{service_type | message_type | action_type}}
+# 例子
+ros2 interface show geometry_msgs/msg/Twist
+```
+
+### Service
+
+```bash
+ros2 service list
+ros2 service type {{service}}
+# arguments 参数可选
+ros2 service call {{service}} {{service_type}} {{arguments}}
+ros2 service echo {{service_type | service_type}} {{arguments}}
+# 根据服务类型查找服务
+ros2 service find {{service type name}}
+```
+
+### Parameters
+
+```bash
+ros2 param list
+ros2 param get {{node}} {{parameter}}
+ros2 param set {{node}} {{parameter}} {{value}}
+# 查看所有节点参数值，以 yaml 格式展示
+# 可以重定向到 yaml 文件
+ros2 param dump {{node}}
+ros2 param load {{node}} {{parameter_file}}
+```
+
+### Actions
+
+```bash
+ros2 action list
+ros2 action list -t
+ros2 action type {{action}}
+ros2 action info {{action}}
+```
+
+### Packages
+
+```bash
+ros2 pkg executables {{package_name}} # 查看有哪些可执行文件
+ros2 pkg create
+```
+
+## 概念
+
+### 话题，服务，动作
 
 #### Topic（话题）
 • 概念：话题是ROS2中最基本的异步、单向通信方式，类似于发布/订阅模式。一个节点可以作为发布者（Publisher）发布信息到一个特定的话题上，而零个、一个或多个节点作为订阅者（Subscriber）接收这些信息。发布者不知道也不关心有多少订阅者，而订阅者只接收它们感兴趣的话题。
@@ -198,12 +216,16 @@ ros2 run turtlesim turtle_teleop_key --ros-args --remap turtle1/cmd_vel:=turtle2
 • 使用场景：适合于持续更新的数据流，例如摄像头图像、激光雷达数据传输，或是机器人状态的广播。
 
 #### Service（服务）
+
+类似 C/S 架构场景。
+
 • 概念：服务提供了同步的请求/响应通信模式。一个节点作为服务端（Server）等待客户端（Client）的请求，并返回响应。客户端发起请求后会阻塞等待服务端的响应。
 • 特点：服务是双向通信，基于请求和响应的模式，适用于需要立即反馈或确认的交互场景。
 • 使用场景：适用于需要得到明确响应的操作，如查询机器人当前位置、请求执行某个一次性任务或确认操作是否成功。
 
 #### Action（动作）
-• 概念：动作是ROS2中用于处理长时间运行任务的高级通信机制，它结合了异步特性和反馈机制。动作分为目标（goal）、结果（result）、反馈（feedback）三个阶段，允许客户端发送一个目标给服务端，服务端执行过程中可以周期性地提供进度反馈，最终报告结果。
+
+• 概念：动作是 ROS2 中用于处理长时间运行任务的高级通信机制，它结合了异步特性和反馈机制。动作分为目标（goal）、结果（result）、反馈（feedback）三个阶段，允许客户端发送一个目标给服务端，服务端执行过程中可以周期性地提供进度反馈，最终报告结果。
 • 特点：支持多对一的通信，具有目标取消、任务反馈和结果确认的能力，适用于需要持续监控和可能需要中途干预的复杂任务。
 
 使用场景：适用于复杂的、可能需要较长时间完成的任务，如导航到远处的目标点、执行复杂的机械臂动作序列，其中任务的进展和结果需要被监控和可能的中止。
@@ -221,7 +243,7 @@ ros2 run turtlesim turtle_teleop_key --ros-args --remap turtle1/cmd_vel:=turtle2
 
 总结
 - ​选择话题：当需要**持续数据流**或**​一对多/多对多通信**时（如传感器数据分发）。
-- ​选择服务：当需要**​即时反馈**或**​精确控制**时（如执行计算任务或设备控制）。
+- ​选择服务：当需要**​即时反馈**或**​精确控制**时（如执行计算任务或设备控制，需要像 C/S 一样请求回答）。
 
 ## 客户端库
 
@@ -381,7 +403,7 @@ ROS 2 使用分布式通信框架，基于 DDS，满足网络配置条件即可�
 
 两台主机位于同一局域网，且 ping 通。并且要求 ROS 2 环境一致，确保所有节点使用消息类型完全一致，比如 (如 std_msgs/String)。
 
-设置 Domain ID 配置，并且节点在同一 Domain ID 的逻辑分组，不同分组则不能通信。两台主机的 .bashrc 中设置相同的 Domain ID 为：
+Domain ID 标识的逻辑分组，分组内的节点可以通信。可在 .bashrc 中设置相同的 Domain ID：
 
 ```bash
 export ROS_DOMAIN_ID=42 # 保持一致即可，默认 0，范围从 0-101
@@ -420,12 +442,12 @@ ros2 topic echo /chatter
 
 ### 常见问题与解决方案
 
-| ​问题 | ​原因 | ​解决方案 |
-| --- | --- | --- |
-| 节点无法发现彼此 | Domain ID 不一致 | 检查两台主机的 .bashrc 中 ROS_DOMAIN_ID 是否相同。 |
-| 话题数据无法接收 | 防火墙阻拦 | 开放 UDP 端口（默认 7400-7500）或临时禁用防火墙。 |
-| 消息类型不匹配 | 不同主机编译的消息接口不一致 | 在两台主机上重新编译相同功能包，确保消息定义同步。 |
-| IP 地址配置错误 | 网络桥接或静态 IP 设置错误 | 使用 ifconfig 确认 IP，并在 .bashrc 中正确导出 ROS_IP。 |
+| ​问题            | ​原因                        | ​解决方案                                               |
+| ---------------- | ---------------------------- | ------------------------------------------------------- |
+| 节点无法发现彼此 | Domain ID 不一致             | 检查两台主机的 .bashrc 中 ROS_DOMAIN_ID 是否相同。      |
+| 话题数据无法接收 | 防火墙阻拦                   | 开放 UDP 端口（默认 7400-7500）或临时禁用防火墙。       |
+| 消息类型不匹配   | 不同主机编译的消息接口不一致 | 在两台主机上重新编译相同功能包，确保消息定义同步。      |
+| IP 地址配置错误  | 网络桥接或静态 IP 设置错误   | 使用 ifconfig 确认 IP，并在 .bashrc 中正确导出 ROS_IP。 |
 
 TODO...
 
@@ -552,3 +574,5 @@ ros2 run py_pubsub talker
 ```
 
 ## Ref and Tag
+
+https://docs.ros.org/en/rolling/index.html
