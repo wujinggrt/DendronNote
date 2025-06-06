@@ -29,6 +29,10 @@ alias pae="perl -wnlae"
 alias gS='git status'
 alias gs='git stage'
 
+# ros2
+alias rr='ros2 run'
+alias rt='ros2 topic'
+
 export THU_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
 export PATH=$PATH:/usr/local/lib
 

@@ -2,7 +2,7 @@
 id: fyepomr2rnswm2zsv3hk12s
 title: Quick_start
 desc: ''
-updated: 1749191539716
+updated: 1749206763878
 created: 1743493714764
 ---
 
@@ -153,9 +153,30 @@ ros2 topic pub {{topic}} {{msg_type}} '{{args}}'
 ros2 topic pub --once /turtle1/cmd_vel \
     geometry_msgs/msg/Twist \
     "{linear: {x: 2.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 1.8}}"
-
-ros2 topic hz {{topic}} # 查看数据发布速率
+ros2 topic pub /turtle1/cmd_vel geometry_msgs/msg/Twist 'linear:
+  x: 0.0
+  y: 0.0
+  z: 0.0
+angular:
+  x: 0.0
+  y: 0.0
+  z: 0.0
+'
 ```
+
+ros2 topic pub 的参数还有：
+- `--once` 仅仅发布一次，否则持续发送，默认 1 Hz
+- `-w {{num_subscriptions}}` 等待订阅数量
+
+统计话题频率、带宽、查找类型等：
+
+```bash
+ros2 topic hz {{topic}} # 查看数据发布速率
+ros2 topic bw {{topic_name}}
+ros2 topic find {{topic_type}}
+```
+
+可以使用工具 `rqt_graph` 查看节点和话题的联系。
 
 ### interface: 查看类型定义，与 type 打交道
 
@@ -170,6 +191,7 @@ ros2 interface show geometry_msgs/msg/Twist
 
 ```bash
 ros2 service list
+ros2 service list -t # 带有类型的查看
 ros2 service type {{service}}
 # arguments 参数可选
 ros2 service call {{service}} {{service_type}} {{arguments}}
@@ -179,6 +201,8 @@ ros2 service find {{service type name}}
 ```
 
 ### Parameters
+
+Parameter 是节点的配置值，每个节点保存它为 int, float, string, bool, list, dict 等。这是一种动态配置机制，可以在运行时修改，不需要重新编译，给与节点信息。
 
 ```bash
 ros2 param list
@@ -190,7 +214,15 @@ ros2 param dump {{node}}
 ros2 param load {{node}} {{parameter_file}}
 ```
 
+在节点启动时加载 parameter file:
+
+```bash
+ros2 run {{package_name}} {{executable_name}} --ros-args --param-file {{file_name}}
+```
+
 ### Actions
+
+ROS2 的一种通信类型，用于长任务。包含 goal, feedback, and a result。Actions 构建于 topics 和 services 之上，功能类似服务，除了不能被取消。
 
 ```bash
 ros2 action list
@@ -206,6 +238,59 @@ ros2 pkg executables {{package_name}} # 查看有哪些可执行文件
 ros2 pkg create
 ```
 
+### Launching nodes
+
+复杂系统中，通常需要同时运行多个节点。配置 launch 文件，使用 `ros2 launch` 一次启动系统的所有节点。
+
+```bash
+ros2 launch turtlesim multisim.launch.py
+```
+
+multisim.launch.py 内容如下：
+
+```py
+from launch import LaunchDescription
+import launch_ros.actions
+
+
+def generate_launch_description():
+    return LaunchDescription([
+        launch_ros.actions.Node(
+            namespace='turtlesim1', package='turtlesim',
+            executable='turtlesim_node', output='screen'),
+        launch_ros.actions.Node(
+            namespace='turtlesim2', package='turtlesim',
+            executable='turtlesim_node', output='screen'),
+    ])
+```
+
+可以看到，同时加载两个 Node。
+
+### Recording and playing back data
+
+`ros2 bag` 记录系统的数据，主要涉及发布的话题、服务和动作。使用如下：
+
+```bash
+ros2 bag record {{topic_name}} # 单个话题
+ros2 bag record -o subset {{topic_name1}} {{topic_name2}} # 多个话题
+```
+
+- -o 选项指定 bag 文件名；
+- -a 记录系统所有话题。
+
+查看文件细节：
+
+```bash
+ros2 bag info {{bag_file_name}}
+```
+
+重播：
+
+```bash
+ros2 bag play {{bag_file_name}}
+```
+
+##
 ## 概念
 
 ### 话题，服务，动作
@@ -261,7 +346,7 @@ cd ~/ros2_ws
 git clone https://github.com/ros2/examples src/examples -b rolling
 ```
 
-在 ros2_ws 目录下，执行：
+在 ~/ros2_ws 目录下，执行：
 
 ```bash
 colcon build --symlink-install
@@ -297,7 +382,22 @@ ros2 run examples_rclcpp_minimal_subscriber subscriber_member_function
 ros2 run examples_rclcpp_minimal_publisher publisher_member_function
 ```
 
-#### 创建工具
+#### colcon_cd：快速移动 cwd 到 package
+
+首先配置：
+
+```bash
+echo "source /usr/share/colcon_cd/function/colcon_cd.sh" >> ~/.bashrc
+echo "export _colcon_cd_root=/opt/ros/rolling/" >> ~/.bashrc
+```
+
+随后可以用：
+
+```bash
+colcon_cd some_ros_package
+```
+
+#### 创建自己的 package
 
 colcon 使用 package.xml 配置文件。支持不同构建类型，推荐的有 ament_cmake 和 ament_python，还有 cmake 包。
 
@@ -319,7 +419,7 @@ rosdep install -i --from-path src --rosdistro rolling -y
 
 #### Overlay 和 Underlay
 
-我们每次进入新的 shell 时,调用 source /opt/ros/rolling/local_setup.zsh 或是 /opt/ros/rolling/setup.zsh 来初始化开发环境, 此 setup 脚本是 source installation 或者 binary installation 提供的, 会为当前 workspace 提供必要的 build dependencies, 比如 example packages; 我们称此 workspace 的环境为 **underlay**。
+每次进入新的 shell 时,调用 source /opt/ros/rolling/local_setup.zsh 或是 /opt/ros/rolling/setup.zsh 来初始化开发环境, 此 setup 脚本是 source installation 或者 binary installation 提供的, 会为当前 workspace 提供必要的 build dependencies, 比如 example packages; 我们称此 workspace 的环境为 underlay。
 
 我们创建新的目录后,在 underlay 的基础上,做出修改并使其成为 overlay。后续开发中,使用 overlay 来迭代 package 是推荐的做法。
 

@@ -2,7 +2,7 @@
 id: ovto6hepvtttctxmnypiebq
 title: Awesome_terminal_终端各种命令脚本
 desc: ''
-updated: 1749054360258
+updated: 1749197369626
 created: 1742868524198
 ---
 
@@ -321,12 +321,12 @@ ssh -N -R 5556:localhost:5555 用户名@客户端机器
 
 #### 三种隧道模式
 
-|隧道类型|封装内容|底层传输|典型用途|
-|---|---|---|---|
-|本地端口转发(-L)|任意 TCP 流量|TCP|访问远程数据库、内网 Web|
-|远程端口转发(-R)|任意 TCP 流量|TCP|暴露内网服务到公网|
-|动态 SOCKS(-D)|任意 TCP 流量（SOCKS 代理）|TCP|浏览器全局代理|
-|UDP 转发(-T 扩展)|UDP over TCP 隧道|TCP|DNS 查询、游戏服务器|
+| 隧道类型          | 封装内容                    | 底层传输 | 典型用途                 |
+| ----------------- | --------------------------- | -------- | ------------------------ |
+| 本地端口转发(-L)  | 任意 TCP 流量               | TCP      | 访问远程数据库、内网 Web |
+| 远程端口转发(-R)  | 任意 TCP 流量               | TCP      | 暴露内网服务到公网       |
+| 动态 SOCKS(-D)    | 任意 TCP 流量（SOCKS 代理） | TCP      | 浏览器全局代理           |
+| UDP 转发(-T 扩展) | UDP over TCP 隧道           | TCP      | DNS 查询、游戏服务器     |
 
 
 ## sudo 免密码
@@ -336,5 +336,73 @@ ssh -N -R 5556:localhost:5555 用户名@客户端机器
 ```bash
 echo "`whoami` ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 ```
+
+## tr
+
+
+
+## Perl
+
+使用 `-n` 或 `-p` 选项时，若没有指定文件名，则从 stdin 读取内容。
+
+在读取开始前和结束时，可以执行准备工作和扫尾工作。这对统计变量十分有用。只需要在代码块 `BEGIN {...}` 和 `END {...}` 部分指出即可。
+
+比如，统计 TCP 端口：
+
+```bash
+netstat -an | head | perl -wnla -e 'BEGIN {my %state=();} (/tcp/ or $. == 1) and $state{$F[-1]}++; END {foreach (keys %state){ print "$_ => $state{$_}";}}'
+``` 
+
+输出
+
+```
+LISTEN => 5
+established) => 1
+SYN_SENT => 1
+ESTABLISHED => 1
+```
+
+### 特殊变量
+
+`$_` 所有默认操作内容都会放到此遍历，比如从 stdin 和文件读取的内容，比如 foreach 读取的内容等等。
+
+### 哈希
+
+```perl
+my %score = ("barney" => 195, "fred" => 205, "dino" => 30);
+```
+
+也可以用-替代引号
+
+```perl
+my %score = (-barney=> 195, -fred => 205, -dino => 30);
+```
+
+赋值和访问：
+
+```perl
+$data{'google'} = 'google.com';
+# 或
+$data{-google}++； #追加后面的数字为1，内容为：google.com1
+```
+
+遍历：
+
+```perl
+foreach $key (keys %data){
+    print "$data{$key}\n";
+}
+```
+
+### 类似 Awk 用法
+
+```bash
+perl -wnlae '...'
+```
+
+默认用 `\s+` 分割，把内容放到数组 `@F` 中。如果需要指定分割的参数，用 `-F {{分割的字符（串）}}` 即可。
+
+
+
 
 ## Ref and Tag
