@@ -2,13 +2,13 @@
 id: fyepomr2rnswm2zsv3hk12s
 title: Quick_start
 desc: ''
-updated: 1749206763878
+updated: 1749227637097
 created: 1743493714764
 ---
 
 ![overview](assets/images/robotics.ros2.quick_start/overview.png)
 
-## 安装
+## 安装和创建镜像
 
 使用 docker 环境安装，docker pull osrf/ros2:nightly
 
@@ -78,12 +78,34 @@ ros2 run turtlesim turtle_teleop_key
 # 重复第一只海龟命令
 ros2 run turtlesim turtle_teleop_key --ros-args --remap turtle1/cmd_vel:=turtle2/cmd_vel
 ```
-### 安装
+
+### 汇总 bash 设置
+
+```bash
+. /opt/ros/rolling/setup.bash
+# colcon_cd
+. /usr/share/colcon_cd/function/colcon_cd.sh
+. /usr/share/colcon_cd/function/colcon_cd-argcomplete.bash
+
+export _colcon_cd_root=/opt/ros/rolling/
+```
+
+```zsh
+. /opt/ros/rolling/setup.zsh
+# colcon_cd
+. /usr/share/colcon_cd/function/colcon_cd.sh
+. /usr/share/colcon_cd/function/colcon_cd-argcomplete.zsh
+
+export _colcon_cd_root=/opt/ros/rolling/
+```
+
+### 安装对应的包
 
 ```bash
 # rolling 版本的海龟，docker 版本对应 rolling
 # colcon 是构建包的工具
 # rqt 可视化组件和依赖
+# docker 版本的 ros2 自带了 ros-rolling-turtlesim
 apt -y install ros-rolling-turtlesim python3-colcon-common-extensions '~nros-rolling-rqt*' \
     iproute2
 ```
@@ -97,7 +119,6 @@ ros2 topic list
 ros2 service list
 ros2 action list
 ```
-
 
 可以看到，ROS2 使用象牙符号 := 赋值。
 
@@ -352,6 +373,8 @@ git clone https://github.com/ros2/examples src/examples -b rolling
 colcon build --symlink-install
 ```
 
+--symlink-install 在 install 目录创建软链接，指向 build 和 src 中对应的原始文件。比如，使用 Python 时不会编译文件，可以避免复制。不指定，则会拷贝编译文件和需要的文件到 install 目录。此选项方便开发迭代，生产部署时，应当去掉此选项。
+
 可以看到目录变化：
 
 ```
@@ -362,7 +385,7 @@ colcon build --symlink-install
 └── src
 ```
 
-如有需要，可以运行测试命令 colcon test。building 成功后，输出内容放置在 install 目录，如需使用，还要添加它们到对应的环境变量。colcon 会同时生成 bash, zsh, bat 脚本，运行它们来安装即可：
+build 之前，可以运行测试命令 colcon test。building 成功后，输出内容放置在 install 目录。如需使用，要添加它们到对应的环境变量。colcon 会同时生成 bash, zsh, bat 脚本，运行它们来安装即可：
 
 ```bash
 source install/setup.bash
@@ -394,24 +417,16 @@ echo "export _colcon_cd_root=/opt/ros/rolling/" >> ~/.bashrc
 随后可以用：
 
 ```bash
-colcon_cd some_ros_package
+colcon_cd {{pkg_name}}
 ```
 
 #### 创建自己的 package
 
 colcon 使用 package.xml 配置文件。支持不同构建类型，推荐的有 ament_cmake 和 ament_python，还有 cmake 包。
 
-#### 配置 colcon tab 补全
-
-```bash
-# 对于 zsh
-# echo "source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.zsh" >> ~/.zshrc
-echo "source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash" >> ~/.bashrc
-```
-
 #### 使用 rosdep 检验依赖
 
-在 workspace，比如 ~/ros2_ws 目录下，执行 colcon build 之前，可以解析依赖。
+在 workspace，比如 ~/ros2_ws 目录下，执行 colcon build 之前，可以解析依赖。解析 src 目录下的项目，指定 ros 版本为 rolling：
 
 ```bash
 rosdep install -i --from-path src --rosdistro rolling -y
@@ -419,9 +434,9 @@ rosdep install -i --from-path src --rosdistro rolling -y
 
 #### Overlay 和 Underlay
 
-每次进入新的 shell 时,调用 source /opt/ros/rolling/local_setup.zsh 或是 /opt/ros/rolling/setup.zsh 来初始化开发环境, 此 setup 脚本是 source installation 或者 binary installation 提供的, 会为当前 workspace 提供必要的 build dependencies, 比如 example packages; 我们称此 workspace 的环境为 underlay。
+每次进入新的 shell 时,调用 source /opt/ros/rolling/local_setup.zsh 或是 /opt/ros/rolling/setup.zsh 来初始化开发环境, 此 setup 脚本是 ROS2 的 source installation 或者 binary installation 提供的, 为当前 workspace 提供必要的 build dependencies, 比如 example packages; 称此 workspace 的环境为 underlay。
 
-我们创建新的目录后,在 underlay 的基础上,做出修改并使其成为 overlay。后续开发中,使用 overlay 来迭代 package 是推荐的做法。
+我们创建新的目录后,在 underlay 的基础上,做出修改并使其成为 overlay。后续开发中,使用 overlay 迭代 package 是推荐的做法。
 
 比如，在 source /opt/ros/rolling/setup.bash 后，在当前 Workspace 下，source 此 overlay：
 
