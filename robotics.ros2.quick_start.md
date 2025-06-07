@@ -2,7 +2,7 @@
 id: fyepomr2rnswm2zsv3hk12s
 title: Quick_start
 desc: ''
-updated: 1749227637097
+updated: 1749290325212
 created: 1743493714764
 ---
 
@@ -99,15 +99,16 @@ export _colcon_cd_root=/opt/ros/rolling/
 export _colcon_cd_root=/opt/ros/rolling/
 ```
 
-### 安装对应的包
+### 汇总安装对应的包
 
 ```bash
 # rolling 版本的海龟，docker 版本对应 rolling
 # colcon 是构建包的工具
 # rqt 可视化组件和依赖
 # docker 版本的 ros2 自带了 ros-rolling-turtlesim
-apt -y install ros-rolling-turtlesim python3-colcon-common-extensions '~nros-rolling-rqt*' \
-    iproute2
+apt -y install \
+    ros-rolling-turtlesim python3-colcon-common-extensions '~nros-rolling-rqt*' \
+    iproute2 vim x11-apps tree
 ```
 
 ### 查看组件
@@ -311,6 +312,19 @@ ros2 bag info {{bag_file_name}}
 ros2 bag play {{bag_file_name}}
 ```
 
+### colcon: 构建
+
+```bash
+colcon build # 构建当下所有 package
+colcon build --packages-select my_package
+```
+
+### rosdep: 判断依赖
+
+```bash
+rosdep install -i --from-path src --rosdistro rolling -y
+```
+
 ##
 ## 概念
 
@@ -353,7 +367,7 @@ ros2 bag play {{bag_file_name}}
 
 ## 客户端库
 
-### colcon: 构建 packages
+### 构建 packages 的流程
 
 安装，apt -y install python3-colcon-common-extensions。colcon 使用 out of source builds。首先，需要构建一个目录，作为项目目录。随后，目录下放置 src 子目录，对应 ROS 的 package 的源代码。随后，colcon 创建 src 的同级目录 build, install, log。
 - build用于存放生成的中间文件,CMake也会在此目录下,对应源码结构生成中间文件;
@@ -446,7 +460,7 @@ source install/local_setup.bash
 
 即可在 underlay 上构建 overlay。于是，在 local_setup.bash 后，可以运行此 overlay 的内容。
 
-#### package 构成
+#### Package 构成
 
 一个 package 至少包含如下文件：
 - `package.xml` 包含元信息
@@ -455,7 +469,7 @@ source install/local_setup.bash
 - `setup.py` containing instructions for how to install the package
 - `{{package}}` 与包同名的目录名，下面通常包含具体的源代码。used by ROS 2 tools to find your package, contains `__init__.py`
 
-#### workspace 下的包如何组织的
+#### Workspace 下的包如何组织的
 
 在 workspace 的 src 目录下，组织了各种包。
 
@@ -486,17 +500,23 @@ workspace_folder/
 
 ```bash
 cd ~/ros2_ws/src
+```
+
+CMake 和 Python 版本分别如下：
+
+```bash
+ros2 pkg create --build-type ament_cmake --license Apache-2.0 <package_name>
 ros2 pkg create --build-type ament_python --license Apache-2.0 {{package_name}}
 ```
 
-还可指定 --node-name 来创建简单类型的可执行文件。比如：
+还可指定 --node-name 来创建简单类型的可执行文件，类似 Hello World 的模板。指定后，会在 ~/ros2_ws/src 下，生成 my_package/src/my_node.cpp 或 ./my_package/my_package/my_node.py 文件。
 
 ```bash
 ros2 pkg create --build-type ament_python --license Apache-2.0 \
     --node-name my_node my_package
 ```
 
-构建并使用
+构建并运行：
 
 ```bash
 cd ~/ros2_ws
@@ -511,6 +531,50 @@ ros2 run my_package my_node
 package.xml，我们可以看到 description 和 liscence 有 TODO 内容，可以修改。在 `<license>` 标签下方，有很多以 `_depend` 结尾的标签，比如 `<test_depend>`，代表依赖别的包，colcon 会搜索。
 
 setup.py 包含了与 package.xml 相同的描述、维护者和证书字段。还有 version 和 name 字段。
+
+#### 自定义 package.xml
+
+填写 maintainer, description, buildtool_depend 等内容。
+
+### 各种例子
+
+1. [publisher and subscriber (C++)](https://docs.ros.org/en/rolling/Tutorials/Beginner-Client-Libraries/Writing-A-Simple-Cpp-Publisher-And-Subscriber.html)
+2. [publisher and subscriber (Pyhthon)](https://docs.ros.org/en/rolling/Tutorials/Beginner-Client-Libraries/Writing-A-Simple-Cpp-Publisher-And-Subscriber.html)
+
+主要使用回调函数的范式完成定时的任务。
+
+### C++ 版本
+
+头文件：
+- `rclcpp/rclcpp.hpp` 包含了 Node 等定义
+- `std_msgs/msgs/string.hpp` 定义了发布的数据类型，比如 `std_msgs::msg::String`
+
+rclcpp::Node 有创建发布者的成员函数：
+- `rclcpp::Publisher<std_msgs::msg::String>::SharedPtr create_publisher(String, QoS)`
+- `rclcpp::Subscription<std_msgs::msg::String>::SharedPtr create_subscription(String, QoS, callback)`
+- `rclcpp::TimerBase::SharedPtr create_wall_timer(hz, callback)`
+
+Publisher 有方法发布信息：
+- `publish(std_msgs::msg::String msg)`
+
+修改 package.xml，因为需要 rclcpp/rclcpp.hpp, std_msgs/msgs/string.hpp，所以需要指出依赖：
+
+```xml
+<depend>rclcpp</depend>
+<depend>std_msgs</depend>
+```
+
+CmakeList.txt 不分，需要查找对应的 pacakge：
+
+```CmakeLists
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+```
+
+### Python 版本
+
+
 
 ## 多机通信
 
