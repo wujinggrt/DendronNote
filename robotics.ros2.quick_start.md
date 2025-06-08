@@ -2,7 +2,7 @@
 id: fyepomr2rnswm2zsv3hk12s
 title: Quick_start
 desc: ''
-updated: 1749290325212
+updated: 1749369875604
 created: 1743493714764
 ---
 
@@ -200,7 +200,7 @@ ros2 topic find {{topic_type}}
 
 可以使用工具 `rqt_graph` 查看节点和话题的联系。
 
-### interface: 查看类型定义，与 type 打交道
+### Interface: 查看类型定义，与 type 打交道
 
 ```bash
 # 查看类型的定义，展示数据组成细节
@@ -258,6 +258,15 @@ ros2 action info {{action}}
 ```bash
 ros2 pkg executables {{package_name}} # 查看有哪些可执行文件
 ros2 pkg create
+```
+
+ros2 pkg create 可以接受各种名来，简化配置：
+- `--build-type` 可选 ament_cmake 或 ament_python
+- `--license` 通常是 Apache-2.0
+- `--dependencies` 添加依赖，自动配置 package.xml，CMakeLists.txt 等。比如指定 rclcpp
+
+```bash
+ros2 pkg create --build-type ament_cmake --license Apache-2.0 cpp_srvcli --dependencies rclcpp example_interfaces
 ```
 
 ### Launching nodes
@@ -564,7 +573,7 @@ Publisher 有方法发布信息：
 <depend>std_msgs</depend>
 ```
 
-CmakeList.txt 不分，需要查找对应的 pacakge：
+CMakeLists.txt 不分，需要查找对应的 pacakge：
 
 ```CmakeLists
 find_package(ament_cmake REQUIRED)
@@ -572,9 +581,11 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 ```
 
+总结思路：在 Ctor 创建 publisher，定义一个让 publisher 不断发布 msg 的回调函数，创建 timer 并注册此回调函数。最后修改配置文件，引入依赖的包。
+
 ### Python 版本
 
-
+思路类似，与配置 CMakeLists.txt 不同的是，配置 setup.py 文件找到入口。
 
 ## 多机通信
 
