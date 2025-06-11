@@ -2,7 +2,7 @@
 id: ovto6hepvtttctxmnypiebq
 title: Awesome_terminal_终端各种命令脚本
 desc: ''
-updated: 1749612129331
+updated: 1749622886837
 created: 1742868524198
 ---
 
@@ -466,7 +466,11 @@ perl -wnlae '...'
 
 默认用 `\s+` 分割，把内容放到数组 `@F` 中。如果需要指定分割的参数，用 `-F {{分割的字符（串）}}` 即可。
 
+## 输入法
 
-
+```bash
+sudo apt update
+sudo apt install fcitx fcitx-pinyin -y
+```
 
 ## Ref and Tag

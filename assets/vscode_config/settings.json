@@ -2,12 +2,11 @@
     /* 扩展：
     * Vim: 编辑器
     * Which Key: 命令执行工具
-    * multicommand: 快捷工具
+    * multi-command: 组织命令
     * autoDocstring: 方便编辑代码注释
     * Bookmarks: 书签
     * Better Align: 对齐冒号，等号，注释和箭头等内容
     * Better Comments: 高亮注释内容，更有层次
-    * Log File Highlighter: 高亮日志文件的 info, error 等部分
     * Blockman: 不同缩进、括号模块会突出显示，在 Python 文件中方便查看层级关系。可能导致 VS Code 略卡。
     * Error Lens: 高亮错误
     * Dictionary Completion: 忘记英文单词时，提示
@@ -16,7 +15,6 @@
     * Log File Highlighter: 高亮日志文件的 info, error 等
     * Markdown All In One: Markdown 组件
     * Markdown Preview Enhanced
-    * multi-command: 组织命令
     * Partial Diff: 对比文件差异
     * Python: Python 支持
     * Python Indent: 纠正缩进
@@ -1552,7 +1550,6 @@
     "terminal.integrated.fontFamily": "\"CodeNewRoman Nerd Font Mono\"",
     // 缩放
     "window.zoomLevel": 0,
-    "workbench.colorTheme": "GitHub Light",
     "files.associations": {
         "*.py": "python"
     },
@@ -1583,3 +1580,4 @@
         // If this value is negative, it means don't align the trailing comment.
         "comment": 2
     },
+    "workbench.colorTheme": "GitHub Light",
