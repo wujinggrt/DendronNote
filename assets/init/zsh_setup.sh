@@ -3,8 +3,12 @@
 # source ./zsh_setup.sh
 # 在镜像中，默认 root 用户，并且没有 sudo 命令，所以需要删除此脚本的所有 sudo，操作如下：
 # perl -i.bak -wple 's/sudo\s+//g' ./zsh_setup.sh
-sudo apt update
-sudo apt install -y zsh git
+SUDO=''
+if [[ $UID -ne 0 ]]; then
+    SUDO='sudo'
+fi
+$SUDO apt update
+$SUDO apt install -y zsh git
 # ohmyzsh
 # sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 echo Y | sh -c "$(curl -fsSL https://gitee.com/pocmon/ohmyzsh/raw/master/tools/install.sh)"
@@ -31,5 +35,5 @@ if [[ -f $LOCAL_PROFILE ]]; then
 fi
 EOF
 
-sudo chsh -s $(which zsh)
+$SUDO chsh -s $(which zsh)
 # 下一次进终端便可配置 zsh 的 powerlevel10k 外观

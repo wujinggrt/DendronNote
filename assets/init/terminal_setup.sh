@@ -15,6 +15,10 @@ NVIDIA_GPU=1 # 如果没有，与 NVIDIA 相关配置都不会执行
 NVIDIA_CONTAINER_TOOLKIT=1 # 设置此变量为任意值，只要长度非 0，安装NVIDIA driver
 # 应该先试用 ubuntu-drivers devices 查看建议安装版本，随后再修改
 NVIDIA_DRIVER_VERSION=550
+SUDO=''
+if [[ $UID -ne 0 ]]; then
+    SUDO='sudo'
+fi
 # authorization: root
 if [[ $UBUNTU_VERSION == 24.04 ]]; then
     # 24.04换源
@@ -23,26 +27,26 @@ if [[ $UBUNTU_VERSION == 24.04 ]]; then
     /etc/apt/sources.list.d/ubuntu.sources
 elif [[ $UBUNTU_VERSION == 22.04 ]]; then
     # 22.04 换源
-    sudo sed -i "s@http://.*archive.ubuntu.com@http://mirrors.tuna.tsinghua.edu.cn@g" /etc/apt/sources.list
-    sudo sed -i "s@http://.*security.ubuntu.com@http://mirrors.tuna.tsinghua.edu.cn@g" /etc/apt/sources.list
+    $SUDO sed -i "s@http://.*archive.ubuntu.com@http://mirrors.tuna.tsinghua.edu.cn@g" /etc/apt/sources.list
+    $SUDO sed -i "s@http://.*security.ubuntu.com@http://mirrors.tuna.tsinghua.edu.cn@g" /etc/apt/sources.list
 else
     echo "ERROR: Unsupported Ubuntu version: $UBUNTU_VERSION"
     exit 1
 fi
-sudo apt update
-sudo apt install -y wget curl expect tmux
+$SUDO apt update
+$SUDO apt install -y wget curl expect tmux
 # Zerotier
 if [[ -n $ZEROTIER ]]; then
     curl -s https://install.zerotier.com | bash
-    sudo systemctl enable zerotier-one.service
-    sudo systemctl start zerotier-one.service
+    $SUDO systemctl enable zerotier-one.service
+    $SUDO systemctl start zerotier-one.service
 fi
 # SSH
-sudo apt install -y openssh-server
+$SUDO apt install -y openssh-server
 # 开机启动
 # 也可以用service sshd start，这是老一点的系统
-sudo systemctl start ssh
-sudo systemctl enable ssh
+$SUDO systemctl start ssh
+$SUDO systemctl enable ssh
 # 登录别名设置如下
 # 在 .ssh/config 中配置（~/.ssh/config)
 # Host 别名
@@ -71,9 +75,9 @@ echo -e "yes\n" | ssh -T git@github.com
 mkdir -p $HOME/.local/share && apt install -y tldr
 # Asia/Shanghai, CMake需要此包
 echo 1 70 | apt install -y tzdata
-sudo apt install -y cppman iputils-ping net-tools iproute2 make cmake htop vim cmake unzip tree x11-apps
+$SUDO apt install -y cppman iputils-ping net-tools iproute2 make cmake htop vim cmake unzip tree x11-apps
 # git设置
-sudo apt install -y git
+$SUDO apt install -y git
 # git config --global user.name $USER
 # git config --global user.email $EMAIL_ADDRESS
 # miniconda
@@ -94,27 +98,27 @@ fi
 if [[ -n $DOCKER ]]; then
     wget http://fishros.com/install -O fishros && echo 8 | . fishros
     # 开机启动
-    sudo systemctl enable --now docker > /dev/null 2>&1
+    $SUDO systemctl enable --now docker > /dev/null 2>&1
     # docker
     # nvidia runtime和Docker
     if [[ -n $NVIDIA_GPU ]]; then
         # Win下装过驱动后便可忽略driver
         # 应该先试用 ubuntu-drivers devices 查看建议安装版本，随后再修改
-        sudo apt install -y nvidia-driver-${NVIDIA_DRIVER_VERSION} nvidia-settings nvidia-prime
-        if [[ $NVIDIA_DRIVER_VERSION -ne 550 ]]; then 
+        $SUDO apt install -y nvidia-driver-${NVIDIA_DRIVER_VERSION} nvidia-settings nvidia-prime
+        if [[ $NVIDIA_DRIVER_VERSION -ne 550 ]]; then
             echo "ERROR 驱动版本可能不适合当前的 CUDA Toolkit"
             exit 1
         fi
         # CUDA Toolkit for 550
-        wget https://developer.download.nvidia.com/compute/cuda/12.6.3/local_installers/cuda_12.6.3_560.35.05_linux.run 
-        sudo sh cuda_12.6.3_560.35.05_linux.run --silent --toolkit
+        wget https://developer.download.nvidia.com/compute/cuda/12.6.3/local_installers/cuda_12.6.3_560.35.05_linux.run
+        $SUDO sh cuda_12.6.3_560.35.05_linux.run --silent --toolkit
         # cuDNN 需要先登录才能下载和安装，参考：
         # https://developer.nvidia.com/cudnn
         # 下面是安装
         wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
-        sudo dpkg -i cuda-keyring_1.1-1_all.deb
-        sudo apt-get update
-        sudo apt-get -y install cudnn
+        $SUDO dpkg -i cuda-keyring_1.1-1_all.deb
+        $SUDO apt-get update
+        $SUDO apt-get -y install cudnn
         echo 'export LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:$LD_LIBRARY_PATH' >> ~/.bashrc
         echo 'export PATH=/usr/local/cuda-12.4/bin:$PATH' >> ~/.bashrc
         # 安装后注意修改环境变量
@@ -123,13 +127,13 @@ if [[ -n $DOCKER ]]; then
             # https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
             # Installing the NVIDIA Container Toolkit — NVIDIA Container Toolkit 1.16.2 documentation
             # https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
-            curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
+            curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | $SUDO gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
             && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
                 sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
-                sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
-            sudo apt-get update
-            sudo apt-get install -y nvidia-container-toolkit
-            sudo systemctl restart docker
+                $SUDO tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+            $SUDO apt-get update
+            $SUDO apt-get install -y nvidia-container-toolkit
+            $SUDO systemctl restart docker
             # docker run --rm --gpus all nvidia/cuda:11.0-base nvidia-smi # 验证安装
             # 使用英伟达命令行工具
             # 执行以下命令会修改/etc/docker/daemon.json：
@@ -142,9 +146,9 @@ if [[ -n $DOCKER ]]; then
             #         }
             #     }
             # }
-            sudo nvidia-ctk runtime configure --runtime=docker
-            sudo systemctl restart docker
-            sudo systemctl enable docker # 开机自启动
+            $SUDO nvidia-ctk runtime configure --runtime=docker
+            $SUDO systemctl restart docker
+            $SUDO systemctl enable docker # 开机自启动
             # 使用所有GPU 
             # $ docker run --gpus all 【镜像名】 
             # 使用两个GPU 

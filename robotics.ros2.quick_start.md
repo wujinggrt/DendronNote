@@ -2,7 +2,7 @@
 id: fyepomr2rnswm2zsv3hk12s
 title: Quick_start
 desc: ''
-updated: 1749369875604
+updated: 1749524624632
 created: 1743493714764
 ---
 
@@ -582,6 +582,8 @@ find_package(std_msgs REQUIRED)
 ```
 
 总结思路：在 Ctor 创建 publisher，定义一个让 publisher 不断发布 msg 的回调函数，创建 timer 并注册此回调函数。最后修改配置文件，引入依赖的包。
+
+Service and Client：需要定义 .srv 文件，以 `---` 分割请求和响应内容类型。
 
 ### Python 版本
 

@@ -2,9 +2,17 @@
 id: ovto6hepvtttctxmnypiebq
 title: Awesome_terminal_终端各种命令脚本
 desc: ''
-updated: 1749197369626
+updated: 1749612129331
 created: 1742868524198
 ---
+
+## apt
+
+安装：
+
+```bash
+sudo dpkg -i {{pkg_name.deb}}
+```
 
 ## 执行命令
 
@@ -78,6 +86,41 @@ myfunc
 echo $local_var    # 无输出（变量已销毁）
 ```
 
+## 终端复用：Tmux, Tmuxp
+
+tmux 终端复用，tmuxp 管理多个 tmux
+
+```bash
+sudo apt install -y tmux tmuxp
+```
+
+### Tmux
+
+创建会话，和连接
+
+```bash
+tmux new -s session_name
+tmux attach -t session_name
+tmux a # 简写
+tmux ls
+```
+
+一个会话可以包含多个窗口，一个窗口可以包含多个面板。
+
+常用命令：
+- `{{prefix}}"` 水平拆分创建新面板
+- `{{prefix}}%` 垂直拆分创建新面板
+- `{{prefix}}c` 创建新窗口
+- `{{prefix}}x` 关闭面板
+- `{{prefix}}&` 关闭窗口
+- `{{prefix}}d` 把会话挂到后台
+- `{{prefix}}{{ctrl+方向键}}` 调整面板边界
+- `{{prefix}}{ctrl+h|l}` 左右选择窗口
+- `{{prefix}}{{数字}}` 选择对应编号窗口
+- `{{prefix}},` 重命名窗口
+- `{{prefix}}$` 重命名会话
+- `{{prefix}}z` 最大化当前面板
+
 ## curl
 
 常用参数：
@@ -125,6 +168,22 @@ curl -X POST http://host:port/v1/chat/completions \
 ```
 
 ## 网络工具：ip 工具等
+
+### arp
+
+查看 ARP 缓存，列出 IP 地址与 MAC 地址的对应关系。
+
+```bash
+arp -a
+```
+
+### 配置网卡、通信设备
+
+```bash
+sudo ip link set dev {{网卡名}} {{选项}}
+```
+
+其中，dev 是显示指定设备名，有时可以省略，但是为了可读性和避免参数冲突，带上 dev 选项是良好的风格。
 
 ### 静态 ip 地址
 
@@ -329,6 +388,12 @@ ssh -N -R 5556:localhost:5555 用户名@客户端机器
 | UDP 转发(-T 扩展) | UDP over TCP 隧道           | TCP      | DNS 查询、游戏服务器     |
 
 
+### 网线直连的两主机通信
+
+分别在两主机上配置 IP 地址和子网掩码，为在同一网段的不同 IP 地址。随后可以随意设置网关，因为 ARP 能够直接获取目标 IP 地址的 MAC 地址，通信仅在两主机间的情况下，包不会被转发到网关，所以任意网关都不会有影响。
+
+配置后尝试互相 ping 通。连接正常后，确保主机要安装 openssh-server，配置 PasswordAuthentication yes 或者其他免密登录方法，才能正常登录。
+
 ## sudo 免密码
 
 需要在 root 用户下执行。
@@ -338,7 +403,6 @@ echo "`whoami` ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 ```
 
 ## tr
-
 
 
 ## Perl
