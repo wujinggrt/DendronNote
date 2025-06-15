@@ -23,6 +23,7 @@
     * TODO Hightlight
     * TODO Tree
     * Dendron: 笔记工具
+    * Paste Image: 粘贴图片到 Markdown 文件
     * Notes : 指定存放笔记位置后，可以在任何项目编辑 markdown 文件来笔记，不用繁琐地打开其他地方来笔记。配合 Dendron 使用最佳。
     * Github Theme: 使用 Github Light 主题
     * Material Icon Theme: 图标美化

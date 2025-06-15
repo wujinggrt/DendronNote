@@ -2,7 +2,7 @@
 id: eszoks0gixjd0fjyul4wh10
 title: Robotics
 desc: ''
-updated: 1749053086634
+updated: 1749779459395
 created: 1740293600917
 ---
 
@@ -235,5 +235,9 @@ Diffusion Reward
 ## 能否创建一个 Context？
 
 Context 包含了很多 VLM 和扩散专家共同理解的特征。直接用 VLM 的 ViT？
+
+## Long-horizon
+
+长的记忆可以慢慢淡化，作为 context 时，允许给出更大的自由度，不用 100% 还原。
 
 ## Ref and Tag

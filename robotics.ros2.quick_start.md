@@ -2,7 +2,7 @@
 id: fyepomr2rnswm2zsv3hk12s
 title: Quick_start
 desc: ''
-updated: 1749524624632
+updated: 1749785804931
 created: 1743493714764
 ---
 
@@ -764,6 +764,169 @@ ros2 run py_pubsub talker
 ```bash
 ros2 run py_pubsub talker
 ```
+
+## 标准的消息
+
+消息的定义文件通常保存为 `.msg` 后缀。服务和动作的后缀为 `.srv` 和 `.action`。
+
+### std_msgs
+
+#### Header
+
+https://docs.ros2.org/latest/api/std_msgs/msg/Header.html
+
+std_msgs/Header 定义如下：
+
+```
+builtin_interfaces/msg/Time stamp
+string frame_id
+```
+
+stamp 可以通过 Node 对象的 now() 方法获取。
+
+### geometry_msgs
+
+#### Point
+
+geometry_msgs/Point 定义：
+
+```
+float64 x
+float64 y
+float64 z
+```
+
+#### Quaternion
+
+geometry_msgs/Quaternion 定义（带有默认值）：
+
+```
+float64 x 0
+float64 y 0
+float64 z 0
+float64 w 1
+```
+
+#### Pose
+
+geometry_msgs/Pose 定义：
+
+```
+Point position
+Quaternion orientation
+```
+
+#### Vector3
+
+geometry_msgs/Vector3 定义：
+
+```
+float64 x
+float64 y
+float64 z
+```
+
+#### Transform
+
+geometry_msgs/Transform 定义：
+
+```
+geometry_msgs/msg/Vector3 translation
+geomtry_msgs/msg/Quaternion rotation
+```
+
+#### TransformStamped
+
+geometry_msgs/TransformStamped 定义：
+
+```
+std_msgs/Header header
+string child_frame_id
+geometry_msgs/msg/Transform transform
+```
+
+#### PoseStamped
+
+带有时间戳的 Pose。geometry_msgs/PoseStamped 定义：
+
+```
+std_msgs/msg/Header header
+geometry_msgs/msg/Pose pose
+```
+
+### sensor_msgs
+
+#### CompressedImage
+
+CompressedImage 用于压缩图片和传输。通常使用 cv_bridge 包转换，自动处理压缩和解压缩。用法如下：
+
+```py
+import rclpy
+from rclpy.node import Node
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
+import cv2
+
+class ImagePublisher(Node):
+    def __init__(self):
+        super().__init__('image_publisher')
+        self.bridge = CvBridge()
+        self.publisher = self.create_publisher(Image, 'image_raw', 10)
+        
+        # 使用image_transport会自动创建压缩话题
+        # 原始图像
+        img = cv2.imread('image.jpg')
+        msg = self.bridge.cv2_to_imgmsg(img, "bgr8")
+        self.publisher.publish(msg)
+```
+
+订阅端：
+
+```py
+from rclpy.node import Node
+from sensor_msgs.msg import CompressedImage
+from cv_bridge import CvBridge
+import cv2
+
+class CompressedImageSubscriber(Node):
+    def __init__(self):
+        super().__init__('compressed_image_subscriber')
+        self.subscription = self.create_subscription(
+            CompressedImage,
+            'image/compressed',
+            self.listener_callback,
+            10)
+        self.bridge = CvBridge()
+    
+    def listener_callback(self, msg):
+        try:
+            # 将压缩图像转换为OpenCV格式
+            cv_image = self.bridge.compressed_imgmsg_to_cv2(msg)
+            cv2.imshow("Compressed Image", cv_image)
+            cv2.waitKey(1)
+        except Exception as e:
+            self.get_logger().error(f"Error processing image: {e}")
+```
+
+- jpeg: 有损压缩，适合自然场景
+- png: 无损压缩，适合需要保留细节的图像
+- webp: 较新的格式，提供有损和无损选项
+
+#### JointState
+
+主要字段：
+
+```
+std_msgs/Header header   # 时间戳和坐标系信息
+string[] name           # 关节名称数组
+float64[] position      # 关节位置(弧度或米)
+float64[] velocity      # 关节速度(弧度/秒或米/秒)
+float64[] effort        # 关节力矩/力(牛顿米或牛顿)
+```
+
+### geometry_msgs.msg
+
+#### TransformStamped
 
 ## Ref and Tag
 

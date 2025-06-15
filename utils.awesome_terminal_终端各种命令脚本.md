@@ -2,7 +2,7 @@
 id: ovto6hepvtttctxmnypiebq
 title: Awesome_terminal_终端各种命令脚本
 desc: ''
-updated: 1749622886837
+updated: 1749713838771
 created: 1742868524198
 ---
 
@@ -120,6 +120,8 @@ tmux ls
 - `{{prefix}},` 重命名窗口
 - `{{prefix}}$` 重命名会话
 - `{{prefix}}z` 最大化当前面板
+
+复制到剪切板：按住 shift 选中后，shift 不放，ctrl + c 复制，粘贴也是 shift + ctrl + v。
 
 ## curl
 
@@ -272,6 +274,19 @@ ip route # 查看路由表
 
 ```bash
 sudo ip route add 192.168.123.0/24 via 192.168.19.57
+```
+
+注意，CIDR 中，指定的位数后面要全部为 0，比如 192.168.123.0/24 的后 8 位全部为 0，不匹配则会报错 Invalid prefix。如果需要对单个主机添加静态路由，即点对点路由，可以：
+
+```bash
+# 正确写法（/32掩码）
+sudo ip route add 203.0.113.5/32 via 192.0.2.1
+```
+
+也可以指定网卡：
+
+```bash
+sudo ip route add 203.0.113.5/32 dev eth0
 ```
 
 如果删除，则：

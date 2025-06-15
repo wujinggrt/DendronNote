@@ -266,8 +266,8 @@ tmux_conf_theme_status_right='#{prefix}#{pairing}#{synchronized} #(curl -m 5 wtt
 #b58900 土黄
 tmux_conf_theme_status_left_fg="$tmux_conf_theme_colour_6,#073642,$tmux_conf_theme_colour_8"
 #tmux_conf_theme_status_left_fg="$tmux_conf_theme_colour_6,$tmux_conf_theme_colour_7,$tmux_conf_theme_colour_8"
-tmux_conf_theme_status_left_bg="#b58900,$tmux_conf_theme_colour_10,$tmux_conf_theme_colour_11"
-#tmux_conf_theme_status_left_bg="$tmux_conf_theme_colour_9,$tmux_conf_theme_colour_10,$tmux_conf_theme_colour_11"
+#tmux_conf_theme_status_left_bg="#b58900,$tmux_conf_theme_colour_10,$tmux_conf_theme_colour_11"
+tmux_conf_theme_status_left_bg="$tmux_conf_theme_colour_9,$tmux_conf_theme_colour_10,$tmux_conf_theme_colour_11"
 tmux_conf_theme_status_left_attr="bold,none,none"
 
 # status right style

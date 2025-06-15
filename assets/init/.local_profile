@@ -7,6 +7,7 @@ export LANG=en_US.UTF-8\nexport LANGUAGE=en_US:en
 
 # 常用命令 alias
 alias l="ls -alh"
+alias rf="rm -rf"
 alias cD="cd .."
 
 # tmux
@@ -17,7 +18,8 @@ alias tat='tmux attach -t'
 # docker
 alias drr='docker run -it --rm'
 alias de='docker exec -it'
-alias ds='docker stop'
+alias dS='docker start'
+alias dS='docker stop'
 alias drm='docker rm'
 
 # perl
@@ -34,7 +36,6 @@ alias rr='ros2 run'
 alias rt='ros2 topic'
 
 export THU_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
-export PATH=$PATH:/usr/local/lib
 
 # Huggingface
 export HF_DATASETS_CACHE="/data1/wj_24/.cache/huggingface/datasets"
