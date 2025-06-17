@@ -8,7 +8,7 @@ export LANG=en_US.UTF-8\nexport LANGUAGE=en_US:en
 # 常用命令 alias
 alias l="ls -alh"
 alias rf="rm -rf"
-alias cD="cd .."
+alias cdd="cd .."
 
 # tmux
 alias tnew='tmux new -s'
