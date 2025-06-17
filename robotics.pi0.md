@@ -2,13 +2,17 @@
 id: rq1pdrw9brlki588hqsz3t7
 title: Pi0
 desc: ''
-updated: 1749719304975
+updated: 1750132816060
 created: 1748594157008
 ---
 
 ## pi0
 
 通过人给与的或高层次 VLM 策略给与的语言指令，模型要能够执行对应任务。模型能根据微调获取新技能。
+
+总体结构是大小模型结合。pi0 最终能够控制不同动作空间的多个机器人实体（multiple robot embodiments）。
+
+使用高质量数据来后训练，对下游任务至关重要。高质量数据就像教材一样。
 
 ### 作者、团队信息、论文标题、论文链接、项目主页
 - **作者**：Kevin Black, Noah Brown, Danny Driess 等（Physical Intelligence 团队）  
@@ -55,49 +59,24 @@ graph LR
   E & F & G --> H[π₀ 框架]
 ```
 
-```mermaid
-graph LR
-    subgraph ProblemSpace
-        P1[通用机器人控制]
-        C1[数据稀缺与多样性]
-        C2[泛化能力与鲁棒性]
-        C3[灵巧操作 高频连续]
-        C4[语义理解]
-    end
-
-    subgraph PriorArt
-        PA1[VLA 模型 如 RT-2] -- 局限性 --> L1[动作离散化, 灵巧性不足]
-        PA2[扩散/流模型 如 Diffusion Policy] -- 局限性 --> L2[语义知识整合不足]
-        PA3[大规模BC 如 ACT] -- 局限性 --> L3[模型表达力/训练策略]
-    end
-
-    subgraph Pi0_Solution
-        S1[π₀ 模型]
-        S1 -- 改进 --> L1 & L2 & L3
-        S1 -- 包含 --> VLM[预训练VLM PaliGemma - 处理语义]
-        S1 -- 包含 --> AE[动作专家 + 流匹配 - 处理高频连续动作]
-        S1 -- 训练于 --> Data[大规模多样化数据 π + OXE]
-        S1 -- 采用 --> Recipe[预训练 + 后训练策略]
-    end
-    P1 --> C1 & C2 & C3 & C4
-```
-
 ### 方法
 
 π₀ 模型的核心思想是利用预训练的视觉语言模型 (VLM) 作为主干来理解视觉和语言输入，并结合一个专门的“动作专家”模块通过流匹配 (flow matching) 来生成连续的机器人动作。
 
+Flow matching 更精准。架构受到 Transfusion 启发，训练一个 Transformer，输入不同的对象（objectives）的 tokens。其中，连续输出的 tokens 由 flow matching loss 监督训练，离散输出的 tokens 由交叉熵损失监督训练。额外发现，基于分离的机器人特定权重能提高表现，思想类似 MoE。第一部分处理图像和文本输入，第二部分处理机器人特定的输入输出，即 VLM+动作专家的思想。
+
 1.  **模型架构 (π₀ Model):**
     *   **主干 (Backbone):** 采用预训练的 VLM，如 PaliGemma (论文中使用的是一个 3B 参数版本)。VLM 负责处理输入的图像 (多个视角) 和语言指令，提取高级语义特征。其权重从大规模互联网数据预训练中初始化。
     *   **动作专家 (Action Expert):** 一个相对较小的 Transformer 模型 (约 300M 参数)。它接收机器人的本体感受状态 (如关节角度 \( q_t \)) 和经过流匹配过程加噪的动作序列 \( A^τ \) 作为输入。动作专家专注于将 VLM 的语义理解转化为具体的、连续的动作输出。
-    *   **输入 (Inputs):**
+    *   **输入 (Inputs):** $o_t = [I_t^1,\dots I_t^n, \mathcal{l}_t, q_t]$
         *   多视角 RGB 图像 (\( I_1, ..., I_r \))
         *   语言指令 (\( l_t \))
         *   机器人本体感受状态 (\( q_t \))
     *   **输出 (Outputs):** 未来 H 步的连续动作块 (action chunk) \( A_t = [a_t, ..., a_{t+H-1}] \)。论文中 H=50。
-    *   **流匹配 (Flow Matching):**
+    *   **条件流匹配 (Conditional Flow Matching)**: 受生图和视频领域启发，流匹配效果更好。
         *   用于建模条件概率分布 \( p(A_t | o_t) \)，其中 \( o_t \) 是观测 (图像、语言、状态)。
         *   **训练:**
-            1.  对真实的动作块 \( A_t \) 和随机噪声 \( \varepsilon \sim \mathcal{N}(0, I) \)，以及时间步 \( \tau \in [0,1] \)，构造加噪动作 \( A^τ = τA_t + (1-τ)ε \)。
+            1.  对真实的动作块 \( A_t \) 和随机噪声 \( \varepsilon \sim \mathcal{N}(0, I) \)，以及 flow matching 时间步 \( \tau \in [0,1] \)，构造加噪动作 \( A^τ = τA_t + (1-τ)ε \)。
             2.  模型 \( v_θ(A^τ, o_t) \) 被训练来预测去噪向量场 \( u(A^τ | A_t) = ε - A_t \) (或直接预测 \( A_t \) 或 \( \varepsilon \))。
             3.  损失函数为:
                 $$ L(\theta) = \mathbb{E}_{p(A_t|o_t), q(A^τ|A_t)}[||v_θ(A^τ, o_t) – u(A^τ|A_t)||^2] $$
@@ -107,7 +86,7 @@ graph LR
     *   **跨机器人本体 (Cross-Embodiment):** 通过将不同机器人的状态和动作空间填充到数据集中维度最大的机器人，使得单一模型可以处理多种机器人。
 
 2.  **训练流程 (Training Recipe):**
-    *   **预训练 (Pre-training):**
+    *   **预训练 (Pre-training) :**
         *   **数据:** 使用大规模、高度多样化的数据集，包含 π₀ 自有数据集 (7 种机器人配置，68 种任务，超 1000 万个时间步) 和 Open X-Embodiment (OXE) 数据集。
         *   **目标:** 使模型学习广泛的物理交互知识、通用技能和泛化能力。
         *   数据混合策略：对不同任务-机器人组合的数据根据样本量 \( n \) 进行 \( n^{0.43} \) 的加权。
@@ -115,48 +94,9 @@ graph LR
         *   **数据:** 使用针对特定下游任务的、更小规模但更高质量的、经过精心筛选的数据。
         *   **目标:** 使模型在特定复杂任务上 (如叠衣服、擦桌子、组装盒子) 达到更高的熟练度、效率和鲁棒性。
 
-```mermaid
-graph TD
-    subgraph InputProcessing
-        A[多视角图像序列 I] --> PA(图像编码器 ViT)
-        B[语言指令 l_t] --> PB(文本编码器)
-        C[本体感受状态 q_t] --> PC(状态编码器 MLP)
-        PA --> VLM
-        PB --> VLM
-    end
+### 数据收集与处理
 
-    subgraph ModelCore
-        VLM[预训练VLM主干 PaliGemma]
-        AE[动作专家 Transformer]
-        PC -- 本体状态嵌入 --> AE
-        VLM -- 图像/语言嵌入 --> AE
-    end
-    
-    subgraph FlowMatchingTraining
-        D[真实动作块 A_t_gt]
-        E[随机噪声 ε ~ N(0,I)]
-        F[时间步 τ]
-        D & E & F --> G[构造加噪动作 A_τ = τA_t_gt + (1-τ)ε]
-        G -- 输入 --> AE
-        AE -- 预测 --> H[去噪向量场 v_θ(A_τ, o_t)]
-        H --> L[流匹配损失 L(θ)]
-        I[目标向量场 u = ε - A_t_gt] --> L
-        L --> K[更新模型参数 θ]
-    end
-
-    subgraph Inference
-        N[初始随机噪声 A_0 ~ N(0,I)] --> AE_Inf[动作专家 (与AE共享权重)]
-        PC_Inf[状态编码器 q_t] --> AE_Inf
-        VLM_Inf[VLM主干 I,l_t] --> AE_Inf
-        AE_Inf -- 迭代去噪 (如10步欧拉积分) --> O[预测动作块 A_t_pred]
-        O --> P[机器人执行]
-    end
-    
-    subgraph TrainingStages
-        Data_Pre[大规模多样化预训练数据 (π + OXE)] --> ModelCore
-        Data_Post[高质量任务相关后训练数据] --> ModelCore
-    end
-```
+使用了 9.1% 的公开数据集。使用公开数据集面临异构的挑战（TODO，可以在看 UniVLA 提出了什么思路）, 这些机器人通常有一到两个相机, 运行频率在 2~10Hz。包含单臂、双臂数据。
 
 ### 实验与结论
 - 实验设置:
@@ -187,5 +127,68 @@ graph TD
 ### Insights
 
 VLM 能显著提升语言理解准确率（40%）。
+
+研究动作专家时，关注生成连续输出的领域，如生成图和视频等。
+
+## Presentation or 技术分享
+
+### LAN 传输文件
+
+关键 IP 设置，ssh 服务和 sftp 命令，
+
+### 使用二进制 API
+
+C 兼容的 API 是最通用的方式。
+
+C++ 需要指定声明选项，避免。编译时，C++ 会使用修饰（mangling）的方式修改函数签名，比如: 
+
+```cpp
+// mangle.cpp
+extern "C" {
+  void foo(int i) {}
+}
+
+void bar(int i) {}
+
+void bar(double d) {}
+```
+
+```bash
+g++ -c mangle.cpp -o mangle.o
+```
+
+使用 nm 工具查看编译后对象文件的符号表：
+
+```bash
+❯ nm mangle.o
+0000000000000000 T foo
+000000000000001c T _Z3bard
+000000000000000e T _Z3bari
+```
+
+这些符号就是运行时，调用函数的入口点。C++ 比 C 多了**重载**的功能，所以会修饰为不同符号，比如修饰 bar 函数为 _Z3bard 和 _Z3bari。而 extern "C" 告诉编译器，不进行修饰。运行时能够正确找到 C 兼容的 API。
+
+本项目使用到的接口如下：
+
+```bash
+❯ nm -D --defined-only librelaxed_ik_lib.so | grep -e '\(relaxed_ik_new\|solve_position\|relaxed_ik_free\|solve_velocity\)'
+000000000003c8e0 T relaxed_ik_free
+000000000003c5b0 T relaxed_ik_nw
+000000000003cb40 T solve_position
+000000000003d0f0 T solve_velocity
+```
+
+```bash
+# 1. 首先检查是否包含调试符号
+file librelaxed_ik.so  # 查看是否有 "with debug_info"
+# 2. 提取完整调试信息
+objdump --dwarf=info librelaxed_ik.so > debug_info.txt
+# 3. 搜索函数签名
+grep -A 20 'relaxed_ik_new' debug_info.txt
+```
+
+手臂姿态控制部分：
+
+https://docs.galaxea-ai.com/zh/Guide/R1Pro/R1Pro_Software_Introduction_ROS2/#_18
 
 ## Ref and Tag

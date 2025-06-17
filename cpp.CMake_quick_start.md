@@ -2,7 +2,7 @@
 id: yv3a0r2jcb9n0zxx1vjdyo8
 title: CMake_quick_start
 desc: ''
-updated: 1749998395797
+updated: 1750036528121
 created: 1749877457406
 ---
 
@@ -194,9 +194,11 @@ target_link_libraries(my_app PRIVATE yaml-cpp::yaml-cpp)
 ```cmake
 FetchContent_Declare(
   local_lib
-  SOURCE_DIR /path/to/local/source  # 关键参数
+  SOURCE_DIR /path/to/local/source  # 关键参数，绝对路径
 )
 ```
+
+${local_lib_SOURCE_DIR} 如果使用对应头文件，
 
 压缩包下载（URL/HTTP）：
 
