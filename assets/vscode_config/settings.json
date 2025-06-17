@@ -27,10 +27,8 @@
     * Notes : 指定存放笔记位置后，可以在任何项目编辑 markdown 文件来笔记，不用繁琐地打开其他地方来笔记。配合 Dendron 使用最佳。
     * Github Theme: 使用 Github Light 主题
     * Material Icon Theme: 图标美化
-    */
-    // 避免debug的控制程序step into等控制条遮挡菜单和tab
-    "debug.toolBarLocation": "docked",
-    /* Vim >>>>>>>>>>>>>>>>>>>>>>>>>>
+    *
+    * Vim >>>>>>>>>>>>>>>>>>>>>>>>>>
     * normal mode:
     * e easymotion       : 使用了 <leader><leader>e，忽略大小写。
     * E|R                : 移动右,  左标签
@@ -78,13 +76,109 @@
     * ,, 快速在末尾添加逗号
     *
     * visual mode:
-    * <space> 打开which key show
-    * <leader>s 相当于VS Code原生的ctrl+d，选中下一个匹配的单词，方便批量替换变量名
+    * <space> 打开 which key show
+    * <leader>s 相当于 VS Code 原生的 ctrl+d，选中下一个匹配的单词，方便批量替换变量名
     * <leader>ca quickFix，修改意见。
-    */
-    /* Which Key
+    *
+    * Which Key
     * 参考空格提示后的各个选项。
     */
+    "terminal.integrated.defaultProfile.windows": "Command Prompt",
+    // 集成终端右击时选择光标下方的字词，并打开上下文菜单
+    "terminal.integrated.rightClickBehavior": "copyPaste",
+    "editor.fontFamily": "CodeNewRoman Nerd Font Mono",
+    "editor.fontSize": 14,
+    // 启用连字体
+    "editor.fontLigatures": true,
+    // 行高：使用 0 根据字号自动计算行高
+    "editor.lineHeight": 0,
+    "diffEditor.wordWrap": "off",
+    "diffEditor.hideUnchangedRegions.enabled": true,
+    // 每行最多显示字符数量，多余的自动换行
+    "editor.wordWrap": "on",
+    "editor.wordWrapColumn": 100,
+    // 禁用括号指导线，有 Blockman 插件后不再需要
+    "editor.guides.bracketPairs": false,
+    // 启用水平括号指导线
+    "editor.guides.bracketPairsHorizontal": "active",
+    // 禁用高亮选中的缩进指导线
+    "editor.guides.highlightActiveIndentation": true,
+    // 禁用缩进指导线
+    "editor.guides.indentation": false,
+    "editor.inlayHints.enabled": "off",
+    "editor.semanticHighlighting.enabled": true,
+    // 资源管理器不采用紧凑模式
+    "explorer.compactFolders": false,
+    "workbench.iconTheme": "material-icon-theme",
+    // 显示视图头部的操作项
+    "workbench.view.alwaysShowHeaderActions": true,
+    // 默认打开 settings.json 进行设置
+    "workbench.settings.editor": "json",
+    // 编辑器中可以用 enter 接受建议
+    "editor.acceptSuggestionOnEnter": "on",
+    // 始终预先选择第一个建议
+    "editor.suggestSelection": "first",
+    // 在 peek 时，默认聚焦上下的查看条目
+    "editor.peekWidgetDefaultFocus": "tree",
+    "editor.hover.enabled": true,
+    // 自动格式化
+    "editor.formatOnType": true,
+    // 粘贴自动格式化
+    "editor.formatOnPaste": true,
+    // "files.autoSave": "afterDelay", // 自动保存
+    // 控制编辑器在空白字符上显示符号的方式
+    "editor.renderWhitespace": "all", // none, all, boundary, selection
+    "editor.tabSize": 4,
+    // 左侧 sidebar 显示文件目录时，可以使用水平拖动条
+    "workbench.list.horizontalScrolling": true,
+    // 避免debug的控制程序step into等控制条遮挡菜单和tab
+    "debug.toolBarLocation": "docked",
+    /** 外观
+     *  当前激活的 Workspace，顶部菜单栏颜色显示不同，用于区分打开的多个 VS Code
+     *  比如当前激活的 VsCode 窗口顶部便是 activaBackground 指定的颜色，即如下
+    */
+    "workbench.colorCustomizations": {
+        "titleBar.activeBackground": "#54a3ff",
+        "titleBar.activeForeground": "#ffffff",
+        "statusBar.background": "#8FBCBB",
+        "statusBar.noFolderBackground": "#8FBCBB",
+        "statusBar.debuggingBackground": "#8FBCBB",
+        "statusBar.foreground": "#000",
+        "statusBar.debuggingForeground": "#000",
+        "editor.lineHighlightBackground": "#1073cf2d",
+        "editor.lineHighlightBorder": "#9fced11f"
+    },
+    /**
+     * 单行长度提示线与格式化换行的线
+     * 字符提示线
+     */
+    "editor.rulers": [
+        100
+    ],
+    "[python]": {
+        "editor.rulers": [
+            // ruff默认长度88
+            110
+        ],
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "diffEditor.ignoreTrimWhitespace": false, // 默认使用 Ruff 格式化
+        // "editor.formatOnSave": true, // 保存时自动格式化
+        // ruff默认单行长度88，修改之
+        "ruff.lineLength": 88
+    },
+    // ruff-lsp 服务端已经标记为 deprecated，使用新的 rust 实现的后端 ruff server
+    // 参考 https://github.com/astral-sh/ruff/discussions/15991
+    "ruff.nativeServer": "on",
+    // 高亮全角字符，避免中英文出错
+    "editor.unicodeHighlight.allowedCharacters": {
+        "，": true,
+        "（": true,
+        "）": true
+    },
+    // Dendron 中，tag-name 自动补全
+    "editor.suggest.snippetsPreventQuickSuggestions": false,
+    "editor.suggest.showSnippets": true,
+    "editor.tabCompletion": "on",
     "vim.leader": ",",
     "vim.sneak": true,
     "vim.easymotion": true,
@@ -175,16 +269,6 @@
                 "g",
                 "t"
             ]
-        },
-        {
-            // 向上插入空行
-            "before": [
-                "K"
-            ],
-            "commands": [
-                "lineBreakInsert"
-            ],
-            "silent": true
         },
         {
             "before": [
@@ -493,10 +577,6 @@
             "before": [
                 "<"
             ],
-            // "after": [
-            //     "<",
-            //     "<"
-            // ]
             "commands": [
                 "editor.action.outdentLines"
             ]
@@ -505,10 +585,6 @@
             "before": [
                 ">"
             ],
-            // "after": [
-            //     ">",
-            //     ">"
-            // ]
             "commands": [
                 "editor.action.indentLines"
             ]
@@ -751,7 +827,7 @@
             "commands": [
                 "editor.action.quickFix"
             ]
-        },
+        }
     ],
     // 在 vim 输入时，从 insert 模式切换回 normal 时，自动切换输入法为英文。
     // {im} 会被替换为 defaultIM 的值（即 1033），从插入模式返回普通模式时，会切换输入法到键盘。
@@ -1411,50 +1487,11 @@
     // 也可通过 ctrl + shift + p 输入如下来切换滚动状态
     // Markdown Preview Enhanced: Toggle Sync Scroll
     // "markdown-preview-enhanced.syncPreviewWithEditor": false,
-    // 当前激活的 Workspace，顶部菜单栏颜色显示不同，用于区分打开的多个 VS Code
-    // 比如当前激活的 VsCode 窗口顶部便是 activaBackground 指定的颜色，即如下
-    "workbench.colorCustomizations": {
-        "titleBar.activeBackground": "#54a3ff",
-        "titleBar.activeForeground": "#ffffff",
-        "statusBar.background": "#8FBCBB",
-        "statusBar.noFolderBackground": "#8FBCBB",
-        "statusBar.debuggingBackground": "#8FBCBB",
-        "statusBar.foreground": "#000",
-        "statusBar.debuggingForeground": "#000",
-        "editor.lineHighlightBackground": "#1073cf2d",
-        "editor.lineHighlightBorder": "#9fced11f"
-    },
-    // 高亮全角字符，避免中英文出错
-    "editor.unicodeHighlight.allowedCharacters": {
-        "，": true,
-        "（": true,
-        "）": true,
-    },
-    // Python >>>>>>>>>>>>>>>>>>>>>>>>>>>
-    "[python]": {
-        "editor.rulers": [
-            // ruff默认长度88
-            110
-        ],
-        "editor.defaultFormatter": "charliermarsh.ruff",
-        "diffEditor.ignoreTrimWhitespace": false, // 默认使用 Ruff 格式化
-        // "editor.formatOnSave": true, // 保存时自动格式化
-        // ruff默认单行长度88，修改之
-        "ruff.lineLength": 88,
-    },
     // "notebook.formatOnSave.enabled": true, // notebook 保存时自动格式化
-    // ruff-lsp 服务端已经标记为 deprecated，使用新的 rust 实现的后端 ruff server
-    // 参考 https://github.com/astral-sh/ruff/discussions/15991
-    "ruff.nativeServer": "on",
-    // Python <<<<<<<<<<<<<<<<<<<<<<<<<<<
     /* Dendron
     prerequests: 首先，需要同步 wsl2 的剪切板，需要安装 clipboard-cli。sudo apt install -y xclip
     如果不是 wsl2，是 Windows，Powershell 自己能够完成，不用配置。
     */
-    // Dendron 中，tag-name 自动补全
-    "editor.suggest.snippetsPreventQuickSuggestions": false,
-    "editor.suggest.showSnippets": true,
-    "editor.tabCompletion": "on",
     // Dendron Paste Image 设置
     // 粘贴前询问路劲
     "pasteImage.showFilePathConfirmInputBox": true,
@@ -1476,60 +1513,7 @@
     "pasteImage.basePath": "${workspaceRoot}",
     "pasteImage.insertPattern": "![${imageFileNameWithoutExt}](assets/images/${currentFileNameWithoutExt}/${imageFileName})",
     // Dendron end
-    "terminal.integrated.defaultProfile.windows": "Command Prompt",
-    // 集成终端右击时选择光标下方的字词，并打开上下文菜单
-    "terminal.integrated.rightClickBehavior": "copyPaste",
     "todohighlight.isCaseSensitive": false,
-    "editor.fontFamily": "CodeNewRoman Nerd Font Mono",
-    "editor.fontSize": 14,
-    // 启用连字体
-    "editor.fontLigatures": true,
-    // 行高：使用 0 根据字号自动计算行高
-    "editor.lineHeight": 0,
-    "diffEditor.wordWrap": "off",
-    "diffEditor.hideUnchangedRegions.enabled": true,
-    // 每行最多显示字符数量，多余的自动换行
-    "editor.wordWrap": "on",
-    "editor.wordWrapColumn": 100,
-    // 字符提示线
-    "editor.rulers": [
-        100
-    ],
-    // 禁用括号指导线，有 Blockman 插件后不再需要
-    "editor.guides.bracketPairs": false,
-    // 启用水平括号指导线
-    "editor.guides.bracketPairsHorizontal": "active",
-    // 禁用高亮选中的缩进指导线
-    "editor.guides.highlightActiveIndentation": true,
-    // 禁用缩进指导线
-    "editor.guides.indentation": false,
-    "editor.inlayHints.enabled": "off",
-    "editor.semanticHighlighting.enabled": true,
-    // 资源管理器不采用紧凑模式
-    "explorer.compactFolders": false,
-    "blockman.n04ColorComboPreset": "Classic Light (Gradients)",
-    "workbench.iconTheme": "material-icon-theme",
-    // 显示视图头部的操作项
-    "workbench.view.alwaysShowHeaderActions": true,
-    // 默认打开 settings.json 进行设置
-    "workbench.settings.editor": "json",
-    // 编辑器中可以用 enter 接受建议
-    "editor.acceptSuggestionOnEnter": "on",
-    // 始终预先选择第一个建议
-    "editor.suggestSelection": "first",
-    // 在 peek 时，默认聚焦上下的查看条目
-    "editor.peekWidgetDefaultFocus": "tree",
-    "editor.hover.enabled": true,
-    // 自动格式化
-    "editor.formatOnType": true,
-    // 粘贴自动格式化
-    "editor.formatOnPaste": true,
-    // "files.autoSave": "afterDelay", // 自动保存
-    // 控制编辑器在空白字符上显示符号的方式
-    "editor.renderWhitespace": "all", // none, all, boundary, selection
-    "editor.tabSize": 4,
-    // 左侧 sidebar 显示文件目录时，可以使用水平拖动条
-    "workbench.list.horizontalScrolling": true,
     "git.openRepositoryInParentFolders": "never",
     "files.exclude": {
         "**/.git/**": true,
@@ -1538,7 +1522,7 @@
         "**/.svn/**": true,
         "**/bower_components/**": true,
         "**/dist/**": true,
-        "**/build/**": true,
+        // "**/build/**": true,
         "**/.github/**": true,
         "**/.circleci/**": true,
         "**/out/**": true
@@ -1558,6 +1542,7 @@
     "markdown-preview-enhanced.codeBlockTheme": "github.css",
     "projectManager.sortList": "Saved",
     "security.workspace.trust.untrustedFiles": "open",
+    "blockman.n04ColorComboPreset": "Classic Light (Gradients)",
     "betterAlign.surroundSpace": {
         // 选中之后，比如 vim 的 visual 模式选中后，执行 better align 的对齐命令即可。
         // 比如，colon 部分的设置，对齐冒号，左侧最长的字符作为对齐的基准。
