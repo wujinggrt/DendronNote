@@ -28,7 +28,7 @@
     * Github Theme: 使用 Github Light 主题
     * Material Icon Theme: 图标美化
     *
-    * Vim >>>>>>>>>>>>>>>>>>>>>>>>>>
+    * Vim
     * normal mode:
     * e easymotion       : 使用了 <leader><leader>e，忽略大小写。
     * E|R                : 移动右,  左标签
