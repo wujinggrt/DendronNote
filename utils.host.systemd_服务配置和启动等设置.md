@@ -2,7 +2,7 @@
 id: 7d8vhioct7wag76b0fqz8me
 title: Systemd_服务配置和启动等设置
 desc: ''
-updated: 1747284214533
+updated: 1750385004998
 created: 1744559529402
 ---
 
@@ -240,6 +240,25 @@ After 的常见用途​​：
 systemctl kill service_name
 # 查看配置文件
 systemctl cat service_name
+```
+
+1. `systemctl stop [服务名]`
+-   **立即停止**：立即终止正在运行的指定服务
+-   **临时性操作**：只影响当前运行状态，不改变服务的启动配置
+-   **重启后**：服务仍会按照原有配置自动启动（如果之前是 enabled）
+-   **使用场景**：临时停止服务进行维护或调试
+
+2. `systemctl disable [服务名]`
+-   **禁用自启**：移除服务的开机自动启动配置
+-   **不停止运行**：不会终止当前已运行的服务实例
+-   **永久性操作**：改变服务的启动配置（修改 symlink）
+-   **重启后**：服务不会自动启动
+-   **使用场景**：永久禁用不需要开机启动的服务
+
+通常，立即停止和移除开机自动启动配置，可以使用如下：
+
+```bash
+sudo systemctl disable --now {{service_name}}
 ```
 
 ## 例子

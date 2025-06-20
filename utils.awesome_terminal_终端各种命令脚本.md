@@ -2,7 +2,7 @@
 id: ovto6hepvtttctxmnypiebq
 title: Awesome_terminal_终端各种命令脚本
 desc: ''
-updated: 1749713838771
+updated: 1750404402194
 created: 1742868524198
 ---
 
@@ -12,6 +12,12 @@ created: 1742868524198
 
 ```bash
 sudo dpkg -i {{pkg_name.deb}}
+```
+
+查看能够安装的包：
+
+```bash
+sudo apt search {{关键词}}
 ```
 
 ## 执行命令
@@ -128,7 +134,7 @@ tmux ls
 常用参数：
 - `-C, --continue-at <offset>`: 断点续传。<offset> 可以是字节数，如果是 -，代表自动找到断点部分，自动续传。大C, $ curl -C - https:// # highlight part is necessary，否则就是解析为-C offset从offset偏移下载
 - `-o, --output <filename>`: 小 o，相当于wget
-- `-O, --remote-name`: 文件名是URL最后部分，自动命名。不指定 `-o` 或 `-O` 则默认输出到标准输出。
+- `-O, --remote-name`: 文件名是 URL 最后部分，自动命名。不指定 `-o` 或 `-O` 则默认输出到标准输出。
 - `-#`: 进度条
 - `-L, --location`:  (HTTP) 请求返回3XX code，server迁移了，则 redo 自动使用新的服务器 addr，会自动跳转到新的 URL。
 - `-s, --silent`: 禁止 curl 输出进度和错误信息，只显示下载结果。在执行下载的shell内容有用，比如 `$ sudo bash -c $(curl -fsL URL)`
@@ -487,5 +493,13 @@ perl -wnlae '...'
 sudo apt update
 sudo apt install fcitx fcitx-pinyin -y
 ```
+
+## 字体
+
+[nerd-fonts](https://github.com/ryanoasis/nerd-fonts)
+
+下载一个 ttf 文件，比如 [CodeNewRoman Nerd Font Mono](https://link.zhihu.com/?target=https%3A//github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/CodeNewRoman.zip) 系列能够显示 icon，安装后，可以在终端设置此文字，便有等宽字体。
+
+终端 -> 首选项 -> 未命名 -> 文字，选择自定义字体即可。可以设置白色背景，比如，在文字选项卡旁的颜色，在文字和背景颜色中，取消“使用系统主题中的颜色”，可以用 Light 版本，这样取消了茄色的终端背景。
 
 ## Ref and Tag

@@ -2,7 +2,7 @@
 id: fyepomr2rnswm2zsv3hk12s
 title: Quick_start
 desc: ''
-updated: 1750089370045
+updated: 1750373610564
 created: 1743493714764
 ---
 
@@ -765,6 +765,10 @@ ros2 run py_pubsub talker
 ros2 run py_pubsub talker
 ```
 
+## Launch
+
+Launch 系统用于加载程序，能够指定参数等，方便监视状态。加载文件可以是 XML，YAML 和 Python。
+
 ## 标准的消息
 
 消息的定义文件通常保存为 `.msg` 后缀。服务和动作的后缀为 `.srv` 和 `.action`。
@@ -927,6 +931,68 @@ float64[] effort        # 关节力矩/力(牛顿米或牛顿)
 ### geometry_msgs.msg
 
 #### TransformStamped
+
+## rosidl: ROS Interface Definition Language (接口定义语言)
+
+标准化消息、服务和动作的接口描述规范，实现跨语言一致性。代码生成流程：
+
+```mermaid
+graph LR
+A[.msg/.srv/.action文件] --> B(rosidl_parser解析语法树)
+B --> C{目标语言}
+C -->|C++| D[生成.hpp/.cpp]
+C -->|Python| E[生成.pyi/.py]
+C -->|其他| F[TypeScript/ROS 1等]
+```
+
+### 流程
+
+创建接口文件：
+
+```bash
+# 在ROS 2包的msg目录下创建
+my_package/
+└── msg/
+    └── MyMessage.msg  # 内容示例: string name, float32[] data
+```
+
+配置依赖，在 package.xml 中：
+
+```xml
+<build_depend>rosidl_default_generators</build_depend>
+<exec_depend>rosidl_default_runtime</exec_depend>
+<member_of_group>rosidl_interface_packages</member_of_group>
+```
+
+配置 CMakeLists.txt：
+
+```cmake
+find_package(rosidl_default_generators REQUIRED)
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/MyMessage.msg"
+)
+```
+
+编译与生成结果，在位置：
+- C++: install/my_package/include/my_package/msg/my_message.hpp
+- Python: install/my_package/lib/python3.10/site-packages/my_package/msg/__init__.py
+
+## 行为树
+
+https://docs.nav2.org/behavior_trees/index.html
+
+用好行为树优势，发挥可扩展性。
+
+调研 Nav2 用行为树的方便，在
+
+
+## URDF
+
+安装 Tutorial：
+
+```bash
+sudo apt install -y ros-$ROS_DISTRO-urdf-tutorial
+```
 
 ## Ref and Tag
 

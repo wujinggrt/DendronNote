@@ -2,9 +2,17 @@
 id: lrfk6147jm7jwvejhs6zha5
 title: Awesome
 desc: ''
-updated: 1748425254692
+updated: 1750236402594
 created: 1744461965642
 ---
+
+## 查看 commit
+
+版本回退后，也能看到回退前的 commit id。
+
+```bash
+git reflog
+```
 
 ## git pull
 
@@ -37,6 +45,8 @@ git clone -b CVPR-Challenge-2025-Round1 git@github.com:TianxingChen/RoboTwin.git
     }
 
 ## git stash: 暂存修改
+
+当前开发未完成，临时处理新需求或修 Bug，用来暂存当前工作上下文。
 
 ### 用法
 

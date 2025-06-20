@@ -1,6 +1,7 @@
 # ctrl+u clear cursor before
 bindkey '^U' backward-kill-line
-bindkey '^]' autosuggest-accept
+# ctrl+e 到接受建议末尾，或者 alt+f 逐单词级别接受
+# bindkey '^]' autosuggest-accept
 
 # 使用英文终端
 export LANG=en_US.UTF-8\nexport LANGUAGE=en_US:en

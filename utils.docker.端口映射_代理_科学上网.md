@@ -2,7 +2,7 @@
 id: tz6m430sfzjehicuojbggws
 title: 端口映射_代理_科学上网
 desc: ''
-updated: 1745310762855
+updated: 1750389142538
 created: 1742381049066
 ---
 
@@ -33,13 +33,34 @@ docker run -d -p 8080:80 nginx  # 将容器的80端口映射到宿主机的8080�
 
 注意，如果制定 `--net=host`，映射会失效。
 
-## 使用代理
+## 指定镜像源
+
+编辑 /etc/docker/daemon.json 文件，添加如下内容：
+
+```json
+{
+  "log-level": "error",
+  "storage-driver": "overlay2",
+  "registry-mirrors": [
+    "https://do.nark.eu.org",
+    "https://dc.j8.work",
+    "https://docker.m.daocloud.io",
+    "https://dockerproxy.com",
+    "https://docker.mirrors.ustc.edu.cn",
+    "https://docker.nju.edu.cn"
+  ]
+}
+```
+
+```bash
+sudo systemctl restart docker
+```
+
+## 使用代理拉取镜像
 
 目标是需要让 docker pull 命令享受到 clash 等代理。
 
-## 修改配置文件的方法（推荐）
-
-### docker pull 使用代理
+### 修改配置文件的方法（推荐）
 
 ```bash
 sudo vim /etc/docker/daemon.json

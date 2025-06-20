@@ -11,7 +11,7 @@ if [[ $UID -ne 0 ]]; then
     SUDO='sudo'
 fi
 $SUDO apt update
-$SUDO apt install -y zsh git
+$SUDO apt install -y zsh git tmux
 # ohmyzsh
 # sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 echo Y | sh -c "$(curl -fsSL https://gitee.com/pocmon/ohmyzsh/raw/master/tools/install.sh)"

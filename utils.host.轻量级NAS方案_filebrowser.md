@@ -2,7 +2,7 @@
 id: 587qg83fxdhz2ho0pfz85c8
 title: 轻量级NAS方案_filebrowser
 desc: ''
-updated: 1744801384991
+updated: 1750311114236
 created: 1744698789417
 ---
 
@@ -26,7 +26,11 @@ docker run \
     filebrowser/filebrowser
 ```
 
-需要我们自己创建一个 filebrowser.db 和 settings.json 文件，放在指定目录，否则可能映射出错。filebrowser.db 是可以使用 touch 创建一个空文件，否则会创建为目录，导致出错。容器内部，项目默认提供了 settings.json 参考 [settings](https://github.com/filebrowser/filebrowser/blob/master/docker/root/defaults/settings.json)：
+需要我们自己创建一个 filebrowser.db 和 settings.json 文件，放在指定目录，否则可能映射出错。filebrowser.db 是可以使用 touch 创建一个空文件，否则会创建为目录，导致出错。
+
+指定 PUID 和 PGID 是为了避免权限问题，否则操作不了 filebrowser.db 和 settings.json。
+
+容器内部，项目默认提供了 settings.json 参考 [settings](https://github.com/filebrowser/filebrowser/blob/master/docker/root/defaults/settings.json)：
 
 ```json
 {

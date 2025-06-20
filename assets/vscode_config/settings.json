@@ -105,7 +105,8 @@
     "editor.guides.highlightActiveIndentation": true,
     // 禁用缩进指导线
     "editor.guides.indentation": false,
-    "editor.inlayHints.enabled": "off",
+    // clangd 自动类型提示，auto 也能看到类型
+    "editor.inlayHints.enabled": "on",
     "editor.semanticHighlighting.enabled": true,
     // 资源管理器不采用紧凑模式
     "explorer.compactFolders": false,
@@ -180,7 +181,7 @@
     "editor.suggest.showSnippets": true,
     "editor.tabCompletion": "on",
     "vim.leader": ",",
-    "vim.sneak": true,
+    "vim.sneak": false,
     "vim.easymotion": true,
     "vim.camelCaseMotion.enable": false,
     "vim.statusBarColorControl": false,
@@ -1445,9 +1446,10 @@
         // 补全函数时，将会给参数提供占位符，键入后按 Tab 可以切换到下一占位符，乃至函数末
         "--function-arg-placeholders=true",
         "--pretty", // 输出的JSON美观
-        "--query-driver=C:\\Programs\\Qt\\Tools\\mingw1310_64\\bin\\g++.exe",
+        // 指定正确编译器
+        // "--query-driver=C:\\Programs\\Qt\\Tools\\mingw1310_64\\bin\\g++.exe",
         // "--query-driver=C:\\Programs\\Qt\\Tools\\llvm-mingw1706_64\\bin\\clang++.exe",
-        "--compile-commands-dir=${workspaceFolder}/build", // 路径
+        // "--compile-commands-dir=${workspaceFolder}/build", // 路径
     ],
     // 找不到编译数据库(compile_flags.json 文件)时使用的编译器选项,这样的缺陷是不能直接索引同一项目的不同文件,只能分析系统头文件、当前文件和被include的文件
     "clangd.fallbackFlags": [
@@ -1474,7 +1476,8 @@
     ],
     // Qt的文件夹还装了clang-format等
     // 会被远程设置override，我们单独写override
-    "clangd.path": "C:\\Programs\\Qt\\Tools\\QtCreator\\bin\\clang\\bin\\clangd.exe",
+    // 指定正确位置，如果在环境变量中，可以直接用 clangd
+    "clangd.path": "clangd",
     "cmake.configureOnOpen": false,
     // only in user setting files
     "cmake.showOptionsMovedNotification": false,

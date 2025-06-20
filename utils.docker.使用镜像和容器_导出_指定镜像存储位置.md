@@ -2,7 +2,7 @@
 id: l1as99asaza2ux0otwtb82q
 title: 使用镜像和容器_导出_指定镜像存储位置
 desc: ''
-updated: 1747328172905
+updated: 1750309402053
 created: 1740389762581
 ---
 
@@ -71,6 +71,17 @@ ubuntu        20.04                            6013ae1a63c2   5 months ago    72
 
 ## 导出和导入容器
 
+### save 导出镜像
+
+```bash
+# 导出单个镜像
+docker save -o my_image.tar image_name:tag
+# 恢复镜像
+docker load -i my_image.tar
+```
+
+### export 导出容器
+
 ```bash
 docker export {{container_id}}  -o {{name}}.tar
 ```
@@ -87,9 +98,29 @@ docker import {{/path/to/your_container.tar}} {{repository:tag}}
 cat your_container.tar | docker import - repository:tag
 ```
 
+
+
 注意事项，docker export/import ​​与 docker save/load 的区别​​：
 - export/import 操作的是容器文件系统，会丢失历史记录和元数据（如环境变量、端口映射等），仅保存容器当前状态。
 - save/load 操作的是完整镜像，保留所有历史记录和层结构，适合迁移镜像。
+
+#### **何时用 `docker save`？**
+
+-   ✅ 需要完整备份或迁移镜像（包括开发、测试、生产环境的镜像版本控制）
+    
+-   ✅ 需要保留镜像的层结构以优化存储（如共享基础镜像）
+    
+-   ✅ 需保留构建历史用于调试（如 `docker history`）
+    
+
+#### **何时用 `docker export`？**
+
+-   ✅ 只需提取容器的当前文件系统（如分析黑客入侵后的容器状态）
+    
+-   ✅ 将容器文件系统提供给非 Docker 工具使用（如挂载到虚拟机）
+    
+-   ✅ 快速创建一个无历史的轻量级镜像（需手动补全配置）
+
 
 ## Ref and Tag
 

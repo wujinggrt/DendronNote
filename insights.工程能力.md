@@ -2,7 +2,7 @@
 id: b3xypywbus6o3g6k785m5lm
 title: 工程能力
 desc: ''
-updated: 1749308593595
+updated: 1750237309318
 created: 1740223986543
 ---
 
@@ -55,13 +55,23 @@ created: 1740223986543
 
 笔记和工作也同理，先做零碎和推动进步，再调整和重构。
 
-### 以学习 Typescript 为例
+#### 以学习 Typescript 为例
 
 在官网 https://www.typescriptlang.org/docs，组织如下：
 
 ![typescript_doc](assets/images/insights.工程能力/typescript_doc.png)
 
 可以看到左侧有 Get Started，类比不同语言来介绍宏观概念和设计。中间部分是具体内容。包含了更多的概念和设计，样例和细节。
+
+### 关注阅读效率：有的放矢，用好意群（chunks）阅读法
+
+拆分句子为块（chunks），而非逐词，从而克服英文与中文不同的表达方式。千万避免心里默念地读法。目光聚焦的地方即一个 chunk，包含构成同一思想或是表达部分意思的少量单词。比如：
+
+After the conference（时间）| the research team（主语）| presented their findings（动作）| to a panel of experts (对象).
+
+读完段落，要猜测和推测下文大意。用模糊的理解节省阅读时间，有时候通篇仅包含部分紧扣业务内容，或是感兴趣内容时，能够提升获取信息效率。熟练后，可以提高预测段落大意的能力。
+
+遇到难点，重要的点，可以仔细、反复思考，甚至利用 LLM 等工具询问。学习到新概念和内容时，便有裨益。
 
 ## 关于论文调研：紧扣当前业务
 
