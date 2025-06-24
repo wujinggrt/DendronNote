@@ -2,7 +2,7 @@
 id: fyepomr2rnswm2zsv3hk12s
 title: Quick_start
 desc: ''
-updated: 1750373610564
+updated: 1750697032515
 created: 1743493714764
 ---
 
@@ -584,6 +584,22 @@ find_package(std_msgs REQUIRED)
 总结思路：在 Ctor 创建 publisher，定义一个让 publisher 不断发布 msg 的回调函数，创建 timer 并注册此回调函数。最后修改配置文件，引入依赖的包。
 
 Service and Client：需要定义 .srv 文件，以 `---` 分割请求和响应内容类型。
+
+#### 处理 Action
+
+创建 action server，由如下 API 创建：
+
+```cpp
+rclcpp_action::create_server(NodeT, const std::string&, typename Server<ActionT>::GoalCallback, typename Server<ActionT>::CancelCallback, typename Server<ActionT>::AcceptedCallback, const rcl_action_server_options_t&, rclcpp::CallbackGroup::SharedPtr)
+```
+
+所有 Callback 需要理解返回，避免阻塞。
+
+GoalCallback 接受两个参数，在接收到客户端请求目标（goal）时调用，随后开始执行实现 goals 的逻辑。
+
+CancelCallback 接受一个参数，客户端发来取消后，告诉服务端处理取消逻辑。
+
+AcceptedCallback 接受一个参数，处理 GoalCallback 返回 rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE 的目标。由于需要立即返回，通常分发任务到工作线程来完成。
 
 ### Python 版本
 

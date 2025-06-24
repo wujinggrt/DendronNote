@@ -2,7 +2,7 @@
 id: 2exktpevaxn28xkkqlgb22y
 title: Ssh_用法和配置
 desc: ''
-updated: 1744697707811
+updated: 1750482065066
 created: 1744008822884
 ---
 
@@ -52,7 +52,7 @@ ssh 别名 # enter
 
 ### 公钥登录（免密码）
 
-将公钥拷贝到远程主机，会添加到 /root/.ssh/authorized_keys 或 ~/.ssh/authorized_keys (优先) 文件中。
+将公钥拷贝到远程主机，会添加到 /root/.ssh/authorized_keys 或 ~/.ssh/authorized_keys (优先) 文件中，用于验证登录此用户的公钥。
 
 使用工具 ssh-copy-id 自动拷贝公钥到远程主机的 authorized_keys。
 
@@ -78,5 +78,3 @@ sudo systemctl restart ssh
 ```
 
 ## Ref and Tag
-
-wget -c https://github.com/fatedier/frp/releases/download/v0.55.1/frp_0.55.1_linux_amd64.tar.gz

@@ -19,9 +19,11 @@ alias tat='tmux attach -t'
 # docker
 alias drr='docker run -it --rm'
 alias de='docker exec -it'
-alias dS='docker start'
+alias ds='docker start'
 alias dS='docker stop'
+alias dps='docker ps -a'
 alias drm='docker rm'
+alias drmi='docker rmi'
 
 # perl
 alias pne='perl -wlne'
@@ -31,6 +33,10 @@ alias pae="perl -wnlae"
 # git
 alias gS='git status'
 alias gs='git stage'
+alias gcm='git commit -m'
+alias gca='git commit --amend'
+alias gpl='git pull'
+alias gps='git push'
 
 # ros2
 alias rr='ros2 run'

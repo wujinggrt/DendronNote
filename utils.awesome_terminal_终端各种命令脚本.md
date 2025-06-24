@@ -2,7 +2,7 @@
 id: ovto6hepvtttctxmnypiebq
 title: Awesome_terminal_终端各种命令脚本
 desc: ''
-updated: 1750404402194
+updated: 1750730497717
 created: 1742868524198
 ---
 
@@ -123,6 +123,7 @@ tmux ls
 - `{{prefix}}{{ctrl+方向键}}` 调整面板边界
 - `{{prefix}}{ctrl+h|l}` 左右选择窗口
 - `{{prefix}}{{数字}}` 选择对应编号窗口
+- `{{prefix}}<Tab>` 切换当前和上一个窗口
 - `{{prefix}},` 重命名窗口
 - `{{prefix}}$` 重命名会话
 - `{{prefix}}z` 最大化当前面板
@@ -349,6 +350,31 @@ sudo ufw deny {{port}}
 sudo ufw delete {{rule_number}} # 删除规则
 ```
 
+### 刷新 ARP 缓存
+
+```bash
+arp -n # 查看缓存
+sudo ip neigh flush all
+sudo ip neigh flush dev {{dev0}}
+```
+
+#### 扫描本地链路子网
+
+nmap 注意别侵权等问题，不要扫描别人 IP。
+
+```bash
+sudo nmap -sn 169.254.0.0/16
+```
+
+#### 配置 WiFi
+
+无显示器情况下，SSH 连接板子时，可以让其连接 WiFi：
+
+```bash
+nmcli dev wifi list
+nmcli dev wifi connect {{wifi名称}} password {{wifi密码}}
+```
+
 ### ssh 隧道封装 TCP/UDP 流量
 
 只要能够 ssh 通信，就可以使用隧道封装流量。SSH 隧道在传输层（TCP）之上工作，将原始流量封装在 SSH 的安全连接中。本质上，SSH 隧道通过一条加密的 TCP 连接传输其他协议的数据。
@@ -411,9 +437,22 @@ ssh -N -R 5556:localhost:5555 用户名@客户端机器
 
 ### 网线直连的两主机通信
 
-分别在两主机上配置 IP 地址和子网掩码，为在同一网段的不同 IP 地址。随后可以随意设置网关，因为 ARP 能够直接获取目标 IP 地址的 MAC 地址，通信仅在两主机间的情况下，包不会被转发到网关，所以任意网关都不会有影响。
+#### 手动分配
+
+由于没有 DHCP 服务器，所以需要手动分配 IP 地址。分别在两主机上配置 IP 地址和子网掩码，为在同一网段的不同 IP 地址。随后可以随意设置网关，因为 ARP 能够直接获取目标 IP 地址的 MAC 地址，通信仅在两主机间的情况下，包不会被转发到网关，所以任意网关都不会有影响。
 
 配置后尝试互相 ping 通。连接正常后，确保主机要安装 openssh-server，配置 PasswordAuthentication yes 或者其他免密登录方法，才能正常登录。
+
+#### 使用 Link-Local Only 选项（推荐）
+
+设置后，无需手动配置 IP/子网掩码，连接后立即使用。系统通常自动分配经典的 169.254.0.0/16 范围 IP 地址，这是本地链路常用的。
+
+有时候需要手动清除 IP 并重新分配：
+
+```bash
+# 手动清除IP重新分配
+sudo ip addr flush dev enp0s25
+```
 
 ## sudo 免密码
 
@@ -486,6 +525,15 @@ perl -wnlae '...'
 ```
 
 默认用 `\s+` 分割，把内容放到数组 `@F` 中。如果需要指定分割的参数，用 `-F {{分割的字符（串）}}` 即可。
+
+## 构建工具集：build-essential 等
+
+build-essential 包含了编译 C 程序所需的工具，比如 gcc、g++ 和 make 等。
+
+```bash
+sudo apt install build-essential -y
+```
+
 
 ## 输入法
 

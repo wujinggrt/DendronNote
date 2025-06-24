@@ -2,7 +2,7 @@
 id: jc1nt5ed5s5obrls1875g1w
 title: 安装_Rootless_模式
 desc: ''
-updated: 1750389244662
+updated: 1750407438168
 created: 1750384217871
 ---
 
@@ -33,6 +33,10 @@ docker pull docker:dind-rootless
 docker run -d --name dind-rootless --privileged docker:dind-rootless
 ```
 
+随后可以进入此容器，注意没有 bash，只有 sh。
+
 ## Ref and Tag
 
 [Rootless mode|Docekr Docs](https://docs.docker.com/engine/security/rootless/)
+
+
