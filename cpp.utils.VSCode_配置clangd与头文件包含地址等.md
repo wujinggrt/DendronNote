@@ -1,8 +1,8 @@
 ---
 id: 2dei298qbfeobl9krl61vnp
-title: VSCode_配置clangd
+title: VSCode_配置clangd与头文件包含地址等
 desc: ''
-updated: 1750349915299
+updated: 1750817151620
 created: 1750313789535
 ---
 
@@ -77,6 +77,16 @@ bear -- colcon build
 ```bash
 bear -- cmake --build build
 ```
+
+## 配置头文件地址
+
+目录 /usr/include 下的头文件，编译器和 clangd 自动查找。
+
+使用 compile_commands.json 最全，也可以手动配置。
+
+### ROS2 的头文件
+
+ROS2 项目头文件通常在 `/opt/ros/humble/include` 路径。
 
 ## Ref and Tag
 

@@ -2,7 +2,7 @@
 id: eszoks0gixjd0fjyul4wh10
 title: Robotics
 desc: ''
-updated: 1750243129423
+updated: 1751044209693
 created: 1740293600917
 ---
 
@@ -247,5 +247,77 @@ Context 包含了很多 VLM 和扩散专家共同理解的特征。直接用 VLM
 重建能力越强，生成能力越强，则越失去多样性，甚至是泛化性。说明理解能力越差。就像长期工作，思维固化。
 
 是否可以用分层解决？用异构的思路解决，动态路由功能。
+
+## SpatialVLA
+
+空间智能的 VLA。
+
+Insights。
+
+VLA 能实现 Zero-Shot 的关键，有两方面：
+1. VLM 能够合理规划低层动作
+2. 动作专家能够合理执行。只有在机械臂能够理解“接近”这个概念，ee 理解抓取，才能实现泛化。这是 VLA 的最后一块拼图。
+
+我们听到指令，根据 system prompt，可以在没有见过的场景工作。比如，没见过火锅场景，但是知道筷子或勺子，告诉不能碰到锅（因为很烫）的前提，可以指导手臂会去拿勺子去捞火锅里的菜。
+
+
+### 动作专家
+
+动作专家是连续的，需要像图像一样，有 Vision Encoder，先离散的 token 化。DexVLA 提出，先训练一个有基础能力的动作专家，才能更好地对齐 VLM，这个思想是有见解的，合理的，应该采用。pi0.5 之后提出的知识绝缘，就是为了放置动作专家的梯度破坏 VLM 的知识。所以，合理的设计动作 token，适当解耦，是有必要的。比如，用 DCT 的 token。
+
+动作专家能够执行靠近和远离，这是至关重要的。
+
+方案 1：使用多相机，但是能够对齐到观测一个物体，知道远离与否。
+
+生成 heatmap，使用 flow matching，在物体的部分，需要靠近。
+
+#### 语言嵌入选型
+
+DistillBERT 是一个不错的选择，不同语言统一表达，都会得到相近的编码后的 hidden state。
+
+uT5 encoder，多语言处理较好，VACE 选择了它。
+
+[Qwen3 Embedding](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B) 是文本嵌入模型，简单来说，输入一段文本，输出一个向量，此向量类似原文本的指纹，相似语义的文本在向量空间有较近的距离，方便计算相似度和检索。可以把这种「嵌入」当成某种基于「语义」的索引。适合垂直领域，且支持多语言，更加合适。
+
+[阿里开源 Qwen3 新模型 Embedding，该模型的框架设计有哪些优势？ - tomsheep的回答 - 知乎](https://www.zhihu.com/question/1914286810902827620/answer/1914361315604031301)
+
+Qwen3-Embedding-0.6B 仅有 0.6B 参数，28 层，32K 上下文长度，嵌入维度是 1024，支持 MRL 和 Instruction Aware。
+- MRL Support indicates whether the embedding model supports custom dimensions for the final embedding.
+- Instruction Aware notes whether the embedding or reranking model supports customizing the input instruction according to different tasks.
+- Our evaluation indicates that, for most downstream tasks, using instructions (instruct) typically yields an improvement of 1% to 5% compared to not using them. Therefore, we recommend that developers create tailored instructions specific to their tasks and scenarios. In multilingual contexts, we also advise users to write their instructions in English, as most instructions utilized during the model training process were originally written in English.
+
+稀疏的向量通常表现更好。
+
+#### 模型应该理解 where to look
+
+ICLR 2025，[MLLMS KNOW WHERE TO LOOK](https://arxiv.org/pdf/2502.17422)，[qwen2.5vl 例子](https://github.com/saccharomycetes/mllms_know/blob/main/qwen2_5_implementation.ipynb)
+
+### VLM
+
+通过语料，能够让 VLM 规划动作。
+
+人会思考，不一定一直在执行动作。所以执行动作需要一个信号，这应该也体现在 VLA 的 VLM 中，规划好了，才给动作专家信号，进一步执行动作。
+
+VLM 和动作专家都要有空间理解能力。VLM 理解一系列动作帧、图像帧是靠近还是原理，动作专家收到指令，能执行靠近或远离。VLM 要有优秀的 spatial grounding 能力，比如 Qwen2.5VL 的标点和框，是必须的。
+
+可以借助 Tree-Planner，通常任务都是树状的。
+
+#### 动作离散化
+
+pi0 团队的知识绝缘工作，用 FAST 方式将动作离散化，送给 VLM 作 NTP 训练。看起来似乎把 VLM 当做 encoder，动作专家作为 decoder。
+
+把 Transformer 看出拟合各个离散的信息，是很有效的。
+
+#### VLM 的空间理解是如何实现的？
+
+以 Qwen2.5 VL 为例，为什么它的空间理解能力，语言对齐做得这么优秀？
+
+能否单独使用 Qwen2.5VL-3B-Instructed 的 Vision Encoder？
+
+#### VLM 选型
+
+QVQ-Max 可以多图识别。可以在 chat.qwen.ai 上使用 Qwen2.5-Max，上传图像后使用。注意，需要开 Thinking 模式。
+
+Qwen Reranker 和 Embedding 模型，适合用于 Agent 的任务。
 
 ## Ref and Tag

@@ -1,11 +1,8 @@
 #!/bin/bash
-# or zsh
-# source ./zsh_setup.sh
-# 注意，需要安装等宽字体，比如 NerdFont
-# https://github.com/ryanoasis/nerd-fonts
-# 下载后选一个双击图标，便可 install，在终端选择此字体即可。
-# 在镜像中，默认 root 用户，并且没有 sudo 命令，所以需要删除此脚本的所有 sudo，操作如下：
-# perl -i.bak -wple 's/sudo\s+//g' ./zsh_setup.sh
+# 执行 source ./zsh_setup.sh 即可安装
+# 为了让终端正确显示 icon，建议安装等宽字体
+# 下载后选一个，选一个字体即可，推荐安装 icon 现实最全的： CodeNewRoman Nerd Font
+# https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/CodeNewRoman.zip
 SUDO=''
 if [[ $UID -ne 0 ]]; then
     SUDO='sudo'
@@ -17,13 +14,14 @@ $SUDO apt install -y zsh git tmux
 echo Y | sh -c "$(curl -fsSL https://gitee.com/pocmon/ohmyzsh/raw/master/tools/install.sh)"
 # p10k configuration # 配置终端
 git clone --depth=1 https://gitee.com/romkatv/powerlevel10k ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
+# ctrl+r 模糊搜索历史命令
 git clone https://gitee.com/testbook/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
-# 在 .bashrc 或 .zshrc 配置接受命令：bindkey '^ ' autosuggest-accept，功能是 ctrl+空格 接受
-# 光标移动到到哪儿，建议接收到哪儿。使用 ctrl+e 或 end，接收全部；使用 alt+f，接收单词。
+# 命令推荐和补全工具，用法是终端的光标移动到到哪儿，建议接收到哪儿
+# 比如，使用右键，或 ctrl+e 或 end 键，光标移动到当前行的末尾，代表接收全部建议；使用 alt+f，光标前移一个单词，代表接受一个单词，下一个单词可以继续接受或继续提示
 git clone https://gitee.com/qiushaocloud/zsh-autosuggestions ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
 # 更加丰富的高亮
-git clone https://gitee.com/wangl-cc/fast-syntax-highlighting ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/fast-syntax-highlighting
 # 展示自动补全历史，提示参数信息，最近使用文件夹
+git clone https://gitee.com/wangl-cc/fast-syntax-highlighting ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/fast-syntax-highlighting
 # 
 # ctrl+n/p可以上下选择，随后回车选中选择的
 # tab
@@ -40,5 +38,5 @@ if [[ -f $LOCAL_PROFILE ]]; then
 fi
 EOF
 
-$SUDO chsh -s $(which zsh)
+chsh -s $(which zsh)
 # 下一次进终端便可配置 zsh 的 powerlevel10k 外观

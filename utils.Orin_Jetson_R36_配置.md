@@ -2,7 +2,7 @@
 id: ke6zwxz1njywny6b177zpjo
 title: Orin_Jetson_R36_配置
 desc: ''
-updated: 1750729922033
+updated: 1750927928485
 created: 1750473521003
 ---
 
@@ -72,5 +72,42 @@ export TORCH_INSTALL=path/to/torch-2.2.0a0+81ea7a4+nv23.12-cp38-cp38-linux_aarch
 有时候需要支持 Python 3.11，而 Orin Jetson 的 JetPack 版本为 6.2，默认的 Python 版本为 3.10，不能满足项目需求。
 
 参考 [pytorch from source](https://github.com/pytorch/pytorch?tab=readme-ov-file#from-source)
+
+### 安装依赖
+
+```bash
+sudo apt install -y cmake libopenblas-dev libopenmpi-dev
+```
+
+使用版本较高的 cmake，通常不必再按照官网用 pip 安装 ninja 和 cmake。
+
+### 控制编译
+
+查看项目的 setup.py 脚本，可以看到使用环境变量指导编译。通常设置：
+
+```bash
+#!/bin/bash
+
+export USE_NCCL=0
+export USE_DISTRIBUTED=1
+export USE_QNNPACK=0
+export USE_PYTORCH_QNNPACK=0
+
+# Orin 是 安培架构的，所以第一个版本用 8
+export TORCH_CUDA_ARCH_LIST="8.7"
+
+export PYTORCH_BUILD_VERSION=2.0.1
+export PYTORCH_BUILD_NUMBER=1
+
+python3 setup.py bdist_wheel
+```
+
+使用 bdist_wheel 参数，指定在 dist 目录生成 whl 文件。编译结束后，ABI 生成在 dist 目录，在安装之前，最好卸载现有的 torch torchvision torchaudio：
+
+```bash
+pip uninstall torch
+```
+
+可以留下 torchvision 和 torchaudio，安装它们后再卸载 torch，替换为编译后的版本。
 
 ## Ref and Tag
