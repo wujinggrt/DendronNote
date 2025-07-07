@@ -3,6 +3,13 @@
 # 为了让终端正确显示 icon，建议安装等宽字体
 # 下载后选一个，选一个字体即可，推荐安装 icon 现实最全的： CodeNewRoman Nerd Font
 # https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/CodeNewRoman.zip
+#
+# 配置终端显示样式：成功安装后，p10k configuration 会进入配置脚本
+# ctrl+r/f: 关键字搜索历史和前向命令
+#
+# 命令推荐和补全工具：终端的光标移动到哪儿，建议接收到哪儿
+# 比如，使用右键，或 ctrl+e 或 end 键，光标移动到当前行的末尾，代表接收全部建议
+# 使用 alt+f，光标前移一个单词，代表接受一个单词，下一个单词可以继续接受或继续提示
 SUDO=''
 if [[ $UID -ne 0 ]]; then
     SUDO='sudo'
@@ -17,7 +24,6 @@ git clone --depth=1 https://gitee.com/romkatv/powerlevel10k ${ZSH_CUSTOM:-$HOME/
 # ctrl+r 模糊搜索历史命令
 git clone https://gitee.com/testbook/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
 # 命令推荐和补全工具，用法是终端的光标移动到到哪儿，建议接收到哪儿
-# 比如，使用右键，或 ctrl+e 或 end 键，光标移动到当前行的末尾，代表接收全部建议；使用 alt+f，光标前移一个单词，代表接受一个单词，下一个单词可以继续接受或继续提示
 git clone https://gitee.com/qiushaocloud/zsh-autosuggestions ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
 # 更加丰富的高亮
 # 展示自动补全历史，提示参数信息，最近使用文件夹

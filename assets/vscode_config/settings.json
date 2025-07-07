@@ -78,6 +78,7 @@
     *
     * visual mode:
     * <space> 打开 which key show
+    * <leader>d 删除选中的内容中的所有空行
     * <leader>s 相当于 VS Code 原生的 ctrl+d，选中下一个匹配的单词，方便批量替换变量名
     * <leader>ca quickFix，修改意见。
     *
@@ -792,6 +793,23 @@
             // Add Selection To Next Find Match
             "commands": [
                 "editor.action.addSelectionToNextFindMatch"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "d"
+            ],
+            "commands": [
+                {
+                    // 删除选中空白行
+                    "command": "editor.action.insertSnippet",
+                    "args": {
+                        // ${TM_SELECTED_TEXT/.../...} 是 VS Code 的 snippet 变量转换语法
+                        // 对当前选中的文本 TM_SELECTED_TEXT 执行正则替换操作
+                        "snippet": "${TM_SELECTED_TEXT/^\\s*$(\\r?\\n)?//gm}"
+                    }
+                }
             ]
         },
         {

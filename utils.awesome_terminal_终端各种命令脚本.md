@@ -2,7 +2,7 @@
 id: ovto6hepvtttctxmnypiebq
 title: Awesome_terminal_终端各种命令脚本
 desc: ''
-updated: 1750730497717
+updated: 1751693824779
 created: 1742868524198
 ---
 
@@ -57,6 +57,20 @@ ftp -n <<- _EOF_
   get $REMOTE_FILE 
   bye 
 _EOF_
+```
+
+## 变量
+
+### Parameter Expansion
+
+#### 处理不存在的变量
+
+默认值，在函数和脚本传参时使用比较频繁：
+
+```bash
+DEFAULT_VAL=hello
+hello=${1:-$DEFAULT_VAL}
+world=${2:-world}
 ```
 
 ## 工作 job 管理
@@ -454,6 +468,13 @@ ssh -N -R 5556:localhost:5555 用户名@客户端机器
 sudo ip addr flush dev enp0s25
 ```
 
+#### 使用与其他主机共享
+
+把本主机当做路由器，此主机能够内置 DHCP 服务器，给对应主机分配 IP 地址，要求另一主机是 DHCP 分配 IP 的方式。之后，此主机可以转发其他主机的流量。本主机的 IP 自然的，末尾会是 1，比如 10,42.0.1。
+
+arp -a 可以看到连接的其他主机的 IP 地址和 MAC 地址。
+
+
 ## sudo 免密码
 
 需要在 root 用户下执行。
@@ -464,6 +485,34 @@ echo "`whoami` ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 ## tr
 
+替换字符：
+
+```bash
+cat > a.txt
+asd
+ASD
+AsD
+```bash
+
+```bash
+cat a.txt | tr AS jkl
+asd
+jkD
+jsD
+```
+
+处理补集，不匹配前面部分的，全都替换为后面的最后一个字符：
+
+```bash
+perl -wnl -e '$_ =~ tr/AS/jkl/c and print;' a.txt
+lll
+ASl
+All
+```
+
+```bash
+tr -c "AS" "jkl" # 同上
+ ```
 
 ## Perl
 
@@ -481,7 +530,7 @@ netstat -an | head | perl -wnla -e 'BEGIN {my %state=();} (/tcp/ or $. == 1) and
 
 ```
 LISTEN => 5
-established) => 1
+established => 1
 SYN_SENT => 1
 ESTABLISHED => 1
 ```
@@ -549,5 +598,31 @@ sudo apt install fcitx fcitx-pinyin -y
 下载一个 ttf 文件，比如 [CodeNewRoman Nerd Font Mono](https://link.zhihu.com/?target=https%3A//github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/CodeNewRoman.zip) 系列能够显示 icon，安装后，可以在终端设置此文字，便有等宽字体。
 
 终端 -> 首选项 -> 未命名 -> 文字，选择自定义字体即可。可以设置白色背景，比如，在文字选项卡旁的颜色，在文字和背景颜色中，取消“使用系统主题中的颜色”，可以用 Light 版本，这样取消了茄色的终端背景。
+
+## Ubuntu 界面
+
+在外观 -> Dock -> 面板模式，选择关闭，就可以获取居中的图标。
+
+## 用户管理：配置服务器
+
+```bash
+sudo useradd {{USER_NAME}} --create-home --groups adm,sudo,docker --shell /bin/bash
+```
+
+随后可以修改密码：
+
+```bash
+sudo passwd {{USER_NAME}}
+```
+
+可以创建组和添加用户到组：
+
+```bash
+sudo usermod -aG groupname[,groupname2,...] username[,username2,username3,...]
+# 查看用户
+cat /etc/passwd
+# 查看用户组
+cat /etc/group
+```
 
 ## Ref and Tag

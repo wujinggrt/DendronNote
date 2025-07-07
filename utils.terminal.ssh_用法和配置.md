@@ -2,7 +2,7 @@
 id: 2exktpevaxn28xkkqlgb22y
 title: Ssh_用法和配置
 desc: ''
-updated: 1750482065066
+updated: 1751595487675
 created: 1744008822884
 ---
 
@@ -76,5 +76,9 @@ PubkeyAuthentication yes
 ```bash
 sudo systemctl restart ssh
 ```
+
+## 端口配置影响
+
+代理的端口设置可能会导致 VsCode 远程不了
 
 ## Ref and Tag
