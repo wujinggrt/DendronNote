@@ -2,7 +2,7 @@
 id: blk1s4zbfhd016wg0ppuatd
 title: Asyncio_异步
 desc: ''
-updated: 1748087758815
+updated: 1751908993056
 created: 1742836619998
 ---
 
@@ -362,6 +362,68 @@ started main at 19:50:53
 start blocking_io at 19:50:53
 blocking_io complete at 19:50:54
 finished main at 19:50:54
+```
+
+### 在非异步上下文环境使用异步函数
+
+需要给事件循环单独开一个线程，在线程中运行异步函数。
+
+```py
+# 协程函数
+async def my_coroutine(param):
+    print(f"Coroutine started with param: {param}")
+    await asyncio.sleep(2)  # 模拟异步操作
+    print("Coroutine finished")
+    return param * 2
+
+# 事件循环线程函数
+def run_event_loop(loop):
+    asyncio.set_event_loop(loop)
+    loop.run_forever()
+
+# 创建新事件循环
+loop = asyncio.new_event_loop()
+# 启动事件循环线程
+thread = threading.Thread(target=run_event_loop, args=(loop,), daemon=True)
+thread.start()
+
+# 安全提交协程到事件循环线程
+# 可以传入协程，多次传入，它们会调度，最终在 future 中处理结果
+future = asyncio.run_coroutine_threadsafe(
+    my_coroutine(10), 
+    loop
+)
+# 获取协程结果（阻塞直到完成）
+try:
+    result = future.result(timeout=3)  # 设置超时
+    print(f"Coroutine result: {result}")
+except concurrent.futures.TimeoutError:
+    print("Timeout waiting for coroutine")
+# 清理
+loop.call_soon_threadsafe(loop.stop)
+thread.join()
+```
+
+在 ROS2 中，通常可以在 callback 封装提交协程到事件循环协程的部分，callback 调用后，由协程执行可能浪费时间的内容。比如：
+
+```py
+class SomeNode(Node):
+    def __init__(...):
+        ...
+        self.sub = self.create_subscription(
+            ...
+            self.ros_callback
+        )
+    def ros_callback(self, msg):
+        """ROS回调函数 - 在ROS线程中执行"""
+        # 安全提交协程到事件循环线程
+        future = asyncio.run_coroutine_threadsafe(
+            self.async_operation(msg.data),
+            self.loop
+        )
+        
+        # 添加完成回调处理结果
+        future.add_done_callback(self.handle_async_result)
 ```
 
 ## Ref and Tag

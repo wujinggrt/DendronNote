@@ -2,7 +2,7 @@
 id: ovto6hepvtttctxmnypiebq
 title: Awesome_terminal_终端各种命令脚本
 desc: ''
-updated: 1751693824779
+updated: 1751858652675
 created: 1742868524198
 ---
 
@@ -379,6 +379,9 @@ nmap 注意别侵权等问题，不要扫描别人 IP。
 ```bash
 sudo nmap -sn 169.254.0.0/16
 ```
+
+- -n 表示不进行 DNS 解析，直接扫描 IP 地址。
+
 
 #### 配置 WiFi
 

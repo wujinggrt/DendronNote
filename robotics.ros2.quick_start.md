@@ -2,7 +2,7 @@
 id: fyepomr2rnswm2zsv3hk12s
 title: Quick_start
 desc: ''
-updated: 1750697032515
+updated: 1752166781452
 created: 1743493714764
 ---
 
@@ -296,30 +296,6 @@ def generate_launch_description():
 ```
 
 可以看到，同时加载两个 Node。
-
-### Recording and playing back data
-
-`ros2 bag` 记录系统的数据，主要涉及发布的话题、服务和动作。使用如下：
-
-```bash
-ros2 bag record {{topic_name}} # 单个话题
-ros2 bag record -o subset {{topic_name1}} {{topic_name2}} # 多个话题
-```
-
-- -o 选项指定 bag 文件名；
-- -a 记录系统所有话题。
-
-查看文件细节：
-
-```bash
-ros2 bag info {{bag_file_name}}
-```
-
-重播：
-
-```bash
-ros2 bag play {{bag_file_name}}
-```
 
 ### colcon: 构建
 
@@ -1009,6 +985,103 @@ https://docs.nav2.org/behavior_trees/index.html
 ```bash
 sudo apt install -y ros-$ROS_DISTRO-urdf-tutorial
 ```
+
+## 并发与话题订阅的 callback
+
+比如，订阅一个话题，代表控制机器人的关节角到指定位置。还需要监测关节角，移动到与指定角度相差极小后发布成功的话题。
+
+问题：使用 callback 处理订阅的话题，而监测关节角也依赖于处理订阅话题的 callback。内部实现时，一个 callback 阻塞会导致其他订阅的话题阻塞，自然监测不了最新的关节角。
+
+### 方案一：asyncio
+
+当前 callback 发完命令后，使用 asyncio.sleep() 让出控制权，给下一个 callback 机会读取最新关节角。
+
+```py
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import String
+import asyncio
+import threading
+import concurrent.futures
+
+class AsyncSubscriber(Node):
+    def __init__(self):
+        super().__init__('async_subscriber')
+        
+        # 创建专用的事件循环
+        self.loop = asyncio.new_event_loop()
+        self.thread = threading.Thread(target=self.run_event_loop, daemon=True)
+        self.thread.start()
+        
+        # 创建订阅器
+        self.subscription = self.create_subscription(
+            String,
+            'topic',
+            self.callback_wrapper,  # 同步包装器
+            10
+        )
+        self.get_logger().info("Async Subscriber Ready")
+
+    def run_event_loop(self):
+        """在新线程中运行事件循环"""
+        asyncio.set_event_loop(self.loop)
+        self.loop.run_forever()
+
+    def callback_wrapper(self, msg):
+        """同步回调函数，将任务提交到事件循环线程"""
+        # 使用线程安全的方式提交协程
+        future = asyncio.run_coroutine_threadsafe(
+            self.async_callback(msg), 
+            self.loop
+        )
+        
+        # 如果不处理，协程不会执行到最后，不会得到调度的机会
+        future.add_done_callback(self.handle_task_result)
+
+    def handle_task_result(self, future):
+        """处理异步任务的结果或异常"""
+        try:
+            # 获取结果（如果有）或捕获异常
+            future.result()
+        except Exception as e:
+            self.get_logger().error(f"Async task failed: {str(e)}")
+
+    async def async_callback(self, msg):
+        """真正的异步回调函数"""
+        self.get_logger().info(f"Received: {msg.data}")
+        
+        # 模拟异步等待资源
+        await asyncio.sleep(2)  # 替换为实际的异步等待操作
+        
+        # 资源就绪后的处理
+        self.get_logger().info(f"Processed after async wait: {msg.data}")
+
+    def destroy_node(self):
+        """清理资源"""
+        self.loop.call_soon_threadsafe(self.loop.stop)
+        super().destroy_node()
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = AsyncSubscriber()
+    
+    # 使用多线程执行器
+    executor = rclpy.executors.MultiThreadedExecutor()
+    executor.add_node(node)
+    
+    try:
+        executor.spin()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+```
+
+### 方案二：任务队列，轮询
 
 ## Ref and Tag
 
