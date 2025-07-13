@@ -2,7 +2,7 @@
 id: 587qg83fxdhz2ho0pfz85c8
 title: 轻量级NAS方案_filebrowser
 desc: ''
-updated: 1750311114236
+updated: 1752253903070
 created: 1744698789417
 ---
 
@@ -79,6 +79,12 @@ tar -xvf linux-amd64-filebrowser.tar.gz && rm *.tar.gz
 ## 配合 frp，实现网络穿透
 
 参考 [[utils.host.frp_内网穿透]]
+
+## 分享文件
+
+在浏览文件的界面中，可以选择分享文件 link。
+
+![share_pic](assets/images/utils.host.轻量级NAS方案_filebrowser/share_pic.png)
 
 ## Ref and Tag
 

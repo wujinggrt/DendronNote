@@ -2,7 +2,7 @@
 id: ovto6hepvtttctxmnypiebq
 title: Awesome_terminal_终端各种命令脚本
 desc: ''
-updated: 1751858652675
+updated: 1752336435009
 created: 1742868524198
 ---
 
@@ -71,6 +71,52 @@ _EOF_
 DEFAULT_VAL=hello
 hello=${1:-$DEFAULT_VAL}
 world=${2:-world}
+```
+
+### envsubst：替换对应值为环境变量值
+
+```bash
+sudo apt install -y gettext-base
+```
+
+创建模板文件 app.conf.template：
+
+```bash
+# app.conf.template
+server_ip = ${SERVER_IP}
+port = ${PORT}
+debug = ${DEBUG_MODE:-false}  # 设置默认值
+```
+
+设置环境变量：
+
+临时设置：
+
+```bash
+export SERVER_IP="192.168.1.100"
+export PORT=8080
+export DEBUG_MODE="true"
+```
+
+从 .env 文件加载（推荐）：
+
+```bash
+# .env
+SERVER_IP=192.168.1.100
+PORT=8080
+DEBUG_MODE=true
+```
+
+加载到环境：
+
+```bash
+set -a; source .env; set +a
+```
+
+
+```bash
+# 文件替换（输入文件，输出到标准输出），也可以重定向
+envsubst < app.conf.template
 ```
 
 ## 工作 job 管理
@@ -198,6 +244,14 @@ curl -X POST http://host:port/v1/chat/completions \
 
 ```bash
 arp -a
+```
+
+刷新 ARP 缓存
+
+```bash
+arp -n # 查看缓存
+sudo ip neigh flush all
+sudo ip neigh flush dev {{dev0}}
 ```
 
 ### 配置网卡、通信设备
@@ -364,15 +418,7 @@ sudo ufw deny {{port}}
 sudo ufw delete {{rule_number}} # 删除规则
 ```
 
-### 刷新 ARP 缓存
-
-```bash
-arp -n # 查看缓存
-sudo ip neigh flush all
-sudo ip neigh flush dev {{dev0}}
-```
-
-#### 扫描本地链路子网
+### 使用 nmap 扫描本地链路子网有哪些 IP
 
 nmap 注意别侵权等问题，不要扫描别人 IP。
 
@@ -383,13 +429,30 @@ sudo nmap -sn 169.254.0.0/16
 - -n 表示不进行 DNS 解析，直接扫描 IP 地址。
 
 
-#### 配置 WiFi
+### 配置 WiFi
 
 无显示器情况下，SSH 连接板子时，可以让其连接 WiFi：
 
 ```bash
 nmcli dev wifi list
 nmcli dev wifi connect {{wifi名称}} password {{wifi密码}}
+```
+
+### 检测 TCP 和 UDP 链接
+
+#### telnet: 快速测试 IP 和端口开启的工具
+
+TELNET 连接实际上是标准 TCP 连接，因此可以使用客户端，测试其他依赖 TCP 作为传输协议的服务。不光可以模拟 HTTP，也一样可以模拟SMTP，POP，都可以，只要目标端口开启，并且是 TCP 协议，就都可以使用 TELNET 来连接，这种方式也往往用于测试目标计算机的某个端口是否开启，开启的是什么服务。例如，通过一个简单的请求，可以检查 HTTP 服务器的功能或状态。
+
+```bash
+telnet {{ip_addr}} {{port}}
+```
+
+#### 使用 nmap 查看 UDP 的端口开放情况
+
+```bash
+# 扫描特定 UDP 端口
+sudo nmap -sU -p 123 192.168.1.100
 ```
 
 ### ssh 隧道封装 TCP/UDP 流量
@@ -452,15 +515,17 @@ ssh -N -R 5556:localhost:5555 用户名@客户端机器
 | UDP 转发(-T 扩展) | UDP over TCP 隧道           | TCP      | DNS 查询、游戏服务器     |
 
 
-### 网线直连的两主机通信
+### 实践
 
-#### 手动分配
+#### 网线直连的两主机通信
+
+**手动分配**：
 
 由于没有 DHCP 服务器，所以需要手动分配 IP 地址。分别在两主机上配置 IP 地址和子网掩码，为在同一网段的不同 IP 地址。随后可以随意设置网关，因为 ARP 能够直接获取目标 IP 地址的 MAC 地址，通信仅在两主机间的情况下，包不会被转发到网关，所以任意网关都不会有影响。
 
 配置后尝试互相 ping 通。连接正常后，确保主机要安装 openssh-server，配置 PasswordAuthentication yes 或者其他免密登录方法，才能正常登录。
 
-#### 使用 Link-Local Only 选项（推荐）
+**使用 Link-Local Only 选项**：
 
 设置后，无需手动配置 IP/子网掩码，连接后立即使用。系统通常自动分配经典的 169.254.0.0/16 范围 IP 地址，这是本地链路常用的。
 
@@ -471,12 +536,92 @@ ssh -N -R 5556:localhost:5555 用户名@客户端机器
 sudo ip addr flush dev enp0s25
 ```
 
+**使用与其他主机共享网络选项（推荐）**：
+
+设置后，本主机就像路由器一样，与对方主机形成局域网。本主机扮演 DHCP 服务器，分配 IP 地址给对方。使用命令 `arp -a` 可以查看 IP 和 MAC 地址，进而连接和登录。
+
 #### 使用与其他主机共享
 
 把本主机当做路由器，此主机能够内置 DHCP 服务器，给对应主机分配 IP 地址，要求另一主机是 DHCP 分配 IP 的方式。之后，此主机可以转发其他主机的流量。本主机的 IP 自然的，末尾会是 1，比如 10,42.0.1。
 
 arp -a 可以看到连接的其他主机的 IP 地址和 MAC 地址。
 
+
+## SSH
+
+### 安装 ssh
+
+```bash
+sudo apt update
+sudp apt -y install openssh-server
+sudo systemctl enable ssh # 开机启动
+sudo systemctl start ssh # 启动
+sudo ufw allow ssh # 如果防火墙禁止了 ssh，开启
+```
+
+### 生成公钥私钥
+
+生成公钥和私钥：
+
+```bash
+# -N 是密码
+# -f 指定路径，公钥会在后面添加 .pub 后缀
+ssh-keygen -t rsa -f ~/.ssh/id_rsa -N ""
+```
+
+### 别名和公钥登录
+
+#### 别名
+
+在 `~/.ssh/config` 文件中，可以指出别名配置。没有此文件创建即可。端口默认 22，可选。
+
+```config
+Host 别名
+    Hostname 主机名
+    Port 端口 # 可选
+    User 用户名 
+
+Host server
+    HostName 服务器地址
+    User 登录用户名
+```
+
+指定后，可以用别名登录：
+
+```bash
+ssh 别名 # enter
+```
+
+#### 公钥登录（免密码）
+
+将公钥拷贝到远程主机，会添加到 /root/.ssh/authorized_keys 或 ~/.ssh/authorized_keys (优先) 文件中，用于验证登录此用户的公钥。
+
+使用工具 ssh-copy-id 自动拷贝公钥到远程主机的 authorized_keys。
+
+```bash
+# 拷贝 ~/.ssh/id_rsa.pub
+ssh-copy-id {{别名或 username@remote_host}}
+# 指定公钥
+ssh-copy-id -i {{path/to/certificate}} {{别名或 username@remote_host}}
+```
+
+或者手动拷贝，使用 scp 或 sftp 拷贝公钥到远程主机，并且添加到 authorized_keys 即可。
+
+修改 sshd 配置，编辑 /etc/ssh/sshd_config，修改对应选项为 yes：
+
+```
+PubkeyAuthentication yes
+```
+
+重启服务：
+
+```bash
+sudo systemctl restart ssh
+```
+
+### 端口配置影响
+
+代理的端口设置可能会导致 VsCode 远程不了。
 
 ## sudo 免密码
 
@@ -627,5 +772,23 @@ cat /etc/passwd
 # 查看用户组
 cat /etc/group
 ```
+
+## 一些意向不到的坑
+
+### sed/perl 字符替换分隔符
+
+使用 sed/perl 替换时，若涉及的变量为路径名或网络路径，内在的 `/` 极有可能导致模式替换出错。比如，配置 NTP 服务器时，从模板替换变量为环境变量，即 envsubst 的功能。使用环境变量替换和指定。
+
+```bash
+sed -i "s/\${SUBNET}/${SUBNET}/g" /etc/chrony/chrony.conf.template > /etc/chrony/chrony.conf
+```
+
+若 `SUBNET=10.42.0.0/24`，那么命令会替换为：
+
+```bash
+sed -i "s/\${SUBNET}/10.42.0.0/24/g" /etc/chrony/chrony.conf.template > /etc/chrony/chrony.conf
+```
+
+多出现了 `/`。解决方案是使用 `@` 即可。
 
 ## Ref and Tag

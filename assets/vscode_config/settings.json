@@ -74,12 +74,14 @@
     * {; 用于C++中，花括号后还带有;的场景，用于方便输入
     * <leader>; 快速在末尾添加;并插入新行;
     * <leader>: 快速在末尾添加分号，不添加新行
-    * ,, 快速在末尾添加逗号
+    * ,, 抵消 <leader> 影响，快速输入逗号
+    * ,l 快速在末尾添加逗号
     *
     * visual mode:
     * <space> 打开 which key show
-    * <leader>d 删除选中的内容中的所有空行
-    * <leader>s 相当于 VS Code 原生的 ctrl+d，选中下一个匹配的单词，方便批量替换变量名
+    * <leader>s 在选中区域，给数字和英文前后添加空格。用于 Markdown 和文档中，给中文和英文之间添加空格，行文更易读
+    * n 相当于 VS Code 原生的 ctrl+d，选中下一个匹配的单词，方便批量替换变量名
+    * D 删除选中的内容中的所有空行
     * <leader>ca quickFix，修改意见。
     *
     * Which Key
@@ -760,6 +762,15 @@
                 ","
             ],
             "after": [
+                ","
+            ]
+        },
+        {
+            "before": [
+                ",",
+                ","
+            ],
+            "after": [
                 "<Esc>",
                 "A",
                 ",",
@@ -777,20 +788,10 @@
                 "whichkey.show"
             ]
         },
-        // {
-        //     "before": [
-        //         "<Ctrl>",
-        //         "a"
-        //     ],
-        //     "commands": [ "editor.action.selectAll" ]
-        // },
-        // 相当于VS Code原生ctrl+d，选中下一个匹配的单词，方便复制粘贴的时候修改
         {
             "before": [
-                "<leader>",
-                "s"
+                "n"
             ],
-            // Add Selection To Next Find Match
             "commands": [
                 "editor.action.addSelectionToNextFindMatch"
             ]
@@ -798,15 +799,21 @@
         {
             "before": [
                 "<leader>",
-                "d"
+                "s"
+            ],
+            "commands": [
+                ":'<,'>s/([0-9a-z`]+|`.*?`)/ & /g"
+            ]
+        },
+        {
+            "before": [
+                "D"
             ],
             "commands": [
                 {
                     // 删除选中空白行
                     "command": "editor.action.insertSnippet",
                     "args": {
-                        // ${TM_SELECTED_TEXT/.../...} 是 VS Code 的 snippet 变量转换语法
-                        // 对当前选中的文本 TM_SELECTED_TEXT 执行正则替换操作
                         "snippet": "${TM_SELECTED_TEXT/^\\s*$(\\r?\\n)?//gm}"
                     }
                 }
@@ -1268,16 +1275,16 @@
                 // m 右侧显示整个code的小map条
                 {
                     "key": "m",
-                    "name": "Minimap toggle",
-                    "command": "editor.action.toggleMinimap",
-                    "type": "command"
-                },
-                {
-                    "key": "M",
                     "name": "Makrdown preview showing",
                     "command": "markdown-preview-enhanced.openPreviewToTheSide",
                     "when": "editorLangId == 'markdown'"
                 },
+                {
+                    "key": "M",
+                    "name": "Minimap toggle",
+                    "command": "editor.action.toggleMinimap",
+                    "type": "command"
+                }
             ]
         },
         // n DendronNote

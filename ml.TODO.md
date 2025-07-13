@@ -2,7 +2,7 @@
 id: 2l5nw6bxqnhp42w12n7vw8d
 title: TODO
 desc: ''
-updated: 1749055794380
+updated: 1752253227260
 created: 1738165674608
 ---
 
@@ -253,6 +253,14 @@ https://www.zhihu.com/question/21376384/answer/50289239106
 sender + io_uring
 https://cor3ntin.github.io/posts/iouring/
 
+## 编程范式
+
+### 微服务
+
+未来的编程模式一定是微服务的。
+
+https://microservices.io/patterns/microservices.html
+
 ## 简历制作
 
 突出自我学习能力。从以下几个点展开：
@@ -290,3 +298,4 @@ Static Analysis, Compiler Frontend, IDE Plugin Development
 - Learned a lot about Linux programming and the Clang/LLVM codebase.
 
 实习经历中，突出二到四个有亮点的点。体现使用什么工具做了什么，或是从中学到什么。突出了自己会的技能。
+

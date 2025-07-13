@@ -2,15 +2,15 @@
 id: uq048k5m1knzv5egjr43oxn
 title: Openpi_代码
 desc: ''
-updated: 1751736836505
+updated: 1752255128797
 created: 1751475629280
 ---
 
-## Configs: 训练配置
+## Configs: 训练配置模块
 
 包含模型，数据，权重加载，训练超参数等。
 
-## LoRA
+## LoRA 模块
 
 参考 src/openpi/models/lora.py 部分。LoRA 嵌入了大部分网络层，方便微调。类 LoRAConfig 指定了配置，包含 rank-stabilized LoRA 选项。
 
