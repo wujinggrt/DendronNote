@@ -2,7 +2,7 @@
 id: ovto6hepvtttctxmnypiebq
 title: Awesome_terminal_终端各种命令脚本
 desc: ''
-updated: 1752336435009
+updated: 1752635057098
 created: 1742868524198
 ---
 
@@ -14,7 +14,7 @@ created: 1742868524198
 sudo dpkg -i {{pkg_name.deb}}
 ```
 
-查看能够安装的包：
+查看当前搜到的可安装包：
 
 ```bash
 sudo apt search {{关键词}}
@@ -491,13 +491,19 @@ telnet localhost 12321
 
 #### 远程服务器访问本地服务（反向隧道）
 
-在服务端执行：
+在本地执行：
 
 ```bash
-ssh -N -R 5556:localhost:5555 用户名@客户端机器
+ssh -N -R 12321:localhost:15558 服务器用户名@服务器IP
 ```
 
-服务端的端口 5555 映射到客户端机器的 5556 端口。
+在本地执行：
+
+```bash
+python -m http.server 15558
+```
+
+服务端的端口 12321 映射到客户端机器的 15558 端口。在服务器上可以 `telnet localhost 12321` 来访问本地端口。
 
 #### Tpis：-f, -N 选项
 

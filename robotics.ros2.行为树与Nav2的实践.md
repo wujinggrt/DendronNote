@@ -2,7 +2,7 @@
 id: gm086s8es89ez027mue3e3c
 title: 行为树与Nav2的实践
 desc: ''
-updated: 1750688539349
+updated: 1752810781802
 created: 1750439044989
 ---
 
@@ -165,6 +165,254 @@ Deliberation（审慎决策）：强调在执行前进行深度推理和规划�
 Online：动态调整
 
 侵入式？
+
+## Behaviortree.CPP
+
+https://www.behaviortree.dev/docs/learn-the-basics/main_concepts
+
+可以使用函数指针的方式注册 TreeNodes，但是最佳实践是继承 TreeNode 并自定义行为。通常定义下面三个类的其中之一：
+- `ActionNodeBase`
+- `ConditionNode`
+- `DecorateNode`
+
+### Ports
+
+IO ports 是行为树的输入和输出端口，用于在节点之间传递数据。可以在节点之间传递数据，也可以在节点和外部环境之间传递数据。
+
+### 访问 ROS package 内容
+
+对于 ROS 用户，如果需要访问 ROS package 的内容，在 xml 配置中，使用如下语法：
+
+```xml
+<include ros_pkg="name_package" path="path_relative_to_pkg/path_to_file.xml" />
+```
+
+### 第一个 BT
+
+BT 的机制最终会调用 callbacks，也就是 tick。
+
+#### 动态地创建树
+
+除了使用代码静态地定义节点，可以使用 XML 文件来动态创建。通常在 CPP 文件定义各类节点，注册到 Factory 后，XML 来组织这些节点为树。
+
+![create_tree](assets/images/robotics.ros2.行为树与Nav2的实践/create_tree.png)
+
+问题：存在大量重复的 register 代码，节点增多，代码注册会变得冗长，是否可以设计可扩展性更强的方式？
+
+设计自动化实现一个类时，自动注册到 Factory。注册逻辑在 Base 类中，可以使用静态变量，反射或 CRTP 语法来实现。
+
+```cpp
+class Base {
+  public:
+    static void Register() {
+      Factory::Register<Base>("Base");
+    }
+};
+```
+
+或者在 class 前面使用一个宏来处理，就像内核开发使用宏来注册驱动的接口。实现一个：
+
+```c
+MODULE_DEVICE_TABLE()
+```
+
+#### Blackboard and ports
+
+TreeNodes 提供了与高层次抽象沟通的机制，与函数的思想完全不同。我们通常想要：
+- 传递 arguments/parameters 给一个 Node 作为输入
+- 获取节点的输出信息
+- 分享输出信息给其他节点
+
+简单的可以用函数，复杂的要用节点。尽可能用节点的方式。
+
+btcpp 通过 ports 提供了 dataflow 的机制，易用且类型安全。
+
+![balckboard_ports](assets/images/robotics.ros2.行为树与Nav2的实践/balckboard_ports.png)
+
+在 XML 中，可以使用 `{the_answer}` 的形式引用 Blackboard 中的值，提供给节点。节点可以写和读这些 Entry 的内容。
+
+```xml
+<ThinkWhatToSay   text="{the_answer}"/>
+<SaySomething     message="{the_answer}" />
+```
+
+"Blackboard" 是 KV 存储，树的所有节点可见。有 IO ports。
+- I: 节点以静态成员函数注册 `InputPort<T>`，可以调用 `getInput<T>` 获取输入;
+- O: 节点以静态成员函数注册 `OutputPort<T>`，调用 `setOutput()` 成员函数输出。
+
+输入可以是静态字符串，也可以是 KEY 的标识符。
+
+注意，不要用 bb 传递参数，它们仅作为不同节点之间的连接。应当在构造函数中指定参数，在 registerNodeType 的时候传入参数并注册到 factory。
+
+#### XML 语法
+
+[详细 XML 用法](https://www.behaviortree.dev/docs/learn-the-basics/xml_format/)
+
+第一个 tag 必须是 root，属性 BTCPP_format 是必要的，通常是 4; 包含 1 or 多个 BehaviorTree tag，且每个都要有 ID 属性。通常要实例化的树的 ID 设为 "MainTree"。
+
+name 属性可选，仅表示实例的名称，可选。自己写节点时，也要以
+
+在 2.4 之后，使用 include 标签可以像 C++ 一样包含其他文件。对于 ROS 项目，可以用语法：
+
+```bash
+<include ros_pkg="name_package"  path="path_relative_to_pkg/grasp.xml"/>
+```
+
+可在脚本 XML 中，使用 `<Script>` tag 输出到 Port。参考 [Introduction to Scripting](https://www.behaviortree.dev/docs/guides/scripting/)。比如：
+
+```xml
+<Sequence>
+    <Script code=" A:=THE_ANSWER; B:=3.14; color:=RED " />
+    <Precondition if="A>B && color!=BLUE" else="FAILURE">
+        <Sequence>
+          <SaySomething message="{A}"/>
+          <SaySomething message="{B}"/>
+          <SaySomething message="{color}"/>
+        </Sequence>
+    </Precondion>
+</Sequence>
+```
+
+这些变量都会保存在 Blackboard，可以访问。
+
+#### Ports 与泛型
+
+支持自动转换类型，如 int, long, double 和 NodeStatus。用户定义类型也可以。需要自定义模板特例化函数，来解析：
+
+```cpp
+namespace BT
+{
+    template <> inline Position2D convertFromString(StringView str)
+    {
+        ......
+    }
+} // end namespace BT
+```
+
+```xml
+  <Script        code=" OtherGoal:='-1;3' " />
+  <PrintTarget   target="{OtherGoal}" />
+```
+
+#### 编译和安装
+
+使用 conan 编译。在项目父目录创建 build 目录，即 build 与 Behaviortree.CPP 同级。初次可能会报错。需要安装编译工具 conan 和 catkin_pkg
+
+```bash
+uv pip install conan catkin_pkg
+```
+
+catkin_pkg 会在 cmake 时调用，没有此包会导致 CMake Error。
+
+首次使用 conan，需要创建 conan 的 profile，在编译时指出 `--profile:build=<myprofile>` 位置，或者直接默认创建：
+
+```bash
+conan profile detect --force
+```
+
+随后，conan 可以安装项目所需的依赖等。
+
+指定安装目录，可以在 cmake 时指定 `-DCMAKE_INSTALL_PREFIX=/usr/local`，编译完成后 `sudo make install`。
+
+构建 rapid-yaml 使用：
+
+```bash
+git submodule update --init --recursive
+cmake -S . -B build -DCMAKE_INSTALL_PREFIX=/usr/local
+```
+
+### Reactive and Asynchronous behaviors
+
+Async Action 在完成之前返回 Running 状态。不会在 tick() 阻塞太多时间，尽快返回。出现异常情况时，调用 halt() 方法，能尽快 abort。更多参考 [Asynchronous Actions](https://www.behaviortree.dev/docs/guides/asynchronous_nodes/)。
+
+StatefulActionNode 是常见的方式，通常是 request-reply 模式。请求后，周期性地检查反馈是否完成。如果计算耗时，应当放到线程中。使用 Reactive 风格的 API，需要覆盖 onStart()、onRunning()、onHalted() 等方法。
+
+在 XML 中，与响应式相关设计时，使用 ReactiveSequence，当子树 Sequence 的子节点返回 Running 时，会重复地执行 ReactiveSequence 下的各个节点，从头开始。其中，若发生 FAILURE，则节点会尽快调用 onHalted()。为了更好地控制，尽可能使用 Tree::sleep()，它能由 TreeNode::emitStateChanged() 唤醒。
+
+异步参考 [AsyncThreadedAction](https://www.behaviortree.dev/docs/guides/asynchronous_nodes)，指出尽量避免直接生成新线程的方案。特别是线程 sleep 时，却需要 aborted 的场景，唤醒不及时会导致难以即使退出和释放资源。也许可以考虑 C++20 的 jthread 和 stop_tokens。现在 std::condition_variable_any 也能够传入和收到 stop_tokens 的信号，避免等待过久。
+
+官方指出，需要默认避免复杂度情况，尽可能避免多线程。
+
+### 使用子树组成行为
+
+可以在 XML 中，定义多个树，组织子树到更大的树，得到层次化地树。
+
+```xml
+<root BTCPP_format="4">
+
+    <BehaviorTree ID="MainTree">
+        <Sequence>
+            <Script code=" move_goal='1;2;3' " />
+            <SubTree ID="MoveRobot" target="{move_goal}" 
+                                    result="{move_result}" />
+            <SaySomething message="{move_result}"/>
+        </Sequence>
+    </BehaviorTree>
+
+    <BehaviorTree ID="MoveRobot">
+        <Fallback>
+            <Sequence>
+                <MoveBase  goal="{target}"/>
+                <Script code=" result:='goal reached' " />
+            </Sequence>
+            <ForceFailure>
+                <Script code=" result:='error' " />
+            </ForceFailure>
+        </Fallback>
+    </BehaviorTree>
+
+</root>
+```
+
+最终，由 factory 创建树，使用树的 ID 来创建。
+
+引用子树时，可以 remap Blackboard 中的变量，避免名称冲突。比如 MainTree 中的需要使用 move_goal，可能来自子树中的 target Port。所以 `target="{move_goal}"` 代表 MoveRobot 中的 target 相当重新映射到 MainTree 中的 move_goal，随后 SaySomething 节点可以使用。
+
+一个行为对应一个类。factory 不应该放到负责的行为中，应当在行为创建时，用 DI 方式注入。
+
+### 官方提供的节点
+
+- root
+- BehaviorTree，指定一颗树，由 ID 属性指定唯一标识
+- 子树管理：Subtree，使用 ID 引用其他行为树; include 引入其他 XML 文件
+- 控制节点：
+  - [Sequence, ReactiveSequence, SequenceWithMemory](https://www.behaviortree.dev/docs/nodes-library/SequenceNode), 
+  - [Fallback, ReactiveFallback](https://www.behaviortree.dev/docs/nodes-library/FallbackNode), Parallel
+- [装饰器](https://www.behaviortree.dev/docs/nodes-library/DecoratorNode)：Inverter, RetryUntilSucessful
+- 条件节点和动作节点需自行实现
+- 黑板操作：Script
+
+### Pre and Post conditions
+
+简单的，不需要编写 C++ 代码的简短 Script。
+
+### 集成到 ROS2
+
+[BehaviorTree.ROS2](https://github.com/BehaviorTree/BehaviorTree.ROS2)
+
+应当由中心化的 ROS 节点，负责行为树的执行，即 Task Planner。其他元素应当是 service-oriented 组件，代理业务逻辑和决策部署。
+
+rclcpp_action 完美适配，因为都有异步特性，且不需要开新的线程。且都有 halt() 或类似的 abort。
+
+## 架构设计
+
+行为树是高级的抽象，负责最终的执行。机器人的关系不是包含关系，而是使用关系。行为树用到了机器人，组织它的行为。机器人的动作不应该依赖于行为树，而是设计好了且足够细节，由行为树组织它们。因此，适合使用一个 Controller，或者是上下文管理器管理它们。
+
+把机器人的控制器的类放到行为树里，是否妥当？让行为树依赖机器人。
+
+### 控制关节的节点
+
+```cpp
+class MoveRobot;
+class MoveJoints;
+class FireJoints;
+```
+
+### 动作节点管理
+
+维护一个 factory，包含各种动作。就像 MODULE_DEVICE_TABLE 宏，在实现的 cpp 中，在最后一行调用它即可注册。
+
+factory 为什么不能放到全局作用域？
 
 ## Ref and Tag
 

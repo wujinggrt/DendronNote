@@ -2,7 +2,7 @@
 id: kcism5sjj3bvuntcovct65l
 title: 注意力机制公式_漂亮的Attention实现
 desc: ''
-updated: 1748014072712
+updated: 1752894860869
 created: 1741315704596
 ---
 
@@ -40,7 +40,9 @@ $$
 输入 a1, a2, a3, a4 等等，经过 Attention 层的参数处理，得到向量 q, k, v
 
 ![self_attn](assets/images/llm.transformer.注意力机制公式_漂亮的Attention实现/self_attn.png)
-得到的向量中，每个 q 都与当前批次内的所有 (包括自己) 的 k 向量求内积，经 softmax 处理，得到 attention score，或 attention weight。随后与 v 向量求内积，得到当前的结果。
+
+得到的向量中，每个 q 都与当前批次内的所有 (包括自己) 的 k 向量求内积，经 softmax 处理，得到 attention score，或 attention weight。随后与 v 向量求内积，得到当前的结果。N x N 的 attention score 矩阵，每个 q 与所有 k 求内积，得到 N 个 attention score。
+
 
 与长度也无关。
 
@@ -121,6 +123,7 @@ class Attention(nn.Module):
             q = q * self.scale
             # Q * K.T
             # (B num_heads N head_dim) * (B num_heads head_dim N)
+            # 得到 (B num_heads N N)
             attn_scores = torch.matmul(q, k.transpose(-2, -1))
             # Add attention mask if provided
             if attn_mask is not None:

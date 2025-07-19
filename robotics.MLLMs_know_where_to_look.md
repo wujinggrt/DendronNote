@@ -2,7 +2,7 @@
 id: 88lxutih2k72osc4a5hfzlt
 title: MLLMs_know_where_to_look
 desc: ''
-updated: 1752370804764
+updated: 1752894976508
 created: 1752370725596
 ---
 
@@ -62,6 +62,15 @@ created: 1752370725596
 
 4.  **高分辨率图像策略**: 对于超高分辨率的图像 (如 V* 数据集)，采用两阶段策略：先将大图切块，分别计算重要性图并拼接，然后再进行边界框选择和裁剪，以避免在初始缩放时丢失过多细节。
 
+第三节，指出 VLMs 对尺寸敏感。更大的图像更容易得到预期回答。这样来说，腕部相机提供查看更大图像的能力，提供的信息更加丰富。当然，远离操作物体时，视野里的信息明显少于头部相机。所以需要关注和设计。
+
+第四节，VLMs 尽管答错，但也知道往哪儿看。为了评估往哪儿看的能力，作者使用量化的方法研究，分析 Transformer layers 的注意力图。量化关于整张图像的 spatial attention，比较 GT 的 BB 中注意力总数与其他同等大小 BB 区域的注意力分数总数。
+
+分析 xformer 生成的 token 对于图像 token 的注意力（softmax 得到的注意力分数），研究图像 token 对于生成内容的影响。关于所有 layers，从生成的 tokens 开始，提取它们关于图像 tokens 的 softmax cross-attention (softmax 的每个头得到 seq_len x seq_len 的注意力矩阵，分别对应每个 q 对应各个内容的注意力)，可以得 $A_{st}(x,q)\in \mathbb{R}^{L \times H \times 1 \times T}$，L 是层数，此维度对应每层, H 对应各个注意力头，T 对应图像 tokens 数量。随后，对于所有头求平均。
+
+再分析每个图像区域对于图像 token 的重要性。基于 xformer 的 connector 中，提取每层中，每个 image token 关于 ViT 输出 tokens 的 softmax cross-attention。LLaVA 系列则不做此分析，仅得到单位矩阵。
+
+回顾 VLMs 的处理方式，ViT 先拆分为 patches，经过 connector 映射到 LLMs 的输入空间，加入到问题 tokens 之前。如此思路，方便对齐和微调。是否动作专家也需要对齐呢？此外，对齐之后是否可以舍弃其余部分？比如，只用 Decoder 生成一个 token。利用对齐后的内容作为编码器。就像 MAE 工作的思路。
 
 
 ### 实验与结论

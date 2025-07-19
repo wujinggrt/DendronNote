@@ -2,7 +2,7 @@
 id: 2dei298qbfeobl9krl61vnp
 title: VSCode_配置clangd与头文件包含地址等
 desc: ''
-updated: 1750817151620
+updated: 1752544056527
 created: 1750313789535
 ---
 
@@ -82,7 +82,14 @@ bear -- cmake --build build
 
 目录 /usr/include 下的头文件，编译器和 clangd 自动查找。
 
-使用 compile_commands.json 最全，也可以手动配置。
+使用 compile_commands.json 最全，也可以手动配置。手动配置可以在 VS Code 的 settings.json 中，设置：
+
+```json
+"clangd.fallbackFlags: [
+  ......
+  "-isystem/usr/local/include",
+]
+```
 
 ### ROS2 的头文件
 

@@ -2,7 +2,7 @@
 id: fyepomr2rnswm2zsv3hk12s
 title: Quick_start
 desc: ''
-updated: 1752166781452
+updated: 1752716664277
 created: 1743493714764
 ---
 
@@ -765,9 +765,13 @@ Launch 系统用于加载程序，能够指定参数等，方便监视状态。�
 
 消息的定义文件通常保存为 `.msg` 后缀。服务和动作的后缀为 `.srv` 和 `.action`。
 
+### std_srvs/srv/SetBool
+
 ### std_msgs
 
 #### Header
+
+https://docs.ros2.org/latest/api/
 
 https://docs.ros2.org/latest/api/std_msgs/msg/Header.html
 
