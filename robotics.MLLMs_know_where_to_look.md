@@ -2,7 +2,7 @@
 id: 88lxutih2k72osc4a5hfzlt
 title: MLLMs_know_where_to_look
 desc: ''
-updated: 1752894976508
+updated: 1752904690124
 created: 1752370725596
 ---
 
@@ -71,7 +71,6 @@ created: 1752370725596
 再分析每个图像区域对于图像 token 的重要性。基于 xformer 的 connector 中，提取每层中，每个 image token 关于 ViT 输出 tokens 的 softmax cross-attention。LLaVA 系列则不做此分析，仅得到单位矩阵。
 
 回顾 VLMs 的处理方式，ViT 先拆分为 patches，经过 connector 映射到 LLMs 的输入空间，加入到问题 tokens 之前。如此思路，方便对齐和微调。是否动作专家也需要对齐呢？此外，对齐之后是否可以舍弃其余部分？比如，只用 Decoder 生成一个 token。利用对齐后的内容作为编码器。就像 MAE 工作的思路。
-
 
 ### 实验与结论
 

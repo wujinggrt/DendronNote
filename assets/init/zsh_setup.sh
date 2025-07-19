@@ -15,9 +15,11 @@ if [[ $UID -ne 0 ]]; then
     SUDO='sudo'
 fi
 $SUDO apt update
-$SUDO apt install -y zsh git tmux
+# 这些包是依赖的, tmux 常用
+$SUDO apt install -y curl zsh git tmux
 # ohmyzsh
 # sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+# 如果下载出现错误，安装出错，需要删除 ~/.oh-my-zsh 目录，重新安装即可
 echo Y | sh -c "$(curl -fsSL https://gitee.com/pocmon/ohmyzsh/raw/master/tools/install.sh)"
 # p10k configuration # 配置终端
 git clone --depth=1 https://gitee.com/romkatv/powerlevel10k ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
