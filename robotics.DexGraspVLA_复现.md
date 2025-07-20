@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1749048794540
+updated: 1752931539116
 created: 1741144146461
 ---
 
@@ -497,6 +497,14 @@ def numpy_to_base64(np_image: np.ndarray) -> str:
 ```
 
 有了 str，便可向 Qwen2.5-VL 询问了。
+
+### 标框和制作 mask 思路
+
+Qwen2-VL 标框是为了提供给 sam2 分割，并提供给 cutie 追踪，以得到 mask。
+
+采集数据时，灵巧手从一堆杂物中抓取物体，难以分辨标框的物体，可以使用手动标框。一个 episode 中，
+
+改进和提高的思路：第一次提供作为 context 即可，此操作比较耗时，随后不要再追踪了。
 
 ### 多进程制作数据
 

@@ -2,7 +2,7 @@
 id: ovto6hepvtttctxmnypiebq
 title: Awesome_terminal_终端各种命令脚本
 desc: ''
-updated: 1752635057098
+updated: 1752914668823
 created: 1742868524198
 ---
 
