@@ -2,7 +2,7 @@
 id: kcism5sjj3bvuntcovct65l
 title: 注意力机制公式_漂亮的Attention实现
 desc: ''
-updated: 1752894860869
+updated: 1752988654145
 created: 1741315704596
 ---
 
@@ -41,7 +41,7 @@ $$
 
 ![self_attn](assets/images/llm.transformer.注意力机制公式_漂亮的Attention实现/self_attn.png)
 
-得到的向量中，每个 q 都与当前批次内的所有 (包括自己) 的 k 向量求内积，经 softmax 处理，得到 attention score，或 attention weight。随后与 v 向量求内积，得到当前的结果。N x N 的 attention score 矩阵，每个 q 与所有 k 求内积，得到 N 个 attention score。
+得到的向量中，每个 q 都与当前批次内的所有 (包括自己) 的 k 向量求内积，经 softmax 处理，得到 attention score，或 attention weight。随后与 v 向量求内积，得到当前的结果。N x N 的 attention score 矩阵，每个 q 与所有 k 求内积，得到 N 个 attention score。有可能交叉注意力机制中，q 与 k 不同长度，会得到 T x N 的得分矩阵。
 
 
 与长度也无关。

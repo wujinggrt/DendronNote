@@ -2,7 +2,7 @@
 id: us3phg4jcf3ej4lpymsyu6q
 title: DexGraspVLA_复现
 desc: ''
-updated: 1752931539116
+updated: 1753000833843
 created: 1741144146461
 ---
 
@@ -799,15 +799,30 @@ find DexGraspVLA -mindepth 1 -maxdepth 1 | perl -wnle 'm@.*/(Cutie|\.vscode|.*.p
 
 ### 可视化注意力
 
+#### attention map
+
 配置 get_attn_map 之后，在输出检查点的同级目录下，train_sample_attn_maps 目录保存了注意力文件，具体为 pkl 形式。指定 attn_map 路劲后，策略预测时，输出到此位置：
 
 ```py
     pred_action = policy.predict_action(batch['obs'], output_path)
 ```
 
-策略的每次预测动作时，记录每个 DiT 块的 attn_weights，每个 attn_weight 来自噪声和条件的交叉注意力部分，而非自注意力部分，即 $Q K^T$ 后，经过了 softmax 归一化。attn_weights 仅取前两个 samples，
+output_path 是一个 pkl 文件路径，保存了 dict 如下：
 
-x 形状是 (B, N, D)，修改为 (B, h, T, d)，随后交叉注意力得到的形状是 (B, h, T, T)。而 attn_weights
+```py
+    save_dict = {
+        "attention_maps": all_timestep_attention_maps,
+        "obs_dict": obs_dict_numpy,
+    }
+```
+
+all_timestep_attention_maps 通义是 dict，保存每个时间步的注意力图。key 是整形数字，values 为 list，对应个 DiT 层的 softmax cross-attention。
+
+具体解析参考文件 attention_map_visualizer.py。
+
+预测噪声时，记录每个 DiT 块的 softmax corss-attention，得到 (DenoiseTimeSteps, num_layers, B, num_heads, T, L)，但是作者仅保留了前两个 sample，即第一个动作 token，得到 (DenoiseTimeSteps, num_layers, :2, num_heads, 0, L)。Decoder 传入的 token 是 q，所以 T 仅取第一个，代表仅参考第一个动作。L 是第一个 token 对于所有条件 tokens 的注意力。
+
+#### 可视化
 
 ## Ref and Tag
 
