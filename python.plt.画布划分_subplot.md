@@ -2,7 +2,7 @@
 id: jfnhawp9z6yefk5zedupbht
 title: 画布划分_subplot
 desc: ''
-updated: 1742617134718
+updated: 1752945601131
 created: 1742573563940
 ---
 
@@ -76,8 +76,55 @@ def show_box(box, ax):
     )
 ```
 
+## 获取当前轴
+
+```py
+```
+
+ax 一般使用 plt.gca() 获取当前绘制图像的 axis。
+
+## plt.ginput()：交互式输入函数
+
+交互式输入函数，用于从图形窗口中捕获鼠标点击事件。它在数据标注、图像分割、交互式绘图等场景中非常有用。基本用法如下：
+
+```py
+points = plt.ginput(n=2, timeout=0, show_clicks=True, mouse_add=1, mouse_pop=3, mouse_stop=2)
+```
+
+1.  **`n`** (整数):
+    -   需要收集的点的数量
+    -   默认值：1
+    -   设为负数时，可以无限次点击，直到按下回车键或鼠标中键
+2.  **`timeout`** (浮点数):
+    -   等待点击的超时时间（秒）
+    -   默认值：0（无限等待）
+    -   超时后返回已收集的点
+3.  **`show_clicks`** (布尔值):
+    -   是否在点击位置显示临时标记
+    -   默认值：True（显示）
+4.  **`mouse_add`** (整数):
+    -   添加点的鼠标按钮
+    -   1 = 左键（默认）, 2 = 中键, 3 = 右键
+5.  **`mouse_pop`** (整数):
+    -   删除上一个点的鼠标按钮
+    -   默认值：3（右键）
+    -   设为0禁用此功能
+6.  **`mouse_stop`** (整数):
+    -   提前结束收集的鼠标按钮
+    -   默认值：2（中键）
+    -   设为0禁用此功能
+
+返回值：返回一个包含元组的列表，每个元组表示一个点的坐标 `(x, y)`
+
+
+
 ## 展示动画（时间序列的图）
 
 
+## 远程服务器展示图像需要安装
+
+```bash
+sudo apt-get install -y libxcb-xinerama0 libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xkb1 libxkbcommon-x11-0
+```
 
 ## Ref and Tag
