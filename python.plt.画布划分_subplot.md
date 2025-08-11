@@ -2,7 +2,7 @@
 id: jfnhawp9z6yefk5zedupbht
 title: 画布划分_subplot
 desc: ''
-updated: 1752945601131
+updated: 1753113715360
 created: 1742573563940
 ---
 
@@ -78,9 +78,6 @@ def show_box(box, ax):
 
 ## 获取当前轴
 
-```py
-```
-
 ax 一般使用 plt.gca() 获取当前绘制图像的 axis。
 
 ## plt.ginput()：交互式输入函数
@@ -115,8 +112,6 @@ points = plt.ginput(n=2, timeout=0, show_clicks=True, mouse_add=1, mouse_pop=3, 
     -   设为0禁用此功能
 
 返回值：返回一个包含元组的列表，每个元组表示一个点的坐标 `(x, y)`
-
-
 
 ## 展示动画（时间序列的图）
 

@@ -2,7 +2,7 @@
 id: 88lxutih2k72osc4a5hfzlt
 title: MLLMs_know_where_to_look
 desc: ''
-updated: 1752987536822
+updated: 1753551029800
 created: 1752370725596
 ---
 
@@ -66,13 +66,29 @@ created: 1752370725596
 
 第四节，VLMs 尽管答错，但也知道往哪儿看。为了评估往哪儿看的能力，作者使用量化的方法研究，分析 Transformer layers 的注意力图。量化关于整张图像的 spatial attention，比较 GT 的 BB 中注意力总数与其他同等大小 BB 区域的注意力分数总数。
 
-分析 xformer 生成的 token 对于图像 token 的注意力（softmax 得到的注意力分数），研究图像 token 对于生成内容的影响。关于所有 layers，从生成的 tokens 开始，提取它们关于图像 tokens 的 softmax cross-attention (softmax 的每个头得到 seq_len x seq_len 的注意力矩阵，分别对应每个 q 对应各个内容的注意力)，可以得 $A_{st}(x,q)\in \mathbb{R}^{L \times H \times 1 \times T}$，L 是层数，此维度对应每层, H 对应各个注意力头，T 对应图像 tokens 数量。随后，对于所有头求平均。
+#### 分析关于图像的空间注意力
 
-再分析每个图像区域对于图像 token 的重要性。基于 xformer 的 connector 中，提取每层中，每个 image token 关于 ViT 输出 tokens 的 softmax cross-attention。LLaVA 系列则不做此分析，仅得到单位矩阵。
+分析 xformer 生成的 token 对于图像 token (answer-to-token attention) 的注意力（softmax 得到的注意力分数），研究图像 token 对于生成内容的影响。关于所有 layers，从生成的 tokens 开始，提取它们关于图像 tokens 的 softmax cross-attention (softmax 的每个头得到 seq_len x seq_len 的注意力矩阵，分别对应每个 q 对应各个内容的注意力)，可以得 $A_{st}(x,q)\in \mathbb{R}^{L \times H \times 1 \times T}$，L 是层数，此维度对应每层, H 对应各个注意力头，T 对应图像 tokens 数量。随后，对于所有头求平均。
 
-回顾 VLMs 的处理方式，ViT 先拆分为 patches，经过 connector 映射到 LLMs 的输入空间，加入到问题 tokens 之前。如此思路，方便对齐和微调。是否动作专家也需要对齐呢？此外，对齐之后是否可以舍弃其余部分？比如，只用 Decoder 生成一个 token。利用对齐后的内容作为编码器。就像 MAE 工作的思路。
+分析每个图像区域对于图像 token (token-to-image attention) 的重要性，也就是查看 decoder 中，输出的 token 部分（即 q）对于所有图像区域的注意力分数。对于使用 xformer 作为 connector 链接 ViT 输出和投影到模型 token 的方案，每层中，提取每个 image token 关于 ViT 输出 tokens 的 softmax cross-attention。输出 $A_{ti} \in \mathbb{R}^{L_c \times H_c \times T \times N^2}$，其中 L_c 和 H_c 为 connector xformer 的层数和头数，T 代表投影的 image token 数，N 是 ViT 的 patch 数量, N^2 代表 ViT patches 数量。LLaVA 系列使用 MLP 作为 connector，则不做此分析，仅用单位矩阵考虑图像 token 对与 image patches 的 attn。
+
+计算 answer-to-image attention，计算 VLM 输出 token 对于 image patches 的注意力。计算 answer-to-token 与 token-to-image attention 矩阵的内积，$A_{si} \in \mathbb{R}^{L \times L_c \times 1 \times N^2$，
+
+#### Relative Attention
+
+部分注意力得分高的 tokens 与输入问题并非语义上相关。为了强调语义相关注意力，作者提出了，要对 image-question pair (x,q) 的 answer-to-image 注意力归一化，参考其在通用指令 q' 上的值。比如通用指令 q'="Write a general description of the image."，可以计算 relative attention $A_{rel}(x,q)=\frac{A_{si}(x,q)}{A_{si}(x,q')}$，
+
+#### 是否知道往哪儿看？
+
+对于每个 image-question pair，计算 relative attention，定义 attention ratio，评估 MLLM 参与到 GT bbox 能力。在包含正确答案的 GT bbox 内，计算相对注意力的总和，与相同大小的所有 bbox 的平均相对注意力综合的比率。大于 1 表示模型对答案的正确区域关注度明显高于图像中的其他区域; 接近或小于 1 代表没有关注正确答案所在区域。作者发现，即使回答错误，比率也远大于 1。
+
+基于以上发现，研究人员提出了一种名为 ViCrop (Visual Cropping) 的无训练优化方法，并取得了显著成效。
+
+ViCrop 方法: 该方法利用计算出的注意力图（特别是相对注意力图）来自动定位图像中与问题最相关的区域，然后对该区域进行裁剪和放大，并将裁剪后的高分辨率图像与原始图像一起重新输入给模型，从而帮助模型“看清”细节。
 
 ### 实验与结论
+
+模型知道往哪儿看，但是提供的信息不够多，回答不准确。
 
 *   **实验设置**:
     *   **模型**: InstructBLIP (Vicuna-7B), LLaVA-1.5 (Vicuna-7B)
@@ -92,5 +108,12 @@ created: 1752370725596
 2.  **计算开销**: 尽管合理，但 ViCrop 仍然引入了额外的推理时间开销（在 GPU 上约 1-2 秒）。
 3.  **未来方向**: 论文提出，未来的工作可以探索将 ViCrop 扩展到同时关注多个区域，通过量化等方法优化其推理成本，以及探索如何结合不同 ViCrop 方法的优势。
 
+计算图像的 Spatial Attention 时，输入问题也会有影响。不同问题，对于图中不同区域注意力应当不同。注意力的表现取决于大模型的能力，这条指标应当z大作为型的能力在垂直领域的参考。
+
+启发：从此关系可以体会，操作机械臂时，注意力机制需要有一个。子命令也需要同样的归一化来校准注意力，难以学习该关注哪儿。有了良好的子命令，大模型可以规划，就像 MCP 一样调用工具。可以借鉴 MCP 思路，把 BT 看做机器人的 MCP，专门训练此 Agent 能力，接下来就是扩展能力的工作了。
+
+DexGraspVLA 增加 mask 的方式，能否帮助动作专家型提升往哪儿看的能力？因为学习 mask 本身也是一种对齐，模态多了，对齐和 Fusion 是一个难点。需要用 mask 来影响关节角的生成，让关节角拟合到抓取此区域的内容。
+
+回顾 VLMs 的处理方式，ViT 先拆分为 patches，经过 connector 映射到 LLMs 的输入空间，加入到问题 tokens 之前。如此思路，方便对齐和微调。是否动作专家也需要对齐呢？此外，对齐之后是否可以舍弃其余部分？比如，只用 Decoder 生成一个 token。利用对齐后的内容作为编码器。就像 MAE 工作的思路。
 
 ## Ref and Tag

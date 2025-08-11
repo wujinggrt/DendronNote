@@ -2,7 +2,7 @@
 id: 1ka9ot8e39esd6hg84b4mma
 title: Numpy
 desc: ''
-updated: 1751737573817
+updated: 1753722438589
 created: 1751694639071
 ---
 
@@ -19,7 +19,7 @@ created: 1751694639071
 numpy.einsum(subscripts, *operands)
 ```
 
-subscripts 的语法中，输入操作数之间用逗号分隔，这些操作数会隐式地先执行对应元素的乘法（广播后），然后按照下标规则进行求和。
+subscripts 的语法中，输入操作数之间用逗号分隔，这些操作数会隐式地执行对应元素的乘法（广播后），然后按照下标规则进行求和。
 
 乘法执行顺序分为两个阶段：
 1.  **广播乘法阶段**：所有输入数组在匹配维度上进行广播和元素级乘法，也就是说，只要两个数组在维度上有匹配的部分，就会执行乘法
@@ -200,5 +200,7 @@ def grouped_query_attention(
     
     return output
 ```
+
+甚至，可以给 q k v 转换的权重矩阵，保存为 (3,num_heads,embed_dim,head_dim)，参考 openpi0 的权重矩阵。
 
 ## Ref and Tag

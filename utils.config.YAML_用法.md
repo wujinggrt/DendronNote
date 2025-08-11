@@ -2,7 +2,7 @@
 id: swykb3cramun062tsnjetsr
 title: YAML_用法
 desc: ''
-updated: 1743586356865
+updated: 1753721711220
 created: 1743585843505
 ---
 
@@ -137,5 +137,32 @@ launch:
 ```
 
 使用 & 声明锚点,使用 * 引用。
+
+## 换行
+
+关于 yaml 语法，如果命令太长，可以使用 >- 或 | 来处理换行。注意，要在命令或对象的一开始就指出，不能在一半指出。比如：
+
+```yaml
+panes:
+  - shell_command:
+      - >-
+        if [[ -n ${SHOULD_LAUNCH_CAMERA} ]]; then
+          echo "Launching camera...";
+          ros2 launch signal_camera_node signal_camera.py;
+        else
+          echo "Should not launch camera";
+        fi
+
+  - shell_command:
+      - |
+        if [[ -n ${SHOULD_LAUNCH_CAMERA} ]]; then
+          echo "Launching camera..."
+          ros2 launch signal_camera_node signal_camera.py
+        else
+          echo "Should not launch camera"
+        fi
+```
+
+`>-` 是折叠的含义，将多行压缩到一行，保留中间的空格。`|` 则保留换行。可以看到，为了区分多行命令，`>-` 的场景使用了 `;` 结尾。
 
 ## Ref and Tag

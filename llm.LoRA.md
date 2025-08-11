@@ -2,11 +2,15 @@
 id: 3d70v3qtqyg2tjtnwuzus6g
 title: LoRA
 desc: ''
-updated: 1751732696911
+updated: 1753628125810
 created: 1751690669800
 ---
 
-## LoRA：`h_final = W * x + (alpha / r) * B * A * x`
+## LoRA
+
+$$
+h_{final} = W * x + \frac{\alpha}{r} * B * A * x
+$$
 
 LoRA (Low-Rank Adaptation) 是一种高效的微调（Fine-Tuning）技术，其核心思想是：**在对大型预训练模型进行微调时，我们不需要更新模型的所有参数，而只需要更新一个非常小的、“注入”到模型中的“旁路”参数。**
 

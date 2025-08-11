@@ -2,7 +2,7 @@
 id: gm086s8es89ez027mue3e3c
 title: 行为树与Nav2的实践
 desc: ''
-updated: 1752810781802
+updated: 1753377607677
 created: 1750439044989
 ---
 
@@ -385,6 +385,30 @@ StatefulActionNode 是常见的方式，通常是 request-reply 模式。请求�
 ### Pre and Post conditions
 
 简单的，不需要编写 C++ 代码的简短 Script。
+
+### 区分 Ports 与传入参数（arguments）的场景
+
+关于构造函数，如果需要使用更多的参数，官网不推荐使用 blackboards 和 Input Ports 的方式，t通常有几个错误：参数是编译时可知的，而 Input Ports 是运行时j决定的；且 arguments 在运行时不变，所以没必要在 XML 设置。
+
+首选方案是构造函数传参，在注册到 factory 时指定节点的构造函数的参数，适合参数在树初始化时确定且运行时不变。
+
+其次，同一节点类型的不同实例需不同参数时，使用初始化函数 initialize()，创建树后遍历节点，通过 dynamic_cast 识别目标节点并调用其 initialize() 方法。参数值可在代码中动态指定。
+
+```cpp
+auto tree = factory.createTreeFromText(xml);
+tree.applyVisitor([](TreeNode* node) {
+  if (auto action_b = dynamic_cast<Action_B*>(node)) {
+    action_b->initialize(69, "interesting_value");
+  }
+});
+```
+
+Ports 的合理使用场景是运行时动态修改的内容，（如根据传感器数据更新），可以通过黑板传递。某些结果保存到黑板，方便调试和后续处理。将状态和结果（如 ROS2 service 的返回结果）通过黑板（Blackboard）共享是绝对正确的设计，也是官方推荐的核心模式。Ports 作为访问黑板的接口，是实现这一目标的关键机制。
+
+优点：
+1. 解耦节点通信。节点间无需直接引用彼此，通过黑板键值（如 {result}）间接交互，符合行为树数据驱动的设计哲学。
+2. 动态数据支持。ROS2 服务返回的结果通常在运行时确定（如导航路径、传感器数据），黑板天然支持动态更新。
+3. 跨子树共享。黑板数据可被任意节点访问，实现跨子树的状态传递（如全局错误码 error_code）。
 
 ### 集成到 ROS2
 

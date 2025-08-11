@@ -2,7 +2,7 @@
 id: fyepomr2rnswm2zsv3hk12s
 title: Quick_start
 desc: ''
-updated: 1752716664277
+updated: 1754550377269
 created: 1743493714764
 ---
 
@@ -761,6 +761,33 @@ ros2 run py_pubsub talker
 
 Launch 系统用于加载程序，能够指定参数等，方便监视状态。加载文件可以是 XML，YAML 和 Python。
 
+### 安装
+
+Python 项目中，在 setup.py 中，添加 launch 目录下的所有内容到指定的 install 下对应的 share 目录，才能正常从包中调用和启动。设置 data_files 如：
+
+```py
+from glob import glob
+import os
+...
+package_name = 'py_launch_example'
+setup(
+    # Other parameters ...
+    data_files=[
+        # ... Other data files
+        # Include all launch files.
+        (os.path.join('share', package_name, 'launch'), glob('launch/*'))
+    ]
+)
+```
+
+C++ 项目，在 CMakeLists.txt 直接 install 即可：
+
+```cmake
+install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}/
+)
+```
+
 ## 标准的消息
 
 消息的定义文件通常保存为 `.msg` 后缀。服务和动作的后缀为 `.srv` 和 `.action`。
@@ -1086,6 +1113,39 @@ if __name__ == '__main__':
 ```
 
 ### 方案二：任务队列，轮询
+
+## 编译依赖
+
+编译接口时，需要这包：
+
+```bash
+sudo apt install ros-${ROS_DISTRO}-rosidl-default-generators
+```
+
+Python 需要包
+
+```bash
+# ROS2 通常使用 3.3.4 能调通
+pip install empy==3.3.4 catkin_pkg
+```
+
+## Docker 容器之间通信：要正确配置传输方式，或是共享内存
+
+默认情况下，有节点在不同容器，想要与宿主机通信或是其他容器的节点通信，尽管使用 --net host，但仅列出话题，ros2 topic echo 无法输出内容。
+
+原因：DDS 实现（Fast DDS）在检测到两个节点位于同一主机上时，会出于性能优化的目的，优先尝试使用共享内存（Shared Memory, SHM）进行通信优先使用共享内存。容器没有映射 /dev/shm，所以共享内存机制反而成了阻碍。
+
+方案一（推荐）：在调用的地方，调整 FastDDS 以 UDPv4 方式发送，默认方式不使用共享内存：
+
+```bash
+export FASTDDS_BUILTIN_TRANSPORTS=UDPv4
+```
+
+方案二：如果确实需要共享内存的方式，那么需要映射共享内存的目录到容器中：
+
+```bash
+docker run -it --rm --net host --ipc host -v /dev/shm:/dev/shm osrf/ros2:nightly bash
+```
 
 ## Ref and Tag
 

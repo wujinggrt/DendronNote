@@ -2,7 +2,7 @@
 id: kcism5sjj3bvuntcovct65l
 title: 注意力机制公式_漂亮的Attention实现
 desc: ''
-updated: 1752988654145
+updated: 1753633109679
 created: 1741315704596
 ---
 
@@ -19,14 +19,28 @@ $$
 $$
 
 $$
-\text{head}_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)
+\text{head}_i = \text{Attention}(Q W_i^Q, K W_i^K, V W_i^V)
 $$
+
+线性变换中，作者把权重矩阵放到右侧，而不是 W x 形式，这样与编程保持一致。对于 head 个头，$W^Q$ 按照列分为 head 部分，每部分为连续 embed_dim // head 列的块。 $W_i^Q$ 对应 $W^Q$ 的第 i 个分块。
 
 nn.Linear() 中的 weight 的形状是 (out_features, in_features)，$W_i^Q$ 对应 weight[i:(i+1)*dim, :]。为方便计算多头，输入和输出的最后一维看作由两维num_heads x head_dim 组成，准备处理注意力前拆分。转置后，执行一系列注意力操作，最后再转置回来，并 reshape，便可省去 Concat 操作。
 
 $$
 \text{FFN}(x) = \max(0, xW_1 + b_1)W_2 + b_2
 $$
+
+## 公式与实现的不同之处
+
+深度学习中，变量 x 与很多权重矩阵 W 相乘时，论文和公式通常以 W x 的形式给出，但是在编程实现中，通常是 x 乘以 W 转置的形式。主要是由数学惯例和编程实践中的数据组织方式（尤其是批量处理） 和计算效率共同决定的。
+
+数学公式视角 (Wx)：在数学和理论推导中，通常考虑单个样本（一个向量）。输入 x 被表示为一个 d x 1 的列向量（d 是特征维度）。
+
+代码实现视角 (x * W.T 或类似形式)：实际代码中，几乎总是处理一个批量的样本（batch_size = n），而不是单个样本。这极大地提高了计算效率（利用GPU并行性）。输入数据 X 被组织成一个 n x d 的矩阵，每一行代表一个样本。权重矩阵 W 的维度定义通常保持不变：h x d（每个神经元对应一行权重）。
+
+比如，nn.Linear(in_features, out_features) 中，weight 的 shape 为 (out_features, in_features)，保存的权重记为 A，变换对应 $y=x A^T+b$，以转置的方式存储。
+
+Attention is All you Need 中，FFN 还是以代码的角度来公式，$xW$。
 
 ## 直观的理解
 

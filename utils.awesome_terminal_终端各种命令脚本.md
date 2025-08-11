@@ -2,13 +2,13 @@
 id: ovto6hepvtttctxmnypiebq
 title: Awesome_terminal_终端各种命令脚本
 desc: ''
-updated: 1752914668823
+updated: 1754060698491
 created: 1742868524198
 ---
 
 ## apt
 
-安装：
+安装
 
 ```bash
 sudo dpkg -i {{pkg_name.deb}}
@@ -20,137 +20,6 @@ sudo dpkg -i {{pkg_name.deb}}
 sudo apt search {{关键词}}
 ```
 
-## 执行命令
-
-### source 与 .
-
-最佳实践：在交互式命令行中使用 source，在脚本中使用 `.`。
-
-## IO 重定向
-
-### Here Documents
-
-用法：
-
-```bash
-cat << EOF
-<html> 
-  <head> 
-    <title>$TITLE</title> 
-  </head> 
-  <body> 
-    <h1>$TITLE</h1> 
-    <p>$TIMESTAMP</p>
-  </body> 
-</html>
-EOF
-```
-
-有时候，为了美观，不需要前置空白字符（包括制表符）时，可以使用 `<<-` 的形式：
-
-```bash
-ftp -n <<- _EOF_ 
-  open $FTP_SERVER 
-  user anonymous me@linuxbox 
-  cd $FTP_PATH 
-  hash 
-  get $REMOTE_FILE 
-  bye 
-_EOF_
-```
-
-## 变量
-
-### Parameter Expansion
-
-#### 处理不存在的变量
-
-默认值，在函数和脚本传参时使用比较频繁：
-
-```bash
-DEFAULT_VAL=hello
-hello=${1:-$DEFAULT_VAL}
-world=${2:-world}
-```
-
-### envsubst：替换对应值为环境变量值
-
-```bash
-sudo apt install -y gettext-base
-```
-
-创建模板文件 app.conf.template：
-
-```bash
-# app.conf.template
-server_ip = ${SERVER_IP}
-port = ${PORT}
-debug = ${DEBUG_MODE:-false}  # 设置默认值
-```
-
-设置环境变量：
-
-临时设置：
-
-```bash
-export SERVER_IP="192.168.1.100"
-export PORT=8080
-export DEBUG_MODE="true"
-```
-
-从 .env 文件加载（推荐）：
-
-```bash
-# .env
-SERVER_IP=192.168.1.100
-PORT=8080
-DEBUG_MODE=true
-```
-
-加载到环境：
-
-```bash
-set -a; source .env; set +a
-```
-
-
-```bash
-# 文件替换（输入文件，输出到标准输出），也可以重定向
-envsubst < app.conf.template
-```
-
-## 工作 job 管理
-
-```py
-{{any_command}} &         # 在后台运行某命令，也可用 CTRL+Z 将当前进程挂到后台
-jobs                      # 查看所有后台进程（jobs）
-bg                        # 查看后台进程，并切换过去
-fg                        # 切换后台进程到前台
-fg {job}                  # 切换特定后台进程到前台
-```
-
-bash 终端通过 () & 语法就能开启一个线程，所以对于上面的例子，可以归并到如下一个脚本中：
-
-```bash
-(cd renderer && npm run serve | while read -r line; do echo -e "[renderer] $line"; done) &
-
-(cd service && npm run serve | while read -r line; do echo -e "[service] $line"; done) &
-
-wait # 等待所有当前 shell 启动的进程结束
-```
-
-## 函数
-
-### 局部变量
-
-```bash
-myfunc() {
-  local local_var="仅在函数内可见"
-  echo $local_var  # 正常输出
-}
-myfunc
-echo $local_var    # 无输出（变量已销毁）
-```
 
 ## 终端复用：Tmux, Tmuxp
 
@@ -162,16 +31,34 @@ sudo apt install -y tmux tmuxp
 
 ### Tmux
 
-创建会话，和连接
+创建会话，和连接：
 
 ```bash
 tmux new -s session_name
+# 创建后 detach
+tmux new -d -s {{session_name}}
+#  连接
 tmux attach -t session_name
 tmux a # 简写
+# 向 session 发送命令, C-m 必须要，模拟回车
+tmux send-keys -t {{session_name}} '{{commands}}' C-m
+# Enter 更直观
+tmux send-keys -t {{session_name}} '{{commands}}' Enter
+# 查看
 tmux ls
 ```
 
+tmux 命令支持简写语法，比如 tmux new-session 写作 tmux new。
+
 一个会话可以包含多个窗口，一个窗口可以包含多个面板。
+
+关闭：
+
+```bash
+# 关闭所有会话
+tmux kill-server
+tmux kill-session -t {{session_name}}
+```
 
 常用命令：
 - `{{prefix}}"` 水平拆分创建新面板
@@ -179,6 +66,7 @@ tmux ls
 - `{{prefix}}c` 创建新窗口
 - `{{prefix}}x` 关闭面板
 - `{{prefix}}&` 关闭窗口
+- `{{prefix}}:kill-session` 关闭会话
 - `{{prefix}}d` 把会话挂到后台
 - `{{prefix}}{{ctrl+方向键}}` 调整面板边界
 - `{{prefix}}{ctrl+h|l}` 左右选择窗口
@@ -189,6 +77,150 @@ tmux ls
 - `{{prefix}}z` 最大化当前面板
 
 复制到剪切板：按住 shift 选中后，shift 不放，ctrl + c 复制，粘贴也是 shift + ctrl + v。
+
+
+可以设置进入终端，即进入 tmux：
+
+```bash
+# start tmux
+if [[ -z "$TMUX"  ]] && [ "$SSH_CONNECTION" != ""  ]; then
+   tmux attach || tmux new
+fi
+```
+
+#### 创建和后台发送命令
+
+方便 ssh 远程登录执命令。
+
+```bash
+# 窗口 1，面板 0 发送命令
+tmux send-keys -t my_session:1.0 "ls -l" Enter
+# 自动选择第一个创库
+tmux send-keys -t mysession:2 "vim ~/file.txt" Enter
+```
+
+后台会话中创建新窗口：
+
+```bash
+tmux new-window -t my_session: -n "monitor"
+tmux send-keys -t mysession:monitor "htop" Enter
+```
+
+现有窗口中分割窗口：
+
+```bash
+# 窗口 1 右侧分割面板
+tmux split-window -h -t my_session:1
+```
+
+### Tmuxp：加载 tmux 工具
+
+```bash
+sudo apt install -y tmuxp
+```
+
+注意，首次加载配置，可能需要设置环境变量，可以放到 .bashrc 或 .zshrc：
+
+```bash
+export DISABLE_AUTO_TITLE='true'
+```
+
+加载：
+
+```bash
+cmd="tmuxp load {{config.yaml} -d"
+echo "+ ${cmd}"
+# 执行
+${cmd}
+```
+
+```yaml
+session_name: 会话名称
+start_directory: ${HOME}  # 会话的起始目录
+windows:
+  - window_name: win1
+    layout: main-vertical
+    start_directory: ${HOME}/project1
+    panes:
+      - shell_command1
+      - shell_command2
+      - shell_command3
+  - window_name: win2
+    panes:
+      - ls
+      - top
+  - window_name: win3
+    panes:
+      - shell_command:
+        - echo "Did you know"
+        - echo "you can inline"
+      - shell_command:
+        - ...
+```
+
+-   **环境变量替换**：tmuxp 会自动替换**花括号包裹的环境变量**，可以直接使用环境变量到配置文件。适用于以下设置：
+    -   start_directory
+    -   before_script
+    -   session_name
+    -   window_name
+-   **简写语法**：tmuxp 提供了简写/内联样式语法，适合希望保持工作区简洁的用户。
+-   **会话初始化**：可以配置复杂的会话初始化过程，不仅仅是简单的命令
+
+windows 下，layout 可以是从左到右的 even-horizontal, 可以是从上到下的 main-vertical。
+
+在 panes 中，可以配置：
+- shell_command / cmd：在面板中执行的命令（字符串或命令列表）
+- shell_command_before：在主要命令执行前运行的命令
+- shell_command_prompt：设置是否显示命令提示符（默认为 true）
+- shell_command_delay：命令执行前的延迟时间（毫秒）
+
+环境参数和目录可以配置 start_directory 和 environment。可以配置 focus 为 true，在当前窗口为焦点。
+
+```yaml
+session_name: test-demo
+start_directory: ~
+windows:
+  - window_name: advanced
+    layout: even-horizontal
+    panes:
+      - cmd: top
+        start_directory: /var/log
+        focus: true
+        shell_command_before: 
+          - cd /var/log
+          - echo "Starting log monitoring"
+        options:
+          remain-on-exit: true
+      - 
+        shell_command: 
+          - ssh user@remote-server
+        start_directory: ~/projects
+        # 毫秒
+        shell_command_delay: 500
+```
+
+关于 yaml 语法，如果命令太长，可以使用 >- 或 | 来处理换行。注意，要在命令或对象的一开始就指出，不能在一半指出。比如：
+
+```yaml
+panes:
+  - shell_command:
+      - >-
+        if [[ -n ${SHOULD_LAUNCH_CAMERA} ]]; then
+          echo "Launching camera...";
+          ros2 launch signal_camera_node signal_camera.py;
+        else
+          echo "Should not launch camera";
+        fi
+
+  - shell_command:
+      - |
+        if [[ -n ${SHOULD_LAUNCH_CAMERA} ]]; then
+          echo "Launching camera..."
+          ros2 launch signal_camera_node signal_camera.py
+        else
+          echo "Should not launch camera"
+        fi
+```
 
 ## curl
 
@@ -260,9 +292,13 @@ sudo ip neigh flush dev {{dev0}}
 sudo ip link set dev {{网卡名}} {{选项}}
 ```
 
+选项可以是 `up|down`。
+
 其中，dev 是显示指定设备名，有时可以省略，但是为了可读性和避免参数冲突，带上 dev 选项是良好的风格。
 
 ### 静态 ip 地址
+
+#### 永久生效
 
 如果使用了 networkd 管理网络，配置 /etc/netplan/01-netcfg.yaml。如果使用了 NetworkManager 管理网络，配置 /etc/netplan/01-network-manager-all.yaml。具体查看 /etc/netplan 目录即可。重点在于设置 dhcp4 为 no，addresses 为具体静态 ip。
 
@@ -273,9 +309,9 @@ network:
   renderer: networkd
   ethernets:
     ens33:
-      # dhcp4: no # 静态 IP
+      dhcp4: no # 静态 IP
       addresses: [192.168.19.204/24]
-      # gateway4: 192.168.19.254 # 网关设置
+      # gateway4: 192.168.19.1 # 网关设置
       routes:
         - to: 192.168.123.0/24
           via: 192.168.19.57
@@ -285,6 +321,20 @@ network:
 
 ```bash
 sudo netplan apply
+```
+
+#### ip 命令临时修改，重启失效
+
+```bash
+sudo ip addr add 192.168.1.100/24 dev enp0s3  # 设置IP
+sudo ip link set enp0s3 up                     # 启用网卡
+```
+
+删除
+
+```bash
+sudo ip link set enp0s3 down
+sudo ip addr del 192.168.1.100/24 dev enp0s3
 ```
 
 ### 网桥
@@ -335,6 +385,12 @@ sudo ip addr flush dev eth0
 
 ```bash
 ip route # 查看路由表
+```
+
+#### 手动添加路由
+
+```bash
+sudo ip route add {{目标}} via {{网关}} dev {{接口}} metric {{优先级}}
 ```
 
 用例：内部内网穿透。
@@ -403,6 +459,37 @@ sudo ufw allow from 192.168.123.0/24
 ```
 
 设置路由后，发现 ping 不通。查看 arp -a，192.168.19.57 已经有正确的 MAC 地址。使用 traceroute 工具查看，执行 traceroute -m 15 192.168.19.57，发现包在网关 192.168.19.254 后，找不到 192.168.19.57 了。具体来说，
+
+#### 删除路由
+
+```bash
+sudo ip route del {{目标网络}}
+```
+
+如果目标网络相同时，可能影响包的转发。比如，使用多张网卡连接路由器时，路由器会给网口下发路由表，通常是 0.0.0.0 的目标地址，在 ip route 中显示为 default。同为 default 的目标网络，在网络的包找不到路由表的转发条目时，会选择 default 的 metric 最小者，即优先值最高者转发。所以，有些网口总是不会被访问，但又需要它来转发，以访问其他主机。
+
+解决方案：通过其他参数，比如 dev 接口，比如 via 的网关，删除指定转发路由。
+
+```bash
+# 根据网卡
+sudo ip route del default dev eth1
+# 或者根据目标网关
+sudo ip route del default via 192.168.8.1
+```
+
+#### 修改路由优先级（metric）
+
+```bash
+sudo ip route change {{目标网络}} via {{网关}} dev {{接口}} metric {{新优先级}}
+```
+
+### ip neigh 处理 ARP
+
+```bash
+# 清楚 ARP 缓存
+sudo ip neigh flush all
+sudo ip neigh show
+```
 
 ### ufw 端口的防火墙
 
@@ -646,7 +733,9 @@ cat > a.txt
 asd
 ASD
 AsD
-```bash
+```
+
+### 转换字符
 
 ```bash
 cat a.txt | tr AS jkl
@@ -654,6 +743,8 @@ asd
 jkD
 jsD
 ```
+
+### 补集
 
 处理补集，不匹配前面部分的，全都替换为后面的最后一个字符：
 
@@ -737,6 +828,13 @@ build-essential 包含了编译 C 程序所需的工具，比如 gcc、g++ 和 m
 sudo apt install build-essential -y
 ```
 
+## top 和 htop：监控进程状态
+
+单次显示实时的值，可以结合 tail 使用，查看 CPU，内存等占用。
+
+```bash
+top -b -n 1 -p {{PID}} | tail -n 2 | perl -nlae 'print "$F[8] $[9]";'
+```
 
 ## 输入法
 
@@ -798,3 +896,6 @@ sed -i "s/\${SUBNET}/10.42.0.0/24/g" /etc/chrony/chrony.conf.template > /etc/chr
 多出现了 `/`。解决方案是使用 `@` 即可。
 
 ## Ref and Tag
+
+作为程序员的你，常用的工具软件有哪些？ - PegasusWang的回答 - 知乎
+https://www.zhihu.com/question/22867411/answer/463974547

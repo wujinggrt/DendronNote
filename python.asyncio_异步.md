@@ -2,7 +2,7 @@
 id: blk1s4zbfhd016wg0ppuatd
 title: Asyncio_异步
 desc: ''
-updated: 1751908993056
+updated: 1753502645646
 created: 1742836619998
 ---
 
@@ -404,7 +404,7 @@ loop.call_soon_threadsafe(loop.stop)
 thread.join()
 ```
 
-在 ROS2 中，通常可以在 callback 封装提交协程到事件循环协程的部分，callback 调用后，由协程执行可能浪费时间的内容。比如：
+在 ROS2 中，如果想要在一个 callback 中 sleep，那么会阻塞当前主线程，其他 callback 不能够有机会调用。可以使用事件循环，asyncio.sleep() 之后，马上切出去。在 callback 中封装协程，提交到事件循环中后，马上返回，由后台的事件循环来执行实际的逻辑，前台的 callback 只需要马上返回即可：
 
 ```py
 class SomeNode(Node):
@@ -414,6 +414,14 @@ class SomeNode(Node):
             ...
             self.ros_callback
         )
+        # 创建新事件循环
+        self.loop = asyncio.new_event_loop()
+
+    # 事件循环线程函数
+    def run_event_loop(self):
+        asyncio.set_event_loop(loop)
+        loop.run_forever()
+
     def ros_callback(self, msg):
         """ROS回调函数 - 在ROS线程中执行"""
         # 安全提交协程到事件循环线程

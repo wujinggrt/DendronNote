@@ -2,7 +2,7 @@
 id: tmruqcalaaqsqzkj35nehsq
 title: Uv
 desc: ''
-updated: 1752928350600
+updated: 1753606664505
 created: 1737822755943
 ---
 
@@ -58,6 +58,8 @@ uv pip install -U flask==3.0.0 # --upgrade
 uv pip install -e .
 uv pip uninstall flask
 ```
+
+注意，包名加上方括号通常代表安装包的额外依赖（extras）。
 
 pip install 的 -f，--find-links 参数，uv pip 使用 --find-links。
 
